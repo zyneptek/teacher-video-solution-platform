@@ -150,6 +150,34 @@ shared/   ortak tipler ve fonksiyonlar
 - Türler: *Soru metninde hata, Şıklarda hata, Yazım yanlışı, Kırpma hatası, Cevap anahtarı hatası, Kazanım hatası* ve serbest metin (*Diğer*).
 - Soru paketinde soru metni ve şıklar bulunmadığı için bu alanlara işaret etme, ilgili **tür seçilerek** yapılır.
 
+### 9. Veritabanı şeması
+
+Şema düz SQL ile yazılır ve `server/db/migrations/` altındaki numaralı dosyalarla yönetilir; `npm run db:migrate -w server` bunları sırayla uygular (uygulananlar `schema_migrations` tablosunda tutulur, tekrar çalıştırmak zararsızdır). ORM kullanılmaz, sunucu `pg` ile SQL çalıştırır.
+
+| Tablo | İçerik |
+|---|---|
+| `profiles` | Yönetici ve öğretmenler: ad, soyad, e-posta, rol, branş, `auth_user_id`, `deleted_at` |
+| `learning_outcomes` | Kazanımlar: kod (benzersiz), açıklama, branş (boş olabilir) |
+| `questions` | Sorular: görsel yolu, branş, cevap anahtarı (A–E), paketteki orijinal kimlik (`source_id`), sayfa ve soru no |
+| `question_outcomes` | Soru–kazanım ilişkisi (bir soruda birden fazla kazanım) |
+| `assignments` | Atama: soru, öğretmen, durum (`assigned`, `submitted`, `approved`, `returned`), geri gönderme notu. `(soru, öğretmen)` benzersiz |
+| `recordings` | Atamanın güncel videosu (atama başına en fazla bir), durum (`processing`, `ready`, `failed`), `deleted_at` |
+| `notifications` | Bildirim: alıcı, atama, tür, `read_at` (boşsa okunmamış). Metin saklanmaz, gösterilirken üretilir |
+| `error_reports` | Hata bildirimi: soru, gönderen öğretmen, tür, açıklama, isteğe bağlı ek |
+
+**Normalizasyon:** Şema **3NF**'yi, tabloların çoğunda BCNF'yi sağlar. Bilinçli tavizler:
+
+- Kazanımın branşı koddan türetilir ama yükleme sırasında bir kez hesaplanıp saklanır (branşa göre hızlı arama için).
+- Sorunun branşı yüklemede ilk kazanımdan alınır, sonra bağımsız bir bilgidir.
+- Branş değerleri ayrı tablo yerine `CHECK` kısıtıyla sınırlanır.
+- Soru metni ve şıklar pakette olmadığı için şemada yoktur; gerekirse ayrı bir `question_options` tablosu eklenir (şıkları tek sütunda liste tutmak 1NF'yi bozardı).
+
+**Veritabanı kuralları:** Öğretmenin branşı zorunlu, yöneticinin branşı yoktur. E-posta yalnızca silinmemiş kullanıcılarda benzersizdir (silinen öğretmenin e-postası yeniden kullanılabilir). Aynı soru aynı öğretmene iki kez atanamaz. Hata bildiriminde ek dosya ile türü birlikte dolu ya da birlikte boştur.
+
+**Uygulama kodunda denetlenen kurallar** (tek tabloyla ifade edilemediği için): öğretmen yalnızca sorunun branşındaki soruya atanabilir; her sorunun en az bir kazanımı olmalıdır.
+
+**Güvenlik:** Tüm tablolarda satır düzeyi güvenlik (RLS) açıktır ve politika yoktur; Data API ileride açılsa bile `anon` ve `authenticated` roller hiçbir satıra erişemez. Sunucu `postgres` rolüyle bağlandığı için etkilenmez.
+
 ### MVP kapsamı (video stüdyosu)
 
 - Kalem ve silgi, tek renk ve tek kalınlık

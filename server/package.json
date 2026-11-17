@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "typecheck": "tsc -p .",
-    "check:supabase": "tsx src/scripts/check-supabase.ts"
+    "check:supabase": "tsx src/scripts/check-supabase.ts",
+    "db:migrate": "tsx src/scripts/migrate.ts"
   },
   "dependencies": {
     "@app/shared": "*",
