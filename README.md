@@ -91,6 +91,23 @@ Sunucu, soru görselini arka plan olarak alıp çizim olaylarını zamanına gö
 - Ek ayar dosyaları ve tip yazma zamanı.
 - Ortak tiplerin mobil uygulamada (Metro) sorunsuz çalışması ilk iskelette doğrulanır; olmazsa küçük tip dosyaları kopyalanır.
 
+### 7. Klasör düzeni: tek repo, ortak paket
+
+**Karar:** Tek repoda npm workspaces ile dört paket:
+
+```
+server/   Express sunucusu
+web/      Vite + React (yönetici ve öğretmen)
+mobile/   Expo uygulaması
+shared/   ortak tipler ve fonksiyonlar
+```
+
+`shared/` içinde sunucu, web ve mobilin ortak kullandığı tipler (çizim olayı formatı, atama durumları, branş listesi, API biçimleri) ve küçük ortak fonksiyonlar (özellikle çizgi yumuşatma) bulunur. Böylece ekranda çizilen çizgi ile sunucunun videoya işlediği çizgi aynı koddan çıkar.
+
+**Bilinen kısıtlar**
+
+- Mobil uygulamanın (Metro) `shared/` paketini tanıması ek ayar gerektirebilir. Sorun çıkarsa ortak paket bırakılır, tipler her pakette ayrı tutulur.
+
 ### MVP kapsamı (video stüdyosu)
 
 - Kalem ve silgi, tek renk ve tek kalınlık
