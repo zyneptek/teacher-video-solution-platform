@@ -219,14 +219,16 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 - **Çıktı:** 1280×720 (16:9), 15 kare/sn, H.264/AAC MP4. Kayıt **en fazla 3 dakika** (ücretsiz Supabase planında tek dosya sınırı 50 MB).
 - **Tahta:** Çizim yüzeyi, soru görselinden bağımsız, **sabit 1280×720 mantıksal koordinat sistemidir.** Soru görseli tahtanın sol tarafına oranı korunarak yerleştirilir; geri kalan alan çözümü yazmak için boştur. Çizimler ve silgi hareketleri bu tahta koordinatlarında, kayıt süresine göre zaman damgalı olarak saklanır.
-- **Katmanlar:** Beyaz zemin, soru görseli, bunun üstünde şeffaf bir *çizim katmanı*. Silgi yalnızca çizim katmanını siler, soru görseline dokunmaz.
+- **Katmanlar:** Beyaz zemin, soru görseli, bunun üstünde şeffaf bir *çizim katmanı*. Silgi soru görseline dokunmaz.
+- **Silgi parça silgisidir:** Çizgiye (kenarına, ucuna bile) değdiği anda o çizginin **tamamı** silinir; alan silgisi değildir. Video, çizginin silindiği andan itibaren onu göstermez.
+- **Çizim günlüğü:** Olaylar gerçekleşme sırasıyla tutulur: `stroke` (kalemle çizilmiş çizgi: renk, kalınlık, zamanlı noktalar) ve `erase` (silinen çizgi ve zamanı). Sıra, zaman damgaları eşit olduğunda (örneğin duraklatma sırasında) neyin önce olduğunu belirler.
 - **Duraklatma:** Kayıt saati durur. Duraklatma sırasında yapılan çizimler duraklatma anının zaman damgasını alır; kayıt devam ettiğinde videoda ilk karede görünür.
 
 **Gerekçe**
 
 - Soru görselleri 618–1386 piksel yükseklikte ve oranları çok farklıdır; sabit tahta sayesinde web, mobil ve tablet aynı koordinatlarla aynı videoyu üretir, ekran boyutu sonucu etkilemez.
 - Görseller küçük olduğundan, çözümü yazmak için görselin dışında da boş alan gerekir.
-- Çizim parçaları basit doğru parçalarıdır (yuvarlak uçlu); ekranda ve videoda aynı koddan çizilir.
+- Kalem çizgisi, noktaların orta noktalarından geçen yumuşatılmış eğrilerle (ikinci derece Bézier, yuvarlak uçlu) çizilir; küçük ve hızlı el hareketlerinde (örneğin küçük bir "3") köşeli görünmez. Ekranda ve videoda aynı koddan çizilir.
 
 **Bilinen kısıtlar**
 
@@ -235,9 +237,9 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 **Sunucu renderer'ı (`server/src/render/renderVideo.ts`)**
 
 - Kareler `@napi-rs/canvas` ile çizilir, ham piksel olarak `ffmpeg`'e (`ffmpeg-static` paketi, ayrıca kurulum gerektirmez) verilir; H.264 + AAC, `yuv420p` MP4 üretilir. Çizim kodu (`shared/src/drawing.ts`) istemcilerle ortaktır.
-- Her karede, o ana kadar gerçekleşen çizim adımları çizim katmanına işlenir; değişiklik olmayan karelerde önceki kare yeniden kullanılır.
+- Her karede, o ana kadar gerçekleşen çizim adımları (çizgiler ve silmeler) çizim katmanına işlenir; bir çizgi silindiğinde katman temizlenip silinmemiş çizgiler yeniden çizilir. Değişiklik olmayan karelerde önceki kare yeniden kullanılır.
 - Deneme: `npm run render:demo -w server -- <çıktı klasörü> [süre sn]` elle hazırlanmış olaylarla (kalem, silgi, duraklatma sırasında çizim, ses) MP4 üretir.
-- **Doğrulandı:** MP4 1280×720, 15 kare/sn, ses akışı var ve sessiz değil; çizim zamanla ilerliyor; silgi yalnızca çizimi siliyor, soru görseline dokunmuyor ve silinen çizim sonraki karelerde geri gelmiyor; duraklatma sırasında yapılan çizim, devam anının ilk karesinde görünüyor.
+- **Doğrulandı:** MP4 1280×720, 15 kare/sn, ses akışı var ve sessiz değil; çizim zamanla ilerliyor; silgi bir çizgiye (yalnızca ucuna değse bile) değince çizginin tamamı silme anından itibaren videodan kalkıyor, soru görseline dokunmuyor ve geri gelmiyor; duraklatma sırasında yapılan çizim, devam anının ilk karesinde görünüyor; küçük bir "3" yalnızca 9 seyrek noktadan akıcı bir eğri olarak çiziliyor.
 - **Ölçüm:** 3 dakikalık video yaklaşık 11 saniyede üretildi (~17 kat gerçek zamanlı), dosya 2,7 MB.
 
 ### 12. Web tahtası: HTML canvas
@@ -248,14 +250,15 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 **Nasıl çalışır**
 
-- İki katman: zemin (beyaz + soru görseli) ve şeffaf çizim katmanı. Silgi yalnızca çizim katmanını siler. Katmanlar 1280×720 mantıksal çözünürlüktedir, CSS ile ekrana sığdırılır.
+- İki katman: zemin (beyaz + soru görseli) ve şeffaf çizim katmanı. Katmanlar 1280×720 mantıksal çözünürlüktedir, CSS ile ekrana sığdırılır.
+- Silgi parça silgisidir: silgi işaretçisi bir çizgiye değdiğinde (hızlı harekette üstünden atlamasın diye yolu küçük adımlarla taranır) çizginin tamamı silinir.
 - Pointer Events kullanılır (fare, kalem ve dokunmatik aynı kodla). İşaretçi yakalanır, ikinci parmak yok sayılır.
 - Hızlı harekette tarayıcının iki olay arasında biriktirdiği ara noktalar da alınır (`getCoalescedEvents`), çizgi kopmaz.
 - Her noktanın kayıt süresi, olayın gerçekleştiği an esas alınarak hesaplanır ve geriye gitmez.
-- Çizim, sunucudaki renderer'la aynı `drawSegment` fonksiyonuyla yapılır (`shared/`).
+- Çizim, sunucudaki renderer'la aynı `InkPainter` sınıfıyla yapılır (`shared/`).
 - `desynchronized` canvas ipucu ile tarayıcıdan çizimi daha düşük gecikmeyle ekrana göndermesi istenir.
 
-**Doğrulama (Chrome, otomatik):** kalem çiziyor, silgi siliyor ve soru görseline dokunmuyor, görsel doğru yerleşiyor. Yoğun harekette (1.500 `pointermove`) olay işleme süresi ortalama 0,13 ms, %95'i 0,2 ms, en yüksek 0,9 ms ölçüldü. Bu, yalnızca yazılımın olay işleme süresidir; ekrandaki algılanan gecikme gerçek fare, kalem veya dokunmatikle elle de denenmelidir.
+**Doğrulama (Chrome, otomatik):** kalem çiziyor; silgi bir çizginin ucuna değince tüm çizgiyi siliyor, uzaktaki çizgilere ve soru görseline dokunmuyor; küçük bir "3" akıcı çıkıyor. Yoğun kalem hareketinde (1.500 `pointermove`) olay işleme süresi ortalama 0,13 ms, en yüksek 0,5 ms; 40 çizgi varken silgi hareketinde ortalama 0,37 ms, en yüksek 4 ms ölçüldü. Bu, yalnızca yazılımın olay işleme süresidir; ekrandaki algılanan gecikme gerçek fare, kalem veya dokunmatikle elle de denenmelidir.
 
 ### MVP kapsamı (video stüdyosu)
 

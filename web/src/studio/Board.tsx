@@ -1,14 +1,17 @@
-// Çözüm tahtası: soru görseli üzerinde kalem ve silgiyle çizim.
+// Çözüm tahtası: soru görseli üzerinde kalem ve silgi.
+// Kalem yumuşatılmış çizgi çizer; silgi parça silgisidir (çizgiye değerse tüm çizgi silinir).
 // Çizim doğrudan canvas'a yapılır (React'ten geçmez), böylece çizgi işaretçiyi gecikmeden izler.
 // Her nokta tahta koordinatında ve kayıt süresiyle saklanır; videoyu sunucu bu olaylardan üretir.
 import { useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import {
   BOARD,
-  TOOL_STYLES,
-  drawSegment,
+  PEN_STYLE,
+  InkPainter,
+  eraserHitsStroke,
   questionImageRect,
-  type Stroke,
+  type DrawingEvent,
+  type StrokeEvent,
   type StrokePoint,
   type Tool,
 } from '@app/shared';
@@ -18,25 +21,29 @@ type Props = {
   tool: Tool;
   // Kayıt saati (ms). Duraklatılmışsa donmuş değeri döner.
   getTimeMs: () => number;
-  onStrokeComplete: (stroke: Stroke) => void;
+  // Biten her çizgi ve her silme için çağrılır; olaylar gerçekleşme sırasıyla gelir.
+  onEvent: (event: DrawingEvent) => void;
 };
 
-type ActiveStroke = { pointerId: number; stroke: Stroke };
+type Active =
+  | { kind: 'pen'; pointerId: number; index: number; stroke: StrokeEvent }
+  | { kind: 'eraser'; pointerId: number; last: StrokePoint };
 
 const fill: React.CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%' };
 
-export function Board({ imageUrl, tool, getTimeMs, onStrokeComplete }: Props) {
+export function Board({ imageUrl, tool, getTimeMs, onEvent }: Props) {
   const baseRef = useRef<HTMLCanvasElement>(null);
   const inkRef = useRef<HTMLCanvasElement>(null);
-  const inkCtxRef = useRef<CanvasRenderingContext2D | null>(null);
-  const activeRef = useRef<ActiveStroke | null>(null);
+  const painterRef = useRef<InkPainter | null>(null);
+  const eventsRef = useRef<DrawingEvent[]>([]); // tahtanın kendi günlüğü (silmelerde hedef bulmak için)
+  const activeRef = useRef<Active | null>(null);
   const lastTimeRef = useRef(0); // zaman damgaları geriye gitmesin
 
   // Olay işleyicilerinin her çizimde yeniden kurulmaması için en güncel değerler burada tutulur.
-  const latest = useRef({ tool, getTimeMs, onStrokeComplete });
+  const latest = useRef({ tool, getTimeMs, onEvent });
   useEffect(() => {
-    latest.current = { tool, getTimeMs, onStrokeComplete };
-  }, [tool, getTimeMs, onStrokeComplete]);
+    latest.current = { tool, getTimeMs, onEvent };
+  }, [tool, getTimeMs, onEvent]);
 
   // Zemin: beyaz + soru görseli.
   useEffect(() => {
@@ -60,12 +67,31 @@ export function Board({ imageUrl, tool, getTimeMs, onStrokeComplete }: Props) {
     };
   }, [imageUrl]);
 
-  function inkContext(): CanvasRenderingContext2D | null {
-    if (!inkCtxRef.current) {
+  function painter(): InkPainter | null {
+    if (!painterRef.current) {
+      const canvas = inkRef.current;
       // desynchronized: tarayıcıya çizimi ekrana beklemeden göndermesini söyler (daha düşük gecikme).
-      inkCtxRef.current = inkRef.current?.getContext('2d', { desynchronized: true }) ?? null;
+      const ctx = canvas?.getContext('2d', { desynchronized: true });
+      if (!canvas || !ctx) return null;
+      painterRef.current = new InkPainter(ctx, eventsRef.current, () => ctx.clearRect(0, 0, BOARD.width, BOARD.height));
     }
-    return inkCtxRef.current;
+    return painterRef.current;
+  }
+
+  // Silgi from'dan to'ya giderken değdiği çizgileri siler.
+  function eraseAlong(from: StrokePoint, to: StrokePoint) {
+    const ink = painter();
+    if (!ink) return;
+    const events = eventsRef.current;
+    for (let i = 0; i < events.length; i++) {
+      const candidate = events[i] as DrawingEvent;
+      if (candidate.type !== 'stroke' || ink.isErased(i)) continue;
+      if (!eraserHitsStroke(candidate, from, to)) continue;
+      const erase: DrawingEvent = { type: 'erase', t: to.t, target: i };
+      events.push(erase);
+      ink.erase(i);
+      latest.current.onEvent(erase);
+    }
   }
 
   // Ekran koordinatını tahta koordinatına ve kayıt süresine çevirir.
@@ -83,32 +109,39 @@ export function Board({ imageUrl, tool, getTimeMs, onStrokeComplete }: Props) {
   function handlePointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
     if (activeRef.current) return; // tek işaretçi: ikinci parmak yok sayılır
     if (event.pointerType === 'mouse' && event.button !== 0) return;
-    const ctx = inkContext();
-    if (!ctx) return;
+    const ink = painter();
+    if (!ink) return;
 
     event.currentTarget.setPointerCapture(event.pointerId);
-    const tool = latest.current.tool;
-    const stroke: Stroke = { tool, ...TOOL_STYLES[tool], points: [] };
     const point = toPoint(event.nativeEvent);
-    stroke.points.push(point);
-    drawSegment(ctx, stroke, point, point); // dokunuş bir nokta bırakır
-    activeRef.current = { pointerId: event.pointerId, stroke };
+    if (latest.current.tool === 'pen') {
+      const stroke: StrokeEvent = { type: 'stroke', ...PEN_STYLE, points: [point] };
+      const index = eventsRef.current.push(stroke) - 1;
+      ink.point(index, 0); // dokunuş bir nokta bırakır
+      activeRef.current = { kind: 'pen', pointerId: event.pointerId, index, stroke };
+    } else {
+      activeRef.current = { kind: 'eraser', pointerId: event.pointerId, last: point };
+      eraseAlong(point, point);
+    }
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLCanvasElement>) {
     const active = activeRef.current;
-    const ctx = inkContext();
-    if (!active || !ctx || active.pointerId !== event.pointerId) return;
+    const ink = painter();
+    if (!active || !ink || active.pointerId !== event.pointerId) return;
 
     // Hızlı harekette iki çizim arasında gelen ara noktalar da alınır (çizgi kopmasın).
     const coalesced = event.nativeEvent.getCoalescedEvents?.() ?? [];
     const events = coalesced.length > 0 ? coalesced : [event.nativeEvent];
-    const points = active.stroke.points;
     for (const e of events) {
-      const from = points[points.length - 1] as StrokePoint;
       const to = toPoint(e);
-      drawSegment(ctx, active.stroke, from, to);
-      points.push(to);
+      if (active.kind === 'pen') {
+        active.stroke.points.push(to);
+        ink.point(active.index, active.stroke.points.length - 1);
+      } else {
+        eraseAlong(active.last, to);
+        active.last = to;
+      }
     }
   }
 
@@ -116,7 +149,10 @@ export function Board({ imageUrl, tool, getTimeMs, onStrokeComplete }: Props) {
     const active = activeRef.current;
     if (!active || active.pointerId !== event.pointerId) return;
     activeRef.current = null;
-    latest.current.onStrokeComplete(active.stroke);
+    if (active.kind === 'pen') {
+      painter()?.end(active.index);
+      latest.current.onEvent(active.stroke);
+    }
   }
 
   return (

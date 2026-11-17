@@ -4,11 +4,11 @@ import { spawn } from 'node:child_process';
 import type { Writable } from 'node:stream';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import ffmpegPath from 'ffmpeg-static';
-import { BOARD, VIDEO, drawSegment, questionImageRect, toInkOps, type Stroke } from '@app/shared';
+import { BOARD, VIDEO, InkPainter, buildTimeline, questionImageRect, type DrawingEvent } from '@app/shared';
 
 export type RenderOptions = {
   imagePath: string;
-  strokes: Stroke[];
+  events: DrawingEvent[];
   durationMs: number; // kayıt süresi (duraklatmalar hariç)
   audioPath?: string;
   outputPath: string;
@@ -28,7 +28,7 @@ function write(stream: Writable, data: Buffer): Promise<void> {
 }
 
 export async function renderVideo(options: RenderOptions): Promise<void> {
-  const { imagePath, strokes, durationMs, audioPath, outputPath } = options;
+  const { imagePath, events, durationMs, audioPath, outputPath } = options;
   const { width, height } = BOARD;
 
   // Sabit zemin: beyaz + soru görseli.
@@ -68,7 +68,8 @@ export async function renderVideo(options: RenderOptions): Promise<void> {
     });
   });
 
-  const ops = toInkOps(strokes);
+  const painter = new InkPainter(inkCtx, events, () => inkCtx.clearRect(0, 0, width, height));
+  const timeline = buildTimeline(events);
   const totalFrames = Math.max(1, Math.ceil((durationMs * VIDEO.fps) / 1000));
   let nextOp = 0;
   let pixels: Buffer | null = null;
@@ -76,10 +77,9 @@ export async function renderVideo(options: RenderOptions): Promise<void> {
   for (let k = 0; k < totalFrames; k++) {
     const timeMs = (k * 1000) / VIDEO.fps;
     let changed = pixels === null;
-    // Bu kareye kadar gerçekleşen çizim adımlarını çizim katmanına işle.
-    while (nextOp < ops.length && (ops[nextOp] as (typeof ops)[number]).t <= timeMs) {
-      const op = ops[nextOp] as (typeof ops)[number];
-      drawSegment(inkCtx, op.stroke, op.from, op.to);
+    // Bu kareye kadar gerçekleşen çizim adımlarını (çizgiler ve silmeler) çizim katmanına işle.
+    while (nextOp < timeline.length && (timeline[nextOp] as (typeof timeline)[number]).t <= timeMs) {
+      painter.apply(timeline[nextOp] as (typeof timeline)[number]);
       nextOp++;
       changed = true;
     }

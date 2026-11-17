@@ -1,11 +1,11 @@
 // Renderer denemesi: elle hazırlanmış çizim olaylarıyla örnek bir MP4 üretir.
 // Kullanım: npm run render:demo -w server -- <çıktı klasörü> [süre (sn), varsayılan 6]
-// Sahne: kalemle çizim, silgiyle silme ve "duraklatma sırasında yapılan" çizim.
+// Sahne: kalemle çizim, silgiyle bir çizgiyi tamamen silme, küçük bir "3" ve "duraklatma sırasında yapılan" çizim.
 import { spawnSync } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Stroke, StrokePoint } from '@app/shared';
+import type { DrawingEvent, StrokePoint } from '@app/shared';
 import { getFfmpegPath, renderVideo } from '../render/renderVideo.js';
 
 const outDir = path.resolve(process.argv[2] ?? 'render-demo-output');
@@ -27,17 +27,30 @@ function line(x0: number, y0: number, x1: number, y1: number, t0: number, t1: nu
   });
 }
 
-const strokes: Stroke[] = [
-  // 0,5 sn - 2 sn: kırmızı kalın çizgi, soru görselinin üzerinde
-  { tool: 'pen', color: '#e11d48', width: 8, points: line(100, 120, 560, 120, 500, 2000) },
-  // 2,2 sn - 3,2 sn: mavi çizgi, sağdaki boş alanda
-  { tool: 'pen', color: '#2563eb', width: 6, points: line(700, 200, 1200, 400, 2200, 3200) },
-  // 3,5 sn - 4,2 sn: silgi, kırmızı çizginin ortasını siler
-  { tool: 'eraser', color: '#000000', width: 40, points: line(300, 120, 400, 120, 3500, 4200, 20) },
-  // Duraklatma sırasında çizilmiş: tüm noktalar duraklatma anının zamanını (4,3 sn) taşır.
-  { tool: 'pen', color: '#16a34a', width: 8, points: line(700, 550, 1200, 550, 4300, 4300, 10) },
+// Küçük bir "3": iki yarım daire, seyrek noktalarla (yumuşatmayı denemek için).
+function smallThree(cx: number, cy: number, t0: number, t1: number): StrokePoint[] {
+  const raw: [number, number][] = [
+    [-9, -16], [0, -22], [9, -16], [10, -8], [0, -1], [8, 6], [10, 14], [0, 22], [-9, 16],
+  ];
+  return raw.map(([dx, dy], i) => ({ x: cx + dx, y: cy + dy, t: Math.round(t0 + ((t1 - t0) * i) / (raw.length - 1)) }));
+}
+
+const pen = { type: 'stroke', color: '#dc2626', width: 4 } as const;
+
+// Olaylar gerçekleşme sırasıyla; indeks = erase olayının hedefi.
+const events: DrawingEvent[] = [
+  // 0: 0,5 sn - 2 sn: kırmızı çizgi, soru görselinin üzerinde
+  { ...pen, points: line(100, 120, 560, 120, 500, 2000) },
+  // 1: 2,2 sn - 3,2 sn: kırmızı çizgi, sağdaki boş alanda
+  { ...pen, points: line(700, 200, 1200, 400, 2200, 3200) },
+  // 2: 3,5 sn: silgi, 0 numaralı çizginin yalnızca ucuna değiyor; çizginin tamamı silinmeli
+  { type: 'erase', t: 3500, target: 0 },
+  // 3: küçük "3" (3,6 sn - 4,1 sn)
+  { ...pen, points: smallThree(800, 560, 3600, 4100) },
+  // 4: duraklatma sırasında çizilmiş: tüm noktalar duraklatma anının zamanını (4,3 sn) taşır
+  { ...pen, color: '#16a34a', points: line(950, 560, 1200, 560, 4300, 4300, 10) },
 ];
 
 const started = Date.now();
-await renderVideo({ imagePath, strokes, durationMs, audioPath, outputPath });
+await renderVideo({ imagePath, events, durationMs, audioPath, outputPath });
 console.log(`MP4 üretildi: ${outputPath} (${((Date.now() - started) / 1000).toFixed(1)} sn sürdü)`);
