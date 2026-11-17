@@ -213,6 +213,25 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 **E-posta testi:** Örnek öğretmen adresleri (`example.com`) gerçek bir posta kutusuna ait değildir, e-posta almazlar. Atama e-postasının gerçekten ulaştığını görmek için yönetici panelinden **kendi e-posta adresinle yeni bir öğretmen oluşturup** ona soru atayın.
 
+### 11. Video çıktısı ve çizim tahtası
+
+**Karar**
+
+- **Çıktı:** 1280×720 (16:9), 15 kare/sn, H.264/AAC MP4. Kayıt **en fazla 3 dakika** (ücretsiz Supabase planında tek dosya sınırı 50 MB).
+- **Tahta:** Çizim yüzeyi, soru görselinden bağımsız, **sabit 1280×720 mantıksal koordinat sistemidir.** Soru görseli tahtanın sol tarafına oranı korunarak yerleştirilir; geri kalan alan çözümü yazmak için boştur. Çizimler ve silgi hareketleri bu tahta koordinatlarında, kayıt süresine göre zaman damgalı olarak saklanır.
+- **Katmanlar:** Beyaz zemin, soru görseli, bunun üstünde şeffaf bir *çizim katmanı*. Silgi yalnızca çizim katmanını siler, soru görseline dokunmaz.
+- **Duraklatma:** Kayıt saati durur. Duraklatma sırasında yapılan çizimler duraklatma anının zaman damgasını alır; kayıt devam ettiğinde videoda ilk karede görünür.
+
+**Gerekçe**
+
+- Soru görselleri 618–1386 piksel yükseklikte ve oranları çok farklıdır; sabit tahta sayesinde web, mobil ve tablet aynı koordinatlarla aynı videoyu üretir, ekran boyutu sonucu etkilemez.
+- Görseller küçük olduğundan, çözümü yazmak için görselin dışında da boş alan gerekir.
+- Çizim parçaları basit doğru parçalarıdır (yuvarlak uçlu); ekranda ve videoda aynı koddan çizilir.
+
+**Bilinen kısıtlar**
+
+- Çok uzun (dikey) soru görselleri 720 piksel yüksekliğe sığması için küçültülür (en uzun örnek yaklaşık %46); okunabilirlik gerçek videoda kontrol edilecek, gerekirse çözünürlük artırılır.
+
 ### MVP kapsamı (video stüdyosu)
 
 - Kalem ve silgi, tek renk ve tek kalınlık
