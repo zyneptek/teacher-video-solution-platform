@@ -1,0 +1,352 @@
+[
+  {
+    "answerKey": "C",
+    "bbox": [
+      329.80499267578125,
+      500.73382568359375,
+      566.6207275390625,
+      747.4459228515625
+    ],
+    "createdAt": "2025-12-26T16:36:53.008Z",
+    "id": "12d62823-babe-428c-9008-79e73d3595db",
+    "index": 2,
+    "learningOutcomes": [
+      {
+        "description": "Tanzimat Dönemi'nde Roman",
+        "key": "TDE.21.4.3",
+        "source": "manual"
+      }
+    ],
+    "name": "Q-12d62823",
+    "outcomeKeys": [
+      "TDE.21.4.3"
+    ],
+    "page_num": 7,
+    "questionNumber": 18,
+    "s3imageUrl": "https://islerteknoloji-prod-publisher-app-data.s3.eu-central-1.amazonaws.com/isler/R%C4%B0T%C4%B0M%20B%C4%B0YOLOJ%C4%B0/questions/12d62823-babe-428c-9008-79e73d3595db.jpg",
+    "searchGrade": "TYT-AYT",
+    "sourceId": "ritimbiyoloji_2025-12-20T17:35:37",
+    "sourceMetadata": {
+      "grade": "TYT-AYT",
+      "learningOutcomeType": "Lise TYT-AYT"
+    },
+    "type": "multiple-choice",
+    "updatedAt": "2025-12-26T17:13:56.264Z",
+    "userId": "ritimbiyolojieditor"
+  },
+  {
+    "answerKey": "B",
+    "bbox": [
+      67.75662231445312,
+      543.7868194580078,
+      303.7566223144531,
+      793.7868194580078
+    ],
+    "createdAt": "2025-12-06T12:03:19.440Z",
+    "id": "223ed642-58e1-400b-8696-4d88cbe1b0b0",
+    "index": 1,
+    "learningOutcomes": [
+      {
+        "description": "Edebiyat Akımları",
+        "key": "TDE.21.1.2",
+        "source": "manual"
+      }
+    ],
+    "name": "Q-223ed642",
+    "outcomeKeys": [
+      "TDE.21.1.2"
+    ],
+    "page_num": 10,
+    "questionNumber": 24,
+    "s3imageUrl": "https://islerteknoloji-prod-publisher-app-data.s3.eu-central-1.amazonaws.com/isler/ENS%20YAYINLARI/questions/223ed642-58e1-400b-8696-4d88cbe1b0b0.jpg",
+    "searchGrade": "TYT-AYT",
+    "sourceId": "ens_2025-12-05T15:53:01",
+    "sourceMetadata": {
+      "grade": "TYT-AYT",
+      "learningOutcomeType": "Lise TYT-AYT"
+    },
+    "type": "multiple-choice",
+    "updatedAt": "2025-12-06T12:59:41.150Z",
+    "userId": "enseditor"
+  },
+  {
+    "answerKey": "B",
+    "bbox": [
+      68.28459930419922,
+      132.77603149414062,
+      307.22760009765625,
+      341.80462646484375
+    ],
+    "createdAt": "2025-12-26T14:03:42.033Z",
+    "id": "fabecad6-eef8-4cec-9252-98c82f6b65e5",
+    "index": 65,
+    "learningOutcomes": [
+      {
+        "description": "Dört İşlem Yeteneği",
+        "key": "MAT.21.1.1",
+        "source": "manual"
+      }
+    ],
+    "name": "Q-fabecad6",
+    "outcomeKeys": [
+      "MAT.21.1.1"
+    ],
+    "page_num": 20,
+    "questionNumber": 1,
+    "s3imageUrl": "https://islerteknoloji-prod-publisher-app-data.s3.eu-central-1.amazonaws.com/isler/R%C4%B0T%C4%B0M%20B%C4%B0YOLOJ%C4%B0/questions/fabecad6-eef8-4cec-9252-98c82f6b65e5.jpg",
+    "searchGrade": "TYT-AYT",
+    "sourceId": "ritimbiyoloji_2025-12-20T17:34:23",
+    "sourceMetadata": {
+      "grade": "TYT-AYT",
+      "learningOutcomeType": "Lise TYT-AYT"
+    },
+    "type": "multiple-choice",
+    "updatedAt": "2025-12-26T15:22:02.966Z",
+    "userId": "ritimbiyolojieditor"
+  },
+  {
+    "answerKey": "D",
+    "bbox": [
+      320.1493225097656,
+      145.40435791015625,
+      554.40234375,
+      607.52685546875
+    ],
+    "createdAt": "2025-12-20T16:53:08.750Z",
+    "id": "fd2883bd-8639-439f-a649-39bdbec72a4f",
+    "index": 1,
+    "learningOutcomes": [
+      {
+        "description": "Mekanik Enerji ve Korunumu",
+        "key": "FİZ.21.6.2",
+        "source": "manual"
+      }
+    ],
+    "name": "Q-fd2883bd",
+    "outcomeKeys": [
+      "FİZ.21.6.2"
+    ],
+    "page_num": 33,
+    "questionNumber": 2,
+    "s3imageUrl": "https://islerteknoloji-prod-publisher-app-data.s3.eu-central-1.amazonaws.com/isler/YAYIN%20DEN%C4%B0Z%C4%B0/questions/fd2883bd-8639-439f-a649-39bdbec72a4f.jpg",
+    "searchGrade": "TYT-AYT",
+    "sourceId": "yayindenizi_2025-12-20T15:30:01",
+    "sourceMetadata": {
+      "grade": "TYT-AYT",
+      "learningOutcomeType": "Lise TYT-AYT"
+    },
+    "type": "multiple-choice",
+    "updatedAt": "2025-12-20T17:22:35.659Z",
+    "userId": "yayindenizieditor"
+  },
+  {
+    "answerKey": "E",
+    "bbox": [
+      324.7149963378906,
+      387.1078186035156,
+      561.478271484375,
+      703.1058959960938
+    ],
+    "createdAt": "2025-12-25T16:17:48.053Z",
+    "id": "79b4caf5-04ad-4543-a0a8-97c9340e480d",
+    "index": 2,
+    "learningOutcomes": [
+      {
+        "description": "Sürtünme Kuvveti",
+        "key": "FİZ.21.5.6",
+        "source": "manual"
+      }
+    ],
+    "name": "Q-79b4caf5",
+    "outcomeKeys": [
+      "FİZ.21.5.6"
+    ],
+    "page_num": 35,
+    "questionNumber": 6,
+    "s3imageUrl": "https://islerteknoloji-prod-publisher-app-data.s3.eu-central-1.amazonaws.com/isler/PROL%C4%B0G%20YAYINLARI/questions/79b4caf5-04ad-4543-a0a8-97c9340e480d.jpg",
+    "searchGrade": "TYT-AYT",
+    "sourceId": "prolig_2025-12-20T17:32:08",
+    "sourceMetadata": {
+      "grade": "TYT-AYT",
+      "learningOutcomeType": "Lise TYT-AYT"
+    },
+    "type": "multiple-choice",
+    "updatedAt": "2025-12-25T17:03:10.515Z",
+    "userId": "proligeditor"
+  },
+  {
+    "answerKey": "C",
+    "bbox": [
+      59.7393798828125,
+      125.76551903784275,
+      298.7393798828125,
+      463.76551903784275
+    ],
+    "createdAt": "2025-12-24T14:39:03.340Z",
+    "id": "f154dc49-ef60-436b-95fe-3f7d2b0186ee",
+    "index": 116,
+    "learningOutcomes": [
+      {
+        "description": "Karışımların Sınıflandırılması",
+        "key": "KİM.21.7.1",
+        "source": "manual"
+      }
+    ],
+    "name": "Q-f154dc49",
+    "outcomeKeys": [
+      "KİM.21.7.1"
+    ],
+    "page_num": 36,
+    "questionNumber": 12,
+    "s3imageUrl": "https://islerteknoloji-prod-publisher-app-data.s3.eu-central-1.amazonaws.com/isler/PROL%C4%B0G%20YAYINLARI/questions/f154dc49-ef60-436b-95fe-3f7d2b0186ee.jpg",
+    "searchGrade": "TYT-AYT",
+    "sourceId": "prolig_2025-12-20T17:30:08",
+    "sourceMetadata": {
+      "grade": "TYT-AYT",
+      "learningOutcomeType": "Lise TYT-AYT"
+    },
+    "type": "multiple-choice",
+    "updatedAt": "2025-12-24T15:20:49.086Z",
+    "userId": "proligeditor"
+  },
+  {
+    "answerKey": "A",
+    "bbox": [
+      63.36892318725586,
+      75.9556884765625,
+      291.5767822265625,
+      433.70355224609375
+    ],
+    "createdAt": "2025-11-14T13:45:00.430Z",
+    "id": "e2528b28-8a45-483c-b46b-8061d40bc181",
+    "index": 150,
+    "learningOutcomes": [
+      {
+        "description": "Moleküllerin geometrilerini merkez atomu orbitallerinin hibritleşmesi esasına göre belirler.",
+        "key": "KİM.12.2.5.2",
+        "source": "manual"
+      }
+    ],
+    "name": "Q-e2528b28",
+    "outcomeKeys": [
+      "KİM.12.2.5.2"
+    ],
+    "page_num": 43,
+    "questionNumber": 25,
+    "s3imageUrl": "https://islerteknoloji-prod-publisher-app-data.s3.eu-central-1.amazonaws.com/isler/AC%C4%B0L%20YAYINLARI/questions/e2528b28-8a45-483c-b46b-8061d40bc181.jpg",
+    "searchGrade": "TYT-AYT",
+    "sourceId": "acil_2025-10-27T11:25:06",
+    "sourceMetadata": {
+      "grade": "TYT-AYT",
+      "learningOutcomeType": "Lise TYT-AYT"
+    },
+    "type": "multiple-choice",
+    "updatedAt": "2025-11-14T15:11:12.558Z",
+    "userId": "acileditor"
+  },
+  {
+    "answerKey": "A",
+    "bbox": [
+      59.199302673339844,
+      386.61212158203125,
+      287.0316467285156,
+      652.64892578125
+    ],
+    "createdAt": "2025-12-26T14:03:43.431Z",
+    "id": "b46cb2d4-ab15-4852-864a-3756b134e5b1",
+    "index": 1,
+    "learningOutcomes": [
+      {
+        "description": "Soyağaçları (Otozomal)",
+        "key": "BİY.21.5.4",
+        "source": "manual"
+      }
+    ],
+    "name": "Q-b46cb2d4",
+    "outcomeKeys": [
+      "BİY.21.5.4"
+    ],
+    "page_num": 37,
+    "questionNumber": 16,
+    "s3imageUrl": "https://islerteknoloji-prod-publisher-app-data.s3.eu-central-1.amazonaws.com/isler/R%C4%B0T%C4%B0M%20B%C4%B0YOLOJ%C4%B0/questions/b46cb2d4-ab15-4852-864a-3756b134e5b1.jpg",
+    "searchGrade": "TYT-AYT",
+    "sourceId": "ritimbiyoloji_2025-12-20T17:34:23",
+    "sourceMetadata": {
+      "grade": "TYT-AYT",
+      "learningOutcomeType": "Lise TYT-AYT"
+    },
+    "type": "multiple-choice",
+    "updatedAt": "2025-12-26T15:22:15.043Z",
+    "userId": "ritimbiyolojieditor"
+  },
+  {
+    "answerKey": "D",
+    "bbox": [
+      55.56489944458008,
+      91.55984497070312,
+      285.9907531738281,
+      501.38214111328125
+    ],
+    "createdAt": "2026-02-13T11:18:23.206Z",
+    "id": "2812f019-3218-4cf2-ba3e-c116d0b6d5cd",
+    "index": 120,
+    "learningOutcomes": [
+      {
+        "description": "Ekosistemde Madde ve Enerji Akışı",
+        "key": "BİY.21.6.1.2",
+        "source": "manual"
+      }
+    ],
+    "name": "Q-2812f019",
+    "outcomeKeys": [
+      "BİY.21.6.1.2"
+    ],
+    "page_num": 37,
+    "questionNumber": 16,
+    "s3imageUrl": "https://islerteknoloji-prod-publisher-app-data.s3.eu-central-1.amazonaws.com/isler/AKT%C4%B0F%20YAYINLARI/questions/2812f019-3218-4cf2-ba3e-c116d0b6d5cd.jpg",
+    "searchGrade": "TYT-AYT",
+    "sourceId": "aktif_2026-02-12T12:21:19",
+    "sourceMetadata": {
+      "grade": "TYT-AYT",
+      "learningOutcomeType": "Lise TYT-AYT"
+    },
+    "type": "multiple-choice",
+    "updatedAt": "2026-02-13T11:55:40.899Z",
+    "userId": "aktifeditor"
+  },
+  {
+    "answerKey": "E",
+    "bbox": [
+      59.2911376953125,
+      83.04229736328125,
+      275.2911376953125,
+      289.04229736328125
+    ],
+    "createdAt": "2026-08-18T07:03:35.596Z",
+    "id": "002ca700-df4a-46b2-8981-bf9812823b44",
+    "index": 64,
+    "learningOutcomes": [
+      {
+        "source": "manual",
+        "key": "MAT.11.1.2",
+        "description": "Trigonometrik Fonksiyonlar"
+      }
+    ],
+    "name": "Q-002ca700",
+    "outcomeKeys": [
+      "MAT.11.1.2"
+    ],
+    "page_num": 22,
+    "questionNumber": 5,
+    "s3imageUrl": "https://islerteknoloji-prod-publisher-app-data.s3.eu-central-1.amazonaws.com/isler/YAYIN%20DEN%C4%B0Z%C4%B0/questions/002ca700-df4a-46b2-8981-bf9812823b44.jpg",
+    "searchGrade": "11",
+    "sourceId": "yayindenizi_2026-08-14T09:04:25",
+    "sourceMetadata": {
+      "grade": 11,
+      "learningOutcomeType": "Lise 11"
+    },
+    "type": "multiple-choice",
+    "updatedAt": "2026-08-18T07:59:34.604Z",
+    "userId": "yayindenizieditor"
+  }
+]

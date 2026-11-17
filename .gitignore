@@ -1,0 +1,10 @@
+# Araç/yardımcı dosyalar (repoya girmez)
+CLAUDE.md
+.claude/
+
+# Genel
+.DS_Store
+node_modules/
+.env
+.env.*
+!.env.example
