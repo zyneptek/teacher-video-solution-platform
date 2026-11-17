@@ -84,6 +84,8 @@ Sunucu, soru görselini arka plan olarak alıp çizim olaylarını zamanına gö
 **Bilinen kısıtlar**
 
 - Simülatörde kamera yoktur ve uzaktan push bildirimi alınamaz. Kamera bindirmesi ve push için gerçek cihaz gerekir.
+- Mobil uygulama Expo (SDK 58) boş TypeScript şablonuyla kuruldu; Expo Go ile iOS simülatöründe çalıştırılır (`npm run dev:mobile`, ardından `i` tuşu). Navigasyon kütüphanesi henüz seçilmedi.
+- `shared/` paketi mobilde çalışır: Metro ortak paketi workspace üzerinden çözer, ek ayar gerekmez. iOS simülatöründe doğrulandı.
 
 ### 6. Dil: TypeScript
 
