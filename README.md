@@ -264,6 +264,8 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 **Akış:** Başlat → kayıt sürerken Duraklat / Devam et ve Bitir, süre göstergesi (en fazla 3:00) → Bitir sonrası sunucu MP4'ü üretir, önizleme sayfada oynatılır.
 
+**Önizleme** (`web/src/studio/VideoPreview.tsx`): Tarayıcıların hazır video kontrolleri bitince yeniden oynatmayı her yerde göstermediği için kendi oynatıcımız vardır: her zaman görünen Oynat/Duraklat düğmesi (bitince "Baştan oynat"), konum çubuğu, süre göstergesi ve videoya tıklayarak oynat/duraklat. **Kaydet** düğmesi şimdilik MP4'ü bilgisayara indirir; sisteme kaydetme (atamaya bağlı) giriş ve atama sistemiyle gelecektir.
+
 **Nasıl çalışır** (`web/src/studio/useRecorder.ts`)
 
 - **Kayıt saati** yalnızca kayıt sürerken ilerler, duraklatınca donar. Çizim zaman damgaları bu saate göre alınır; bu yüzden duraklatma süresi videoya girmez ve duraklatma sırasında yapılan çizimler (hepsi duraklatma anının zamanını taşır) devam edildiğinde videoda belirir.

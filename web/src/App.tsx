@@ -3,6 +3,7 @@ import { VIDEO, type DrawingEvent, type Tool } from '@app/shared';
 import { Board } from './studio/Board';
 import { renderOnServer } from './studio/api';
 import { useRecorder } from './studio/useRecorder';
+import { VideoPreview } from './studio/VideoPreview';
 
 type Phase = 'recording' | 'rendering' | 'done';
 
@@ -129,8 +130,17 @@ function App() {
           <p data-testid="done">
             Önizleme (MP4, {video.sizeKb} KB, sunucuda {(video.renderMs / 1000).toFixed(1)} sn’de üretildi)
           </p>
-          <video data-testid="preview" src={video.url} controls style={{ width: '100%', maxWidth: 1280 }} />
-          <p>
+          <VideoPreview src={video.url} />
+          <p style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            {/* Geçici: sisteme kaydetme atama sistemiyle gelecek; şimdilik MP4 bilgisayara indirilir. */}
+            <a
+              data-testid="save"
+              href={video.url}
+              download="cozum-videosu.mp4"
+              style={{ padding: '4px 12px', border: '1px solid #767676', borderRadius: 4, color: 'inherit', textDecoration: 'none' }}
+            >
+              Kaydet (MP4 indir)
+            </a>
             <button onClick={handleNewRecording}>Yeni kayıt</button>
           </p>
         </section>
