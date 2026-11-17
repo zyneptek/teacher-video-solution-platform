@@ -19,3 +19,5 @@ export function branchFromOutcomeCode(code: string): Branch | null {
   const prefix = code.normalize('NFC').split('.')[0] ?? '';
   return BRANCH_BY_OUTCOME_PREFIX[prefix] ?? null;
 }
+
+export * from './drawing';

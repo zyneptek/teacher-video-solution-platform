@@ -232,6 +232,14 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 - Çok uzun (dikey) soru görselleri 720 piksel yüksekliğe sığması için küçültülür (en uzun örnek yaklaşık %46); okunabilirlik gerçek videoda kontrol edilecek, gerekirse çözünürlük artırılır.
 
+**Sunucu renderer'ı (`server/src/render/renderVideo.ts`)**
+
+- Kareler `@napi-rs/canvas` ile çizilir, ham piksel olarak `ffmpeg`'e (`ffmpeg-static` paketi, ayrıca kurulum gerektirmez) verilir; H.264 + AAC, `yuv420p` MP4 üretilir. Çizim kodu (`shared/src/drawing.ts`) istemcilerle ortaktır.
+- Her karede, o ana kadar gerçekleşen çizim adımları çizim katmanına işlenir; değişiklik olmayan karelerde önceki kare yeniden kullanılır.
+- Deneme: `npm run render:demo -w server -- <çıktı klasörü> [süre sn]` elle hazırlanmış olaylarla (kalem, silgi, duraklatma sırasında çizim, ses) MP4 üretir.
+- **Doğrulandı:** MP4 1280×720, 15 kare/sn, ses akışı var ve sessiz değil; çizim zamanla ilerliyor; silgi yalnızca çizimi siliyor, soru görseline dokunmuyor ve silinen çizim sonraki karelerde geri gelmiyor; duraklatma sırasında yapılan çizim, devam anının ilk karesinde görünüyor.
+- **Ölçüm:** 3 dakikalık video yaklaşık 11 saniyede üretildi (~17 kat gerçek zamanlı), dosya 2,7 MB.
+
 ### MVP kapsamı (video stüdyosu)
 
 - Kalem ve silgi, tek renk ve tek kalınlık
