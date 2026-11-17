@@ -260,6 +260,25 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 **Doğrulama (Chrome, otomatik):** kalem çiziyor; silgi bir çizginin ucuna değince tüm çizgiyi siliyor, uzaktaki çizgilere ve soru görseline dokunmuyor; küçük bir "3" akıcı çıkıyor. Yoğun kalem hareketinde (1.500 `pointermove`) olay işleme süresi ortalama 0,13 ms, en yüksek 0,5 ms; 40 çizgi varken silgi hareketinde ortalama 0,37 ms, en yüksek 4 ms ölçüldü. Bu, yalnızca yazılımın olay işleme süresidir; ekrandaki algılanan gecikme gerçek fare, kalem veya dokunmatikle elle de denenmelidir.
 
+### 13. Web kayıt akışı
+
+**Akış:** Başlat → kayıt sürerken Duraklat / Devam et ve Bitir, süre göstergesi (en fazla 3:00) → Bitir sonrası sunucu MP4'ü üretir, önizleme sayfada oynatılır.
+
+**Nasıl çalışır** (`web/src/studio/useRecorder.ts`)
+
+- **Kayıt saati** yalnızca kayıt sürerken ilerler, duraklatınca donar. Çizim zaman damgaları bu saate göre alınır; bu yüzden duraklatma süresi videoya girmez ve duraklatma sırasında yapılan çizimler (hepsi duraklatma anının zamanını taşır) devam edildiğinde videoda belirir.
+- **Ses** `MediaRecorder` ile kaydedilir (Chrome'da webm/opus, Safari'de mp4); duraklat/devam aynı ses dosyasına devam eder. Saat, ses kaydı gerçekten başladığı anda sıfırlanır; böylece ses ve çizim aynı anda başlar.
+- **Kayıt başlamadan önce ve bittikten sonra tahtaya çizilemez.** Duraklatmada çizilebilir.
+- Süre sınırına (3 dk) gelince kayıt kendiliğinden biter.
+
+**Engelleyici durumlar:** Mikrofon izni verilmediyse, mikrofon bulunamazsa veya açılamazsa kayıt başlamaz ve anlaşılır bir uyarı gösterilir. Kayıt sırasında mikrofon bağlantısı kesilirse kayıt bitirilemez ve uyarı gösterilir. Soru görseli seçilmeden kayıt başlatılamaz.
+
+**Geçici geliştirme uç noktası:** Giriş ve atama sistemi henüz olmadığı için kayıt `POST /api/dev/render` ile sunucuya gönderilir (görsel, ses, çizim günlüğü, süre). Bu uç nokta **kimlik doğrulaması ve atama kontrolü içermez**, yalnızca `NODE_ENV !== 'production'` iken açılır ve atamaya bağlı gerçek yükleme uç noktası yazılınca kaldırılacaktır. Sunucu, gelen çizim günlüğünü doğrular (şekil, sayı sınırları, zaman damgalarının geriye gitmemesi, yalnızca daha önce çizilmiş bir çizginin silinebilmesi); bozuk istekler 400 döner. Geliştirmede web, `/api` isteklerini Vite proxy'siyle sunucuya yönlendirir.
+
+**Doğrulama (Chrome, sahte mikrofonla otomatik):** kayıt başlamadan çizim engelli; başlat–çiz–duraklat–duraklatmada çiz–devam–çiz–sil–bitir akışı çalışıyor; üretilen MP4 1280×720, 15 kare/sn, AAC ses akışı var ve sessiz değil; video süresi kayıt saatiyle aynı (duraklatma süresi çıkarılmış); duraklatmada çizilen çizgi devam anından itibaren görünüyor; silinen çizgi silme anından sonra videoda yok; mikrofon izni reddedilince Türkçe uyarı çıkıyor, kayıt başlamıyor.
+
+**Doğrulanmadı:** gerçek mikrofonla ses–çizim eşzamanlılığı ve uzun kayıtlarda tarayıcı davranışı (elle denenmeli).
+
 ### MVP kapsamı (video stüdyosu)
 
 - Kalem ve silgi, tek renk ve tek kalınlık

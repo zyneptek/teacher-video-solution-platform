@@ -7,7 +7,7 @@ import ffmpegPath from 'ffmpeg-static';
 import { BOARD, VIDEO, InkPainter, buildTimeline, questionImageRect, type DrawingEvent } from '@app/shared';
 
 export type RenderOptions = {
-  imagePath: string;
+  image: string | Buffer; // dosya yolu veya bellekteki görsel
   events: DrawingEvent[];
   durationMs: number; // kayıt süresi (duraklatmalar hariç)
   audioPath?: string;
@@ -28,7 +28,7 @@ function write(stream: Writable, data: Buffer): Promise<void> {
 }
 
 export async function renderVideo(options: RenderOptions): Promise<void> {
-  const { imagePath, events, durationMs, audioPath, outputPath } = options;
+  const { image: imageSource, events, durationMs, audioPath, outputPath } = options;
   const { width, height } = BOARD;
 
   // Sabit zemin: beyaz + soru görseli.
@@ -36,7 +36,7 @@ export async function renderVideo(options: RenderOptions): Promise<void> {
   const baseCtx = base.getContext('2d');
   baseCtx.fillStyle = '#ffffff';
   baseCtx.fillRect(0, 0, width, height);
-  const image = await loadImage(imagePath);
+  const image = await loadImage(imageSource);
   const rect = questionImageRect(image.width, image.height);
   baseCtx.drawImage(image, rect.x, rect.y, rect.width, rect.height);
 

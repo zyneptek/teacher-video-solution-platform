@@ -52,5 +52,5 @@ const events: DrawingEvent[] = [
 ];
 
 const started = Date.now();
-await renderVideo({ imagePath, events, durationMs, audioPath, outputPath });
+await renderVideo({ image: imagePath, events, durationMs, audioPath, outputPath });
 console.log(`MP4 üretildi: ${outputPath} (${((Date.now() - started) / 1000).toFixed(1)} sn sürdü)`);

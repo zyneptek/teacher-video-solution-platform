@@ -23,6 +23,8 @@ type Props = {
   getTimeMs: () => number;
   // Biten her çizgi ve her silme için çağrılır; olaylar gerçekleşme sırasıyla gelir.
   onEvent: (event: DrawingEvent) => void;
+  // true iken çizim yapılamaz (kayıt başlamadan önce ve bittikten sonra).
+  disabled?: boolean;
 };
 
 type Active =
@@ -31,7 +33,7 @@ type Active =
 
 const fill: React.CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%' };
 
-export function Board({ imageUrl, tool, getTimeMs, onEvent }: Props) {
+export function Board({ imageUrl, tool, getTimeMs, onEvent, disabled = false }: Props) {
   const baseRef = useRef<HTMLCanvasElement>(null);
   const inkRef = useRef<HTMLCanvasElement>(null);
   const painterRef = useRef<InkPainter | null>(null);
@@ -40,10 +42,10 @@ export function Board({ imageUrl, tool, getTimeMs, onEvent }: Props) {
   const lastTimeRef = useRef(0); // zaman damgaları geriye gitmesin
 
   // Olay işleyicilerinin her çizimde yeniden kurulmaması için en güncel değerler burada tutulur.
-  const latest = useRef({ tool, getTimeMs, onEvent });
+  const latest = useRef({ tool, getTimeMs, onEvent, disabled });
   useEffect(() => {
-    latest.current = { tool, getTimeMs, onEvent };
-  }, [tool, getTimeMs, onEvent]);
+    latest.current = { tool, getTimeMs, onEvent, disabled };
+  }, [tool, getTimeMs, onEvent, disabled]);
 
   // Zemin: beyaz + soru görseli.
   useEffect(() => {
@@ -107,7 +109,7 @@ export function Board({ imageUrl, tool, getTimeMs, onEvent }: Props) {
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
-    if (activeRef.current) return; // tek işaretçi: ikinci parmak yok sayılır
+    if (latest.current.disabled || activeRef.current) return; // tek işaretçi: ikinci parmak yok sayılır
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     const ink = painter();
     if (!ink) return;
@@ -162,7 +164,7 @@ export function Board({ imageUrl, tool, getTimeMs, onEvent }: Props) {
         ref={inkRef}
         width={BOARD.width}
         height={BOARD.height}
-        style={{ ...fill, touchAction: 'none', cursor: 'crosshair' }}
+        style={{ ...fill, touchAction: 'none', cursor: disabled ? 'not-allowed' : 'crosshair' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
