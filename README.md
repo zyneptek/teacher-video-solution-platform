@@ -178,6 +178,39 @@ shared/   ortak tipler ve fonksiyonlar
 
 **Güvenlik:** Tüm tablolarda satır düzeyi güvenlik (RLS) açıktır ve politika yoktur; Data API ileride açılsa bile `anon` ve `authenticated` roller hiçbir satıra erişemez. Sunucu `postgres` rolüyle bağlandığı için etkilenmez.
 
+### 10. Örnek veri, hesaplar ve yükleme
+
+**Yükleme:** `npm run db:seed -w server` (önce `npm run db:migrate -w server`). Script kazanımları, 10 soruyu (görselleriyle) ve örnek hesapları yükler. Tekrar çalıştırmak güvenlidir: var olan kayıtlara dokunulmaz, yöneticinin panelden yaptığı değişiklikler korunur.
+
+**Alan eşlemesi (soru paketi → veritabanı):**
+
+| Pakette | Veritabanında |
+|---|---|
+| `id` | `questions.source_id` |
+| `answerKey` | `questions.answer_key` |
+| `outcomeKeys` | `question_outcomes` (kod, `learning_outcomes.code` ile eşleşir) |
+| `questionNumber`, `page_num` | `questions.question_number`, `questions.page_num` |
+| `<id>.jpg` görseli | Supabase Storage, özel `question-images` bucket'ı; yolu `questions.image_path` |
+| *(branş alanı yok)* | Sorunun ilk kazanımının kod ön ekinden belirlenir (bkz. Karar 8) |
+| `learningOutcomes`, `s3imageUrl`, `bbox`, `createdAt`, `updatedAt`, `index`, `name`, `searchGrade`, `sourceId`, `sourceMetadata`, `type`, `userId` | Kullanılmaz (kazanım açıklamaları kazanım listesinden gelir) |
+
+Kazanım dosyası: anahtar → `learning_outcomes.code`, değer → `learning_outcomes.description`. Dosyadaki 6.411 kaydın tamamı yüklenir; dağılım: Türkçe 1.627, Matematik 736, Fizik 686, Kimya 599, Biyoloji 630, branşsız 2.133.
+
+Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde bu alanlar, hata türü seçilerek belirtilir.
+
+**Örnek hesaplar** (herkese açık demo hesaplarıdır):
+
+| Rol | Branş | E-posta | Şifre |
+|---|---|---|---|
+| Yönetici | – | `admin@example.com` | `Admin12345!` |
+| Öğretmen | Türkçe | `turkce@example.com` | `Ogretmen12345!` |
+| Öğretmen | Matematik | `matematik@example.com` | `Ogretmen12345!` |
+| Öğretmen | Fizik | `fizik@example.com` | `Ogretmen12345!` |
+| Öğretmen | Kimya | `kimya@example.com` | `Ogretmen12345!` |
+| Öğretmen | Biyoloji | `biyoloji@example.com` | `Ogretmen12345!` |
+
+**E-posta testi:** Örnek öğretmen adresleri (`example.com`) gerçek bir posta kutusuna ait değildir, e-posta almazlar. Atama e-postasının gerçekten ulaştığını görmek için yönetici panelinden **kendi e-posta adresinle yeni bir öğretmen oluşturup** ona soru atayın.
+
 ### MVP kapsamı (video stüdyosu)
 
 - Kalem ve silgi, tek renk ve tek kalınlık
