@@ -60,6 +60,15 @@ Sunucu, soru görselini arka plan olarak alıp çizim olaylarını zamanına gö
 - Supabase Auth token'ı, kullanıcı silinse de süresi dolana kadar geçerlidir. "Silinen öğretmen giriş yapamamalı ve açık oturumu kapanmalı" şartı için sunucu her istekte kullanıcının uygulama tablosunda hâlâ var olduğunu kontrol eder; yoksa 401 döner, istemci oturumu kapatır.
 - Değerlendirenin uygulamayı çalıştırması için kendi Supabase projesini açması gerekir; adımlar README'nin kurulum bölümünde anlatılacaktır.
 
+**Supabase proje ayarları**
+
+- **Data API kapalı.** Sunucu veritabanına doğrudan Postgres bağlantısıyla eriştiği ve web/mobil Supabase'e bağlanmadığı için tabloların REST olarak açılmasına gerek yoktur; böylece saldırı yüzeyi küçülür. Auth ve Storage bu ayardan etkilenmez.
+- **Yeni kullanıcı kaydı kapalı** (Authentication > Sign In / Providers > "Allow new users to sign up"). Supabase'in kayıt uç noktası proje adresini bilen herkese açık olduğundan, "herkese açık kayıt formu olmamalı" şartı bu ayarla da güvence altına alınır. Hesapları yalnızca yönetici, sunucu üzerinden oluşturur.
+- **Veritabanı bağlantısı: Session pooler (port 5432).** Direct connection ücretsiz planda yalnızca IPv6 destekler ve bazı ağlarda bağlanamaz; Transaction pooler prepared statement gibi oturum özelliklerini desteklemez. Session pooler IPv4'te çalışır ve `pg` kütüphanesini olduğu gibi kullanmamıza izin verir.
+- Bağlantı SSL ile şifrelidir. Sertifika zinciri doğrulanmaz (`rejectUnauthorized: false`); ileride Supabase CA sertifikası eklenerek sıkılaştırılabilir.
+- Bağlantı doğrulaması için `npm run check:supabase -w server` komutu veritabanı, Auth ve Storage'ı dener; geçici kayıtları oluşturup siler.
+- Ortam değişkenleri `server/.env` dosyasındadır (örnek: `server/.env.example`). `SUPABASE_URL` sonundaki `/rest/v1/` gibi ekler kodda temizlenir.
+
 ### 3. E-posta
 
 **Karar:** Nodemailer + Gmail SMTP (uygulama şifresiyle). Atama kaydedildiği anda öğretmene e-posta gider.
