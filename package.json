@@ -1,0 +1,10 @@
+{
+  "name": "teacher-video-solution-platform",
+  "private": true,
+  "workspaces": ["shared", "server", "web"],
+  "scripts": {
+    "dev:server": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "typecheck": "npm run typecheck -w shared -w server -w web"
+  }
+}
