@@ -10,6 +10,12 @@ export const BOARD = { width: VIDEO.width, height: VIDEO.height } as const;
 
 export type Tool = 'pen' | 'eraser';
 
+// MVP: tek renk ve tek kalınlık (tahta koordinat biriminde).
+export const TOOL_STYLES = {
+  pen: { color: '#dc2626', width: 4 },
+  eraser: { color: '#000000', width: 28 },
+} as const;
+
 // t: kayıt başından itibaren geçen süre (ms). Duraklatma süreleri sayılmaz.
 export type StrokePoint = { x: number; y: number; t: number };
 

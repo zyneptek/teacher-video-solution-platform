@@ -240,6 +240,23 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 - **Doğrulandı:** MP4 1280×720, 15 kare/sn, ses akışı var ve sessiz değil; çizim zamanla ilerliyor; silgi yalnızca çizimi siliyor, soru görseline dokunmuyor ve silinen çizim sonraki karelerde geri gelmiyor; duraklatma sırasında yapılan çizim, devam anının ilk karesinde görünüyor.
 - **Ölçüm:** 3 dakikalık video yaklaşık 11 saniyede üretildi (~17 kat gerçek zamanlı), dosya 2,7 MB.
 
+### 12. Web tahtası: HTML canvas
+
+**Karar:** Web'de çözüm tahtası ham HTML canvas ile yapılır (`web/src/studio/Board.tsx`); SVG veya çizim kütüphanesi kullanılmaz.
+
+**Gerekçe:** Çizim akıcılığı görevin en kritik ölçütlerinden biridir. Canvas'ta işaretçi olayları React'ten geçmeden doğrudan çizime çevrilir; böylece çizgi işaretçiyi gecikmeden izler ve silgi davranışı üzerinde tam kontrol kalır.
+
+**Nasıl çalışır**
+
+- İki katman: zemin (beyaz + soru görseli) ve şeffaf çizim katmanı. Silgi yalnızca çizim katmanını siler. Katmanlar 1280×720 mantıksal çözünürlüktedir, CSS ile ekrana sığdırılır.
+- Pointer Events kullanılır (fare, kalem ve dokunmatik aynı kodla). İşaretçi yakalanır, ikinci parmak yok sayılır.
+- Hızlı harekette tarayıcının iki olay arasında biriktirdiği ara noktalar da alınır (`getCoalescedEvents`), çizgi kopmaz.
+- Her noktanın kayıt süresi, olayın gerçekleştiği an esas alınarak hesaplanır ve geriye gitmez.
+- Çizim, sunucudaki renderer'la aynı `drawSegment` fonksiyonuyla yapılır (`shared/`).
+- `desynchronized` canvas ipucu ile tarayıcıdan çizimi daha düşük gecikmeyle ekrana göndermesi istenir.
+
+**Doğrulama (Chrome, otomatik):** kalem çiziyor, silgi siliyor ve soru görseline dokunmuyor, görsel doğru yerleşiyor. Yoğun harekette (1.500 `pointermove`) olay işleme süresi ortalama 0,13 ms, %95'i 0,2 ms, en yüksek 0,9 ms ölçüldü. Bu, yalnızca yazılımın olay işleme süresidir; ekrandaki algılanan gecikme gerçek fare, kalem veya dokunmatikle elle de denenmelidir.
+
 ### MVP kapsamı (video stüdyosu)
 
 - Kalem ve silgi, tek renk ve tek kalınlık
