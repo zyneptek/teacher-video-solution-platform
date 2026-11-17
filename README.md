@@ -117,6 +117,39 @@ shared/   ortak tipler ve fonksiyonlar
 
 - Mobil uygulamanın (Metro) `shared/` paketini tanıması ek ayar gerektirebilir. Sorun çıkarsa ortak paket bırakılır, tipler her pakette ayrı tutulur.
 
+### 8. İş kuralları
+
+**Atama**
+
+- Bir soru yalnızca **sorunun branşındaki** öğretmenlere atanabilir (ilk atama dahil).
+- Aynı soru aynı öğretmene **ikinci kez atanamaz.** Yönetici videoyu geri gönderirse atama aynı kalır; öğretmen aynı atama üzerinde videosunu yeniden çeker veya düzenleyip yeniden onaya gönderir.
+- Aynı soru, aynı branştaki birden fazla öğretmene atanabilir; her öğretmen kendi kaydını üretir.
+
+**Silinen öğretmen**
+
+- Hesap **kapatılır** (Supabase Auth kaydı silinir, açık oturumlar geçersiz olur). Öğretmenin atamaları, kayıtları ve hata bildirimleri veritabanında **kalır** (yumuşak silme).
+
+**Kazanımlar**
+
+- Verilen JSON'daki **tüm kazanımlar** (6.411 kayıt) veritabanına yüklenir. JSON, anahtarı hiyerarşik kod olan düz bir listedir; kod ve açıklama olduğu gibi saklanır.
+- Her kazanıma, kodunun ön ekine göre bir **branş** eşlenir:
+
+| Kod ön eki | Ders (JSON'da) | Branş |
+|---|---|---|
+| TDE, TÜR | Türk Dili ve Edebiyatı, Türkçe | Türkçe |
+| MAT, GEO | Matematik, Geometri | Matematik |
+| FİZ | Fizik | Fizik |
+| KİM | Kimya | Kimya |
+| BİY | Biyoloji | Biyoloji |
+| COG, TAR, FEL, DİN, İNG, ROOT | Coğrafya, Tarih, Felsefe, Din Kültürü, İngilizce, Tüm Dersler | Branş yok (boş) |
+
+- Soruların branşı, sorunun kazanımının ön ekinden belirlenir (soru paketinde branş alanı yoktur).
+
+**Hata bildirimi**
+
+- Türler: *Soru metninde hata, Şıklarda hata, Yazım yanlışı, Kırpma hatası, Cevap anahtarı hatası, Kazanım hatası* ve serbest metin (*Diğer*).
+- Soru paketinde soru metni ve şıklar bulunmadığı için bu alanlara işaret etme, ilgili **tür seçilerek** yapılır.
+
 ### MVP kapsamı (video stüdyosu)
 
 - Kalem ve silgi, tek renk ve tek kalınlık
@@ -129,6 +162,12 @@ shared/   ortak tipler ve fonksiyonlar
 
 Aşağıdaki konularda karar verildikçe bu bölüm "Mimari kararlar"a taşınacaktır:
 
-- Proje klasör düzeni
 - Push servisi (Expo Push öneriliyor; gerçek cihaz gerektirir)
-- Atama, silinen öğretmen ve branş kuralları
+- Düzenleme veya silme sonrası atama durumu
+- Çapraz atanan öğretmenin hangi videoları göreceği
+- Öğretmenin cevap anahtarını ve kazanımları görüp görmeyeceği
+- Hata bildirimi ekleri (hangi türlerde, dosya türü ve boyut sınırı)
+- Branşı değişen öğretmenin mevcut atamaları
+- Geri gönderme notu uzunluğu, onay/geri gönderme sonrası öğretmen bildirimi
+- Yeni soru ekleme ekranı, kazanım ekleme/silme
+- Video çıktısı: çözünürlük, en-boy oranı, kamera bindirme konumu
