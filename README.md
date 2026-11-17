@@ -76,6 +76,21 @@ Sunucu, soru görselini arka plan olarak alıp çizim olaylarını zamanına gö
 
 - Simülatörde kamera yoktur ve uzaktan push bildirimi alınamaz. Kamera bindirmesi ve push için gerçek cihaz gerekir.
 
+### 6. Dil: TypeScript
+
+**Karar:** Sunucu, web ve mobilin tamamı TypeScript ile yazılır; hafif ayarlarla (tipleri susturmak için `any` kullanılmaz).
+
+**Gerekçe**
+
+- Üç parça (sunucu, web, mobil) aynı veriyi kullanır: çizim olayı formatı, atama durumları (Atandı / Onaya gönderildi / Onaylandı / Geri gönderildi), API cevapları. Tür tanımı, bu parçalar arasındaki uyumsuzlukları kod çalışmadan yakalar.
+- Tipler kodun belgesi gibidir, kodu açıklamayı kolaylaştırır.
+- JavaScript'ten TypeScript'e sonradan geçmek, baştan başlamaktan çok daha pahalıdır.
+
+**Bilinen kısıtlar**
+
+- Ek ayar dosyaları ve tip yazma zamanı.
+- Ortak tiplerin mobil uygulamada (Metro) sorunsuz çalışması ilk iskelette doğrulanır; olmazsa küçük tip dosyaları kopyalanır.
+
 ### MVP kapsamı (video stüdyosu)
 
 - Kalem ve silgi, tek renk ve tek kalınlık
@@ -88,7 +103,6 @@ Sunucu, soru görselini arka plan olarak alıp çizim olaylarını zamanına gö
 
 Aşağıdaki konularda karar verildikçe bu bölüm "Mimari kararlar"a taşınacaktır:
 
-- Dil: TypeScript / JavaScript
 - Proje klasör düzeni
 - Push servisi (Expo Push öneriliyor; gerçek cihaz gerektirir)
 - Atama, silinen öğretmen ve branş kuralları
