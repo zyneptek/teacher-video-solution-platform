@@ -9,6 +9,7 @@ import { useNotifications } from '../notifications';
 import { useSession } from '../session';
 import { colors } from '../theme';
 import { Button, Card, ErrorText, Notice } from '../ui';
+import { useWide } from '../ui/layout';
 import { NotificationSheet } from '../ui/NotificationSheet';
 import { VideoBox } from '../ui/VideoBox';
 
@@ -134,10 +135,11 @@ function PanelTab({ goTo }: { goTo: (t: Tab) => void }) {
 }
 
 function Stat({ label, value, tone, onPress }: { label: string; value: number; tone?: 'brand' | 'warn'; onPress?: () => void }) {
+  const wide = useWide(); // tablette kartlar daha büyük
   return (
-    <Pressable disabled={!onPress} onPress={onPress} style={styles.stat}>
-      <Text style={[styles.statValue, tone === 'brand' && { color: colors.brand }, tone === 'warn' && { color: colors.danger }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <Pressable disabled={!onPress} onPress={onPress} style={[styles.stat, wide && styles.statWide]}>
+      <Text style={[styles.statValue, wide && styles.statValueWide, tone === 'brand' && { color: colors.brand }, tone === 'warn' && { color: colors.danger }]}>{value}</Text>
+      <Text style={[styles.statLabel, wide && { fontSize: 16 }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -242,6 +244,8 @@ const styles = StyleSheet.create({
   section: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 6 },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   stat: { flexGrow: 1, flexBasis: '22%', minWidth: 76, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 12 },
+  statWide: { padding: 22, minHeight: 130, justifyContent: 'center' },
+  statValueWide: { fontSize: 44 },
   statValue: { fontSize: 26, fontWeight: '800', color: colors.ink },
   statLabel: { fontSize: 12, color: colors.muted },
   empty: { color: colors.muted, textAlign: 'center', padding: 24 },

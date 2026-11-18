@@ -88,9 +88,9 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
       >
         <View style={styles.stats}>
           {(Object.keys(ASSIGNMENT_STATUS_LABEL) as AssignmentStatus[]).map((s) => (
-            <View key={s} style={styles.stat}>
-              <Text style={[styles.statValue, s === 'submitted' && { color: colors.brand }, s === 'returned' && { color: colors.danger }]}>{counts[s]}</Text>
-              <Text style={styles.statLabel}>{ASSIGNMENT_STATUS_LABEL[s]}</Text>
+            <View key={s} style={[styles.stat, wide && styles.statWide]}>
+              <Text style={[styles.statValue, wide && styles.statValueWide, s === 'submitted' && { color: colors.brand }, s === 'returned' && { color: colors.danger }]}>{counts[s]}</Text>
+              <Text style={[styles.statLabel, wide && { fontSize: 16 }]}>{ASSIGNMENT_STATUS_LABEL[s]}</Text>
             </View>
           ))}
         </View>
@@ -143,6 +143,8 @@ const styles = StyleSheet.create({
   gridItem: { width: '48.9%' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   stat: { flexGrow: 1, flexBasis: '22%', minWidth: 76, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 12 },
+  statWide: { padding: 22, minHeight: 130, justifyContent: 'center' },
+  statValueWide: { fontSize: 44 },
   statValue: { fontSize: 26, fontWeight: '800', color: colors.ink },
   statLabel: { fontSize: 12, color: colors.muted },
   section: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 6 },
