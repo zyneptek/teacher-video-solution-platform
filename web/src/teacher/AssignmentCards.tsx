@@ -3,7 +3,8 @@ import { ASSIGNMENT_STATUS_LABEL, type TeacherAssignment } from '@app/shared';
 import { StatusBadge } from '../admin/AssignmentsTable';
 
 export function solutionLabel(a: TeacherAssignment): string {
-  if (a.status === 'assigned') return a.hasRecording ? 'Kayıt hazır, onaya gönderilmedi' : 'Kayıt bekleniyor';
+  if (a.status === 'assigned') return a.recording ? 'Kayıt hazır, onaya gönderilmedi' : 'Kayıt bekleniyor';
+  if (a.status === 'returned') return a.recording ? 'Düzeltip yeniden gönderin' : 'Yeni kayıt gerekli';
   return ASSIGNMENT_STATUS_LABEL[a.status];
 }
 

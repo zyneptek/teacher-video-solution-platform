@@ -9,6 +9,7 @@ import { adminTeachersRouter } from './routes/adminTeachers.js';
 import { authRouter } from './routes/auth.js';
 import { questionImagesRouter, warmQuestionImages } from './questionImages.js';
 import { teacherRouter } from './routes/teacher.js';
+import { recordingVideosRouter } from './recordings.js';
 import { pushTokensRouter } from './routes/pushTokens.js';
 import { devRenderRouter } from './routes/devRender.js';
 
@@ -25,6 +26,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin/assignments', adminAssignmentsRouter);
 app.use('/api/question-images', questionImagesRouter);
 app.use('/api/teacher', teacherRouter);
+app.use('/api/recording-videos', recordingVideosRouter);
 app.use('/api/push-token', pushTokensRouter);
 app.use('/api/admin/dashboard', adminDashboardRouter);
 app.use('/api/admin/questions', adminQuestionsRouter);

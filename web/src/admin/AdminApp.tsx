@@ -5,6 +5,7 @@ import { AssignmentsPage } from './AssignmentsPage';
 import { DashboardPage } from './DashboardPage';
 import { OutcomesPage } from './OutcomesPage';
 import { PlaceholderPage } from './PlaceholderPage';
+import { ReviewQueuePage } from './ReviewQueuePage';
 import { QuestionsPage } from './QuestionsPage';
 import { TeachersPage } from './TeachersPage';
 
@@ -15,11 +16,7 @@ const PAGES: Page[] = [
   { path: '/sorular', label: 'Sorular', render: (r) => <QuestionsPage id={r.param} /> },
   { path: '/kazanimlar', label: 'Kazanımlar', render: () => <OutcomesPage /> },
   { path: '/atamalar', label: 'Atamalar', render: () => <AssignmentsPage /> },
-  {
-    path: '/onay-kuyrugu',
-    label: 'Onay kuyruğu',
-    render: () => <PlaceholderPage title="Onay kuyruğu" description="Onaya gönderilen videolar: tarayıcı içinde izleme, onaylama veya notla geri gönderme." />,
-  },
+  { path: '/onay-kuyrugu', label: 'Onay kuyruğu', render: () => <ReviewQueuePage /> },
   {
     path: '/hata-bildirimleri',
     label: 'Hata bildirimleri',

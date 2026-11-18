@@ -59,11 +59,13 @@ async function refreshTokens(): Promise<boolean> {
 
 // Kimlik doğrulamalı JSON isteği. 401'de bir kez yenilemeyi dener, olmazsa oturumu kapatır.
 export async function api<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
+  // FormData (dosya yükleme) olduğu gibi gönderilir; tarayıcı içerik türünü (sınır değeriyle) kendisi ayarlar.
+  const isForm = init.body instanceof FormData;
   const send = () =>
     fetch(path, {
       method: init.method ?? 'GET',
-      headers: { 'content-type': 'application/json', ...(tokens ? { authorization: `Bearer ${tokens.accessToken}` } : {}) },
-      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      headers: { ...(isForm ? {} : { 'content-type': 'application/json' }), ...(tokens ? { authorization: `Bearer ${tokens.accessToken}` } : {}) },
+      body: init.body === undefined ? undefined : isForm ? (init.body as FormData) : JSON.stringify(init.body),
     });
   let response = await send();
   if (response.status === 401 && tokens && (await refreshTokens())) response = await send();

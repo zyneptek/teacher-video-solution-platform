@@ -77,6 +77,9 @@ export const ASSIGNMENT_STATUS_LABEL: Record<AssignmentStatus, string> = {
   returned: 'Geri gönderildi',
 };
 
+// Atamanın güncel çözüm videosu (sunucuda üretilmiş MP4). videoUrl, süreli imzalı bir adrestir.
+export type RecordingInfo = { id: string; videoUrl: string; durationSeconds: number; updatedAt: string };
+
 export type AssignmentInfo = {
   id: string;
   questionId: string;
@@ -87,6 +90,8 @@ export type AssignmentInfo = {
   status: AssignmentStatus;
   returnNote: string | null;
   assignedAt: string;
+  submittedAt: string | null;
+  recording: RecordingInfo | null;
 };
 
 // Atama sonrası bildirim sonuçları: e-posta durumu ve push gönderilen cihaz sayısı.
@@ -101,14 +106,14 @@ export type TeacherAssignment = {
   status: AssignmentStatus;
   returnNote: string | null;
   assignedAt: string;
-  hasRecording: boolean;
+  recording: RecordingInfo | null;
   question: { id: string; branch: Branch; questionNumber: number | null; imageUrl: string; outcomes: OutcomeInfo[] };
 };
 
 export type NotificationInfo = {
   id: string;
   assignmentId: string;
-  type: 'assignment_created';
+  type: 'assignment_created' | 'recording_approved' | 'recording_returned';
   text: string;
   readAt: string | null;
   createdAt: string;

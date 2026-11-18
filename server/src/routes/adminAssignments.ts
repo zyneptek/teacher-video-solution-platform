@@ -8,6 +8,7 @@ import { requireAuth } from '../auth.js';
 import { pool } from '../db.js';
 import { sendAssignmentEmail } from '../mail.js';
 import { sendPush } from '../push.js';
+import { recordingInfo } from '../recordings.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const STATUSES: AssignmentStatus[] = ['assigned', 'submitted', 'approved', 'returned'];
@@ -23,11 +24,17 @@ type Row = {
   status: AssignmentStatus;
   return_note: string | null;
   assigned_at: Date;
+  submitted_at: Date | null;
+  rec_id: string | null;
+  rec_duration: string | null;
+  rec_updated: Date | null;
 };
 
 const SELECT = `select a.id, a.question_id, q.question_number, q.branch, a.teacher_id, p.first_name, p.last_name,
-                       a.status, a.return_note, a.assigned_at
-                from assignments a join questions q on q.id = a.question_id join profiles p on p.id = a.teacher_id`;
+                       a.status, a.return_note, a.assigned_at, a.submitted_at,
+                       r.id as rec_id, r.duration_seconds as rec_duration, r.updated_at as rec_updated
+                from assignments a join questions q on q.id = a.question_id join profiles p on p.id = a.teacher_id
+                left join recordings r on r.assignment_id = a.id and r.deleted_at is null and r.status = 'ready'`;
 
 const toInfo = (r: Row): AssignmentInfo => ({
   id: r.id,
@@ -39,6 +46,8 @@ const toInfo = (r: Row): AssignmentInfo => ({
   status: r.status,
   returnNote: r.return_note,
   assignedAt: r.assigned_at.toISOString(),
+  submittedAt: r.submitted_at?.toISOString() ?? null,
+  recording: r.rec_id && r.rec_updated ? recordingInfo({ id: r.rec_id, duration_seconds: r.rec_duration, updated_at: r.rec_updated }) : null,
 });
 
 export const adminAssignmentsRouter = Router();
@@ -54,7 +63,7 @@ adminAssignmentsRouter.get('/', async (req, res) => {
   try {
     const { rows } = await pool.query<Row>(
       `${SELECT} where ($1::uuid is null or a.question_id = $1) and ($2::uuid is null or a.teacher_id = $2) and ($3::text is null or a.status = $3)
-       order by a.assigned_at desc`,
+       order by coalesce(a.submitted_at, a.assigned_at) desc`,
       [questionId ?? null, teacherId ?? null, status ?? null],
     );
     res.json({ assignments: rows.map(toInfo) });
@@ -125,4 +134,74 @@ adminAssignmentsRouter.post('/', async (req, res) => {
 
   const { rows } = await pool.query<Row>(`${SELECT} where a.id = $1`, [assignmentId]);
   res.status(201).json({ assignment: toInfo(rows[0] as Row), delivery });
+});
+
+// ---- Onay: yönetici onaya gönderilmiş bir kaydı onaylar veya notla geri gönderir ----
+
+const MAX_NOTE_LENGTH = 500;
+
+type ReviewRow = { id: string; teacher_id: string; status: AssignmentStatus; branch: string; question_number: number | null };
+
+async function loadForReview(id: string): Promise<ReviewRow | null> {
+  if (!UUID_PATTERN.test(id)) return null;
+  const { rows } = await pool.query<ReviewRow>(
+    'select a.id, a.teacher_id, a.status, q.branch, q.question_number from assignments a join questions q on q.id = a.question_id where a.id = $1',
+    [id],
+  );
+  return rows[0] ?? null;
+}
+
+// Durumu günceller ve öğretmene bildirim (+ push) gönderir. Yalnızca "Onaya gönderildi" durumundaki kayıt değerlendirilir.
+async function review(id: string, outcome: 'approved' | 'returned', note: string | null): Promise<{ ok: true; assignment: AssignmentInfo } | { ok: false; status: number; error: string }> {
+  const row = await loadForReview(id);
+  if (!row) return { ok: false, status: 404, error: 'Atama bulunamadı.' };
+  if (row.status !== 'submitted') return { ok: false, status: 409, error: 'Yalnızca onaya gönderilmiş kayıtlar değerlendirilebilir.' };
+
+  const client = await pool.connect();
+  try {
+    await client.query('begin');
+    await client.query('update assignments set status = $1, return_note = $2, reviewed_at = now() where id = $3', [outcome, note, id]);
+    await client.query('insert into notifications (recipient_id, assignment_id, type) values ($1, $2, $3)', [row.teacher_id, id, outcome === 'approved' ? 'recording_approved' : 'recording_returned']);
+    await client.query('commit');
+  } catch (err) {
+    await client.query('rollback').catch(() => undefined);
+    throw err;
+  } finally {
+    client.release();
+  }
+  const label = `${row.branch} - ${row.question_number ? `Soru ${row.question_number}` : 'Soru'}`;
+  void sendPush(row.teacher_id, outcome === 'approved' ? 'Videonuz onaylandı' : 'Videonuz geri gönderildi', label, { type: outcome === 'approved' ? 'recording_approved' : 'recording_returned', assignmentId: id });
+  const { rows } = await pool.query<Row>(`${SELECT} where a.id = $1`, [id]);
+  return { ok: true, assignment: toInfo(rows[0] as Row) };
+}
+
+adminAssignmentsRouter.post('/:id/approve', async (req, res) => {
+  try {
+    const result = await review(req.params.id, 'approved', null);
+    if (!result.ok) res.status(result.status).json({ error: result.error });
+    else res.json({ assignment: result.assignment });
+  } catch (err) {
+    console.error('Onaylanamadı:', err);
+    res.status(500).json({ error: 'Onaylanamadı.' });
+  }
+});
+
+adminAssignmentsRouter.post('/:id/return', async (req, res) => {
+  const note = typeof (req.body as { note?: unknown } | undefined)?.note === 'string' ? ((req.body as { note: string }).note).trim() : '';
+  if (!note) {
+    res.status(400).json({ error: 'Geri göndermek için öğretmene görünecek kısa bir not yazın.' });
+    return;
+  }
+  if (note.length > MAX_NOTE_LENGTH) {
+    res.status(400).json({ error: `Not en fazla ${MAX_NOTE_LENGTH} karakter olabilir.` });
+    return;
+  }
+  try {
+    const result = await review(req.params.id, 'returned', note);
+    if (!result.ok) res.status(result.status).json({ error: result.error });
+    else res.json({ assignment: result.assignment });
+  } catch (err) {
+    console.error('Geri gönderilemedi:', err);
+    res.status(500).json({ error: 'Geri gönderilemedi.' });
+  }
 });

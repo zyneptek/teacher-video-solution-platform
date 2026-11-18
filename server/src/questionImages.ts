@@ -21,7 +21,7 @@ export function questionImageUrl(questionId: string): string {
   return `/api/question-images/${questionId}?exp=${exp}&sig=${sign(questionId, exp)}`;
 }
 
-async function loadImage(questionId: string): Promise<Buffer | null> {
+export async function loadImage(questionId: string): Promise<Buffer | null> {
   const cached = cache.get(questionId);
   if (cached) return cached;
   const { rows } = await pool.query<{ image_path: string }>('select image_path from questions where id = $1', [questionId]);

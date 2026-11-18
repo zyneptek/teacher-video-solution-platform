@@ -1,4 +1,5 @@
-import type { DrawingEvent } from '@app/shared';
+import type { DrawingEvent, TeacherAssignment } from '@app/shared';
+import { api } from '../auth/session';
 
 export type RenderInput = { image: File; audio: Blob; camera?: Blob | null; events: DrawingEvent[]; durationMs: number };
 
@@ -19,4 +20,15 @@ export async function renderOnServer(input: RenderInput): Promise<{ videoUrl: st
     sizeKb: Math.round((body.sizeBytes ?? 0) / 1024),
     renderMs: body.renderMs ?? 0,
   };
+}
+
+// Kaydı atamaya yükler: sunucu MP4'ü üretir, sisteme (Storage + veritabanı) kaydeder ve güncel atamayı döndürür.
+export async function uploadRecording(assignmentId: string, input: { audio: Blob; camera?: Blob | null; events: DrawingEvent[]; durationMs: number }): Promise<TeacherAssignment> {
+  const form = new FormData();
+  form.append('audio', input.audio, 'audio');
+  if (input.camera) form.append('camera', input.camera, 'camera');
+  form.append('events', JSON.stringify(input.events));
+  form.append('durationMs', String(input.durationMs));
+  const { assignment } = await api<{ assignment: TeacherAssignment }>(`/api/teacher/assignments/${assignmentId}/recording`, { method: 'POST', body: form });
+  return assignment;
 }

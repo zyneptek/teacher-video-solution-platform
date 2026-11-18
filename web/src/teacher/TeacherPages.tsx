@@ -4,6 +4,7 @@ import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus, type NotificationInfo, 
 import { StatusBadge } from '../admin/AssignmentsTable';
 import { api } from '../auth/session';
 import StudioPage from '../studio/StudioPage';
+import { VideoPreview } from '../studio/VideoPreview';
 import { AssignmentCards } from './AssignmentCards';
 import { NotificationList } from './NotificationList';
 
@@ -83,14 +84,33 @@ function useAssignment(id: string) {
       .then((r) => setAssignment(r.assignment))
       .catch((err) => setError(err instanceof Error ? err.message : 'Soru yüklenemedi.'));
   }, [id]);
-  return { assignment, error };
+  return { assignment, setAssignment, error };
 }
 
 function QuestionPage({ id }: { id: string }) {
-  const { assignment, error } = useAssignment(id);
+  const { assignment, setAssignment, error } = useAssignment(id);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   if (error) return (<div><p><a href="#/sorularim">← Sorularım</a></p><p role="alert" className="error" data-testid="q-error">{error}</p></div>);
   if (!assignment) return <p>Yükleniyor…</p>;
   const q = assignment.question;
+
+  async function act(path: string, method: 'POST' | 'DELETE', confirmText?: string) {
+    if (confirmText && !window.confirm(confirmText)) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      const r = await api<{ assignment: TeacherAssignment }>(`/api/teacher/assignments/${id}${path}`, { method });
+      setAssignment(r.assignment);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'İşlem yapılamadı.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const canSubmit = !!assignment.recording && (assignment.status === 'assigned' || assignment.status === 'returned');
+  const locked = assignment.status === 'submitted';
 
   return (
     <div>
@@ -112,15 +132,34 @@ function QuestionPage({ id }: { id: string }) {
 
           <div className="card">
             <strong>Çözüm kaydı</strong>
-            {assignment.hasRecording ? (
-              <p className="muted" style={{ margin: 0 }}>Kaydınız var.</p>
+            {actionError && <p role="alert" className="error" data-testid="action-error">{actionError}</p>}
+            {assignment.recording ? (
+              <>
+                <VideoPreview key={assignment.recording.videoUrl} src={assignment.recording.videoUrl} />
+                <div className="muted small">Süre: {Math.round(assignment.recording.durationSeconds)} sn · Kaydedilme: {new Date(assignment.recording.updatedAt).toLocaleString('tr-TR')}</div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {canSubmit && (
+                    <button type="button" className="primary" disabled={busy} onClick={() => void act('/submit', 'POST')} data-testid="submit-review">
+                      {assignment.status === 'returned' ? 'Yeniden onaya gönder' : 'Onaya gönder'}
+                    </button>
+                  )}
+                  {locked && <span className="muted small" data-testid="locked">Onaya gönderildi; yönetici değerlendirmesini bekliyor.</span>}
+                  <a href={`#/sorularim/${assignment.id}/kayit`} className="link" data-testid="re-record">Yeniden kaydet</a>
+                  <button type="button" className="link danger" disabled={busy} onClick={() => void act('/recording', 'DELETE', 'Kayıt silinsin mi? Onaya gönderilmişse yönetici de artık izleyemez.')} data-testid="delete-recording">
+                    Kaydı sil
+                  </button>
+                </div>
+                {assignment.status === 'approved' && <span className="muted small">Yeniden kaydederseniz veya silerseniz onay durumu sıfırlanır; yeniden onaya göndermeniz gerekir.</span>}
+              </>
             ) : (
-              <p className="muted" style={{ margin: 0 }}>Bu soru için henüz kayıt oluşturmadınız.</p>
+              <>
+                <p className="muted" style={{ margin: 0 }}>Bu soru için henüz kayıt oluşturmadınız.</p>
+                <a href={`#/sorularim/${assignment.id}/kayit`} className="primary" style={{ textAlign: 'center', textDecoration: 'none' }} data-testid="start-recording">
+                  Kayıt oluştur
+                </a>
+              </>
             )}
-            <a href={`#/sorularim/${assignment.id}/kayit`} className="primary" style={{ textAlign: 'center', textDecoration: 'none' }} data-testid="start-recording">
-              {assignment.hasRecording ? 'Yeniden kaydet' : 'Kayıt oluştur'}
-            </a>
-            <span className="muted small">Kaydı sisteme kaydetme, izleme, silme, kırpma ve onaya gönderme sonraki adımda bu ekrana eklenecek.</span>
+            <span className="muted small">Kırpma ve düzenleme sonraki adımda eklenecek.</span>
           </div>
 
           <div className="card">
@@ -144,7 +183,7 @@ function RecordPage({ id }: { id: string }) {
   return (
     <div>
       <p><a href={`#/sorularim/${id}`}>← Soruya dön</a></p>
-      <StudioPage questionImageUrl={assignment.question.imageUrl} />
+      <StudioPage questionImageUrl={assignment.question.imageUrl} assignmentId={assignment.id} />
     </div>
   );
 }
