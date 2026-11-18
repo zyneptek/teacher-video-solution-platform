@@ -52,3 +52,17 @@ export type DashboardStats = {
   assignments: Record<AssignmentStatus, number>;
   errorReports: number;
 };
+
+// Yönetici: soru ve kazanım tipleri.
+export type OutcomeInfo = { id: number; code: string; description: string; branch: Branch | null };
+
+export type QuestionInfo = {
+  id: string;
+  branch: Branch;
+  answerKey: 'A' | 'B' | 'C' | 'D' | 'E';
+  questionNumber: number | null;
+  imageUrl: string | null; // Storage'daki özel görsel için süreli imzalı adres
+  outcomes: OutcomeInfo[];
+};
+
+export const ANSWER_KEYS = ['A', 'B', 'C', 'D', 'E'] as const;

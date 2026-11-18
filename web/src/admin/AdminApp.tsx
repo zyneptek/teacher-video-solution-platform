@@ -3,27 +3,20 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { UserInfo } from '@app/shared';
 import { DashboardPage } from './DashboardPage';
+import { OutcomesPage } from './OutcomesPage';
 import { PlaceholderPage } from './PlaceholderPage';
+import { QuestionsPage } from './QuestionsPage';
 import { TeachersPage } from './TeachersPage';
 
-type Page = { path: string; label: string; render: () => ReactNode };
+// param: adresteki ikinci parça (örneğin #/sorular/<id> için soru kimliği)
+type Page = { path: string; label: string; render: (param?: string) => ReactNode };
 
 // Sıra, görevdeki yönetici akışını izler: öğretmenler → sorular ve kazanımlar → atama → onay → hata bildirimleri.
 const PAGES: Page[] = [
   { path: '/', label: 'Panel', render: () => <DashboardPage /> },
   { path: '/ogretmenler', label: 'Öğretmenler', render: () => <TeachersPage /> },
-  {
-    path: '/sorular',
-    label: 'Sorular',
-    render: () => (
-      <PlaceholderPage title="Sorular" description="Soru listesi: görsel, branş, cevap anahtarı ve kazanımlar. Cevap anahtarı ve kazanımlar (arama kutusuyla ekleme) buradan güncellenecek; soru bazında atama ve hata bildirimleri de görünecek." />
-    ),
-  },
-  {
-    path: '/kazanimlar',
-    label: 'Kazanımlar',
-    render: () => <PlaceholderPage title="Kazanımlar" description="Kazanım listesi: arama ve bir kazanımın açıklamasını/branşını güncelleme." />,
-  },
+  { path: '/sorular', label: 'Sorular', render: (id) => <QuestionsPage id={id} /> },
+  { path: '/kazanimlar', label: 'Kazanımlar', render: () => <OutcomesPage /> },
   {
     path: '/atamalar',
     label: 'Atamalar',
@@ -43,15 +36,18 @@ const PAGES: Page[] = [
   },
 ];
 
-function currentPath(): string {
-  const hash = window.location.hash.replace(/^#/, '');
-  return PAGES.some((p) => p.path === hash) ? hash : '/';
+// Adres #/sayfa veya #/sayfa/parametre biçimindedir.
+function currentRoute(): { path: string; param?: string } {
+  const [, first = '', param] = window.location.hash.replace(/^#/, '').split('/');
+  const path = `/${first}`;
+  return PAGES.some((p) => p.path === path) ? { path, param } : { path: '/' };
 }
 
 export function AdminApp({ user, onLogout }: { user: UserInfo; onLogout: () => void }) {
-  const [path, setPath] = useState(currentPath);
+  const [route, setRoute] = useState(currentRoute);
+  const path = route.path;
   useEffect(() => {
-    const onChange = () => setPath(currentPath());
+    const onChange = () => setRoute(currentRoute());
     window.addEventListener('hashchange', onChange);
     return () => window.removeEventListener('hashchange', onChange);
   }, []);
@@ -78,7 +74,7 @@ export function AdminApp({ user, onLogout }: { user: UserInfo; onLogout: () => v
           </button>
         </div>
       </aside>
-      <main className="page">{page.render()}</main>
+      <main className="page">{page.render(route.param)}</main>
     </div>
   );
 }

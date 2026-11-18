@@ -365,3 +365,10 @@ Sırayla ele alınacak işler ve notlar:
 - **Güncelleme:** ad, soyad, e-posta, branş ve şifre değiştirilebilir (şifre boş bırakılırsa değişmez). E-posta/şifre Supabase Auth'ta da güncellenir.
 - **Silme (yumuşak):** profil `deleted_at` ile işaretlenir ve Auth hesabı silinir; atama, kayıt ve hata bildirimleri yerinde kalır. Silinen öğretmen giriş yapamaz; açık oturumu bir sonraki istekte (en geç ~30 sn içinde) otomatik kapanır ve giriş ekranında "Oturumunuz sonlandırıldı" mesajı görünür. Silinen öğretmenin e-postası yeniden kullanılabilir.
 - **Branş değişikliği:** şimdilik serbest; mevcut atamalar korunur (bekleyen karar: branş değişince atamalara ne olacağı).
+
+### Karar 18 — Sorular, kazanım arama ve cevap anahtarı (yönetici)
+- **Sorular:** 10 soru veritabanından kart olarak listelenir (görsel, branş, cevap anahtarı, kazanım sayısı); karta tıklayınca detay açılır (`#/sorular/<id>`). Görseller özel Storage bucket'ındadır; ekrana 1 saatlik imzalı adresle verilir.
+- **Cevap anahtarı** (A–E) ve **kazanımlar** her değişiklikte anında veritabanına yazılır, ardından soru yeniden okunur; yenilemede kalıcıdır. Bir sorunun **en az bir kazanımı** olmalıdır: son kazanım çıkarılamaz (sunucu 409 döner).
+- **Kazanım ekleme:** arama kutusuna yazdıkça (250 ms gecikmeyle) sunucu, veritabanındaki kazanım listesini kod/açıklamaya göre süzer (ilk 30 sonuç); sonuca tıklayınca kazanım soruya eklenir. Varsayılan olarak yalnızca sorunun branşındaki kazanımlar aranır (onay kutusuyla tüm branşlar). Bir soruya birden fazla kazanım eklenebilir.
+- **Kazanımlar sayfası:** arama + branş süzme; bir kazanımın **açıklaması ve branşı** güncellenebilir (kod değişmez). Kazanım ekleme/silme yapılmadı (görevde zorunlu olan yalnızca güncelleme).
+- Soru paketinde soru metni ve şıklar yoktur (yalnızca görsel), bu yüzden hata bildiriminde bu alanlara işaret etme, görselin hangi bölümünü işaret ettiği olarak yorumlanacaktır (hata bildirimi adımında karara bağlanacak).
