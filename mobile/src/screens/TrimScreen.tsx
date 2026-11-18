@@ -3,13 +3,14 @@
 import Slider from '@react-native-community/slider';
 import type { VideoPlayer } from 'expo-video';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { TeacherAssignment } from '@app/shared';
 import { abs, api } from '../api';
 import type { Nav } from '../nav';
 import { colors } from '../theme';
 import { Button, ErrorText, Notice } from '../ui';
+import { useWide } from '../ui/layout';
 import { VideoBox } from '../ui/VideoBox';
 
 const MIN_RANGE = 0.1;
@@ -17,6 +18,7 @@ const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart
 
 export function TrimScreen({ id, nav }: { id: string; nav: Nav }) {
   const insets = useSafeAreaInsets();
+  const wide = useWide();
   const [assignment, setAssignment] = useState<TeacherAssignment | null>(null);
   const [start, setStart] = useState(0);
   const [end, setEnd] = useState(0);
@@ -79,10 +81,14 @@ export function TrimScreen({ id, nav }: { id: string; nav: Nav }) {
   const cutSeconds = total - keepSeconds;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.content, wide && { maxWidth: 1240, paddingHorizontal: 24 }, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}>
       <Button label="← Geri" variant="ghost" onPress={nav.pop} style={{ alignSelf: 'flex-start' }} />
       <Text style={styles.title}>Kaydı düzenle</Text>
-      <VideoBox key={recording.videoUrl} url={abs(recording.videoUrl)} onPlayer={(p) => (player.current = p)} />
+      <View style={wide ? { flexDirection: 'row', gap: 20, alignItems: 'flex-start' } : { gap: 10 }}>
+      <View style={wide ? { flex: 3 } : undefined}>
+        <VideoBox key={recording.videoUrl} url={abs(recording.videoUrl)} onPlayer={(p) => (player.current = p)} />
+      </View>
+      <View style={[{ gap: 10 }, wide && { flex: 2 }]}>
       <Text style={styles.small}>Önce videoda bir aralık seçin; sonra o aralığı tutabilir veya videodan silebilirsiniz.</Text>
       <Text style={styles.label}>Aralık başlangıcı: {fmt(start)}</Text>
       <Slider minimumValue={0} maximumValue={total} step={0.1} value={start} onValueChange={changeStart} minimumTrackTintColor={colors.brand} thumbTintColor={colors.brand} />
@@ -95,6 +101,8 @@ export function TrimScreen({ id, nav }: { id: string; nav: Nav }) {
       {error && <ErrorText>{error}</ErrorText>}
       <Button label={`Yalnızca bu aralığı tut (${keepSeconds.toFixed(1)} sn)`} onPress={() => void apply('keep')} busy={busy} disabled={keepSeconds < 1} />
       <Button label={`Bu aralığı sil (video ${cutSeconds.toFixed(1)} sn kalır)`} variant="ghost" onPress={() => void apply('cut')} disabled={busy || cutSeconds < 1} />
+      </View>
+      </View>
     </ScrollView>
   );
 }

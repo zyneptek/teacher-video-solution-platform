@@ -10,11 +10,13 @@ import { abs, api } from '../api';
 import type { Nav } from '../nav';
 import { colors } from '../theme';
 import { Button, ErrorText, Notice } from '../ui';
+import { useWide } from '../ui/layout';
 
 const MB = 1024 * 1024;
 
 export function ReportScreen({ id, nav }: { id: string; nav: Nav }) {
   const insets = useSafeAreaInsets();
+  const wide = useWide();
   const [assignment, setAssignment] = useState<TeacherAssignment | null>(null);
   const [type, setType] = useState<ErrorReportType | ''>('');
   const [description, setDescription] = useState('');
@@ -72,12 +74,9 @@ export function ReportScreen({ id, nav }: { id: string; nav: Nav }) {
     }
   }
 
-  return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]} keyboardShouldPersistTaps="handled">
-        <Button label="← Geri" variant="ghost" onPress={nav.pop} style={{ alignSelf: 'flex-start' }} />
-        <Text style={styles.title}>Hata bildir</Text>
-
+  // Üç bölüm: geniş ekranda (tablet) iki sütuna dağıtılır, telefonda alt alta dizilir.
+  const typeAndDescription = (
+    <>
         <Text style={styles.label}>Hata türü</Text>
         <View style={styles.chips}>
           {ERROR_REPORT_TYPES.map((t) => (
@@ -90,6 +89,10 @@ export function ReportScreen({ id, nav }: { id: string; nav: Nav }) {
         <Text style={styles.label}>Kısa açıklama {type === 'other' ? '(zorunlu)' : '(isteğe bağlı)'}</Text>
         <TextInput style={styles.textarea} value={description} onChangeText={setDescription} multiline maxLength={ERROR_REPORT_LIMITS.descriptionMax} placeholder="Hatayı kısaca anlatın" accessibilityLabel="Açıklama" />
 
+    </>
+  );
+  const markerPicker = (
+    <>
         <Text style={styles.label}>Hatanın yeri (isteğe bağlı)</Text>
         <Button label={picking ? 'Görsele dokunun…' : marker ? 'İşareti değiştir' : 'Görselde hatayı işaretle'} variant={picking ? 'primary' : 'ghost'} onPress={() => setPicking(!picking)} />
         {assignment && (
@@ -109,12 +112,33 @@ export function ReportScreen({ id, nav }: { id: string; nav: Nav }) {
         )}
         {marker && <Button label="İşareti kaldır" variant="ghost" onPress={() => setMarker(null)} />}
 
+    </>
+  );
+  const attachmentAndSend = (
+    <>
         <Text style={styles.label}>Ek (ekran görüntüsü veya en fazla 1 dakikalık video, isteğe bağlı)</Text>
         <Button label={attachment ? 'Eki değiştir' : 'Dosya seç'} variant="ghost" onPress={() => void pickAttachment()} />
         {attachment && <Notice>Seçilen ek: {attachment.type === 'video' ? 'video' : 'görüntü'}{attachment.fileName ? ` (${attachment.fileName})` : ''}</Notice>}
         {fileError && <ErrorText>{fileError}</ErrorText>}
         {error && <ErrorText>{error}</ErrorText>}
         <Button label="Gönder" onPress={() => void submit()} busy={busy} disabled={!type || (type === 'other' && !description.trim())} />
+    </>
+  );
+
+  return (
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScrollView contentContainerStyle={[styles.content, wide && { maxWidth: 1240, paddingHorizontal: 24 }, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]} keyboardShouldPersistTaps="handled">
+        <Button label="← Geri" variant="ghost" onPress={nav.pop} style={{ alignSelf: 'flex-start' }} />
+        <Text style={styles.title}>Hata bildir</Text>
+
+        {wide ? (
+          <View style={{ flexDirection: 'row', gap: 20, alignItems: 'flex-start' }}>
+            <View style={{ flex: 1, gap: 10 }}>{typeAndDescription}{attachmentAndSend}</View>
+            <View style={{ flex: 1, gap: 10 }}>{markerPicker}</View>
+          </View>
+        ) : (
+          <>{typeAndDescription}{markerPicker}{attachmentAndSend}</>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

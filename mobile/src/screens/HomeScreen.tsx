@@ -10,6 +10,7 @@ import { useNotifications } from '../notifications';
 import { useSession } from '../session';
 import { colors } from '../theme';
 import { Badge, Card, ErrorText, StatusBadge } from '../ui';
+import { useWide } from '../ui/layout';
 
 function solutionHint(a: TeacherAssignment): string {
   if (a.status === 'assigned') return a.recording ? 'Kayıt hazır, onaya gönderilmedi' : 'Kayıt bekleniyor';
@@ -20,6 +21,7 @@ function solutionHint(a: TeacherAssignment): string {
 export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }) {
   const { user, logout } = useSession();
   const insets = useSafeAreaInsets();
+  const wide = useWide();
   const { notifications, unread, refresh: refreshNotifs } = useNotifications();
   const [assignments, setAssignments] = useState<TeacherAssignment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -101,8 +103,9 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
             <Text style={{ color: colors.muted, textAlign: 'center' }}>Yönetici size bir soru atadığında burada görünür ve bildirim alırsınız.</Text>
           </View>
         )}
+        <View style={wide ? styles.grid : { gap: 12 }}>
         {assignments?.map((a) => (
-          <Pressable key={a.id} onPress={() => nav.push({ name: 'question', id: a.id })} testID="assignment-card">
+          <Pressable key={a.id} style={wide ? styles.gridItem : undefined} onPress={() => nav.push({ name: 'question', id: a.id })} testID="assignment-card">
             <Card style={styles.row}>
               <Image source={{ uri: abs(a.question.imageUrl) }} style={styles.thumb} resizeMode="contain" />
               <View style={{ flex: 1, gap: 4 }}>
@@ -117,6 +120,7 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
             </Card>
           </Pressable>
         ))}
+        </View>
       </ScrollView>
 
       <Modal visible={bellOpen} transparent animationType="fade" onRequestClose={() => setBellOpen(false)}>
@@ -158,7 +162,9 @@ const styles = StyleSheet.create({
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '800' },
   logout: { paddingHorizontal: 12, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#ffffff44', alignItems: 'center', justifyContent: 'center' },
   logoutText: { color: colors.sage, fontWeight: '700' },
-  content: { padding: 16, gap: 12, width: '100%', maxWidth: 860, alignSelf: 'center' },
+  content: { padding: 16, gap: 12, width: '100%', maxWidth: 1240, alignSelf: 'center' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  gridItem: { width: '48.9%' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   stat: { flexGrow: 1, flexBasis: '22%', minWidth: 76, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 12 },
   statValue: { fontSize: 26, fontWeight: '800', color: colors.ink },

@@ -8,10 +8,12 @@ import { abs, api } from '../api';
 import type { Nav } from '../nav';
 import { colors } from '../theme';
 import { Button, Card, ErrorText, StatusBadge } from '../ui';
+import { useWide } from '../ui/layout';
 import { VideoBox } from '../ui/VideoBox';
 
 export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
   const insets = useSafeAreaInsets();
+  const wide = useWide();
   const [assignment, setAssignment] = useState<TeacherAssignment | null>(null);
   const [reports, setReports] = useState<ErrorReportInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -70,15 +72,19 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
   const locked = assignment.status === 'submitted';
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.content, wide && styles.contentWide, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}>
       <Pressable onPress={nav.pop} testID="back"><Text style={styles.back}>← Sorularım</Text></Pressable>
       <Text style={styles.title}>{q.branch} sorusu{q.questionNumber ? ` (Soru ${q.questionNumber})` : ''}</Text>
       {error && <ErrorText>{error}</ErrorText>}
 
+      <View style={wide ? styles.cols : { gap: 12 }}>
+      <View style={wide ? styles.colLeft : undefined}>
       <View style={styles.imageBox}>
         <Image source={{ uri: abs(q.imageUrl) }} style={{ width: '100%', aspectRatio: imageRatio }} resizeMode="contain" />
       </View>
+      </View>
 
+      <View style={wide ? styles.colRight : { gap: 12 }}>
       <Card>
         <View style={styles.between}>
           <Text style={styles.bold}>Durum</Text>
@@ -136,6 +142,8 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
           </View>
         ))}
       </Card>
+      </View>
+      </View>
     </ScrollView>
   );
 }
@@ -143,6 +151,10 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.bg, padding: 16, gap: 12 },
   content: { paddingHorizontal: 16, gap: 12, width: '100%', maxWidth: 760, alignSelf: 'center' },
+  contentWide: { maxWidth: 1240, paddingHorizontal: 24 },
+  cols: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
+  colLeft: { flex: 1 },
+  colRight: { flex: 1, gap: 12 },
   back: { color: colors.brandDark, fontWeight: '700', fontSize: 15, paddingVertical: 6 },
   title: { fontSize: 20, fontWeight: '800', color: colors.ink },
   imageBox: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 8 },
