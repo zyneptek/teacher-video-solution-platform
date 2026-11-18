@@ -1,5 +1,5 @@
 // Öğretmen girişi (web ile aynı hesap). Mobil uygulamaya yalnızca öğretmenler girer; yönetici web panelini kullanır.
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../session';
@@ -9,16 +9,10 @@ import { Button, ErrorText, Notice } from '../ui';
 export function LoginScreen() {
   const { login, sessionEnded } = useSession();
   const insets = useSafeAreaInsets();
-  const [email, setEmail] = useState(process.env.EXPO_PUBLIC_DEV_EMAIL ?? '');
-  const [password, setPassword] = useState(process.env.EXPO_PUBLIC_DEV_PASSWORD ?? '');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  // Yalnızca geliştirici doğrulaması için: EXPO_PUBLIC_DEV_AUTOLOGIN=1 ise ortam değişkenlerindeki bilgilerle kendiliğinden girer.
-  useEffect(() => {
-    if (process.env.EXPO_PUBLIC_DEV_AUTOLOGIN === '1' && email && password) void submit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function submit() {
     setError(null);

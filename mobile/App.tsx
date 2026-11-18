@@ -63,24 +63,6 @@ function Root() {
     return () => sub.remove();
   }, [user]);
 
-  // Yalnızca geliştirici doğrulaması için: EXPO_PUBLIC_DEV_OPEN=question|record|trim|report ilk atamayı açar.
-  const devOpen = process.env.EXPO_PUBLIC_DEV_OPEN;
-  const devDone = useRef(false);
-  const openDev = useCallback(async () => {
-    if (!devOpen || devDone.current) return;
-    devDone.current = true;
-    try {
-      const r = await api<{ assignments: TeacherAssignment[] }>('/api/teacher/assignments');
-      const first = r.assignments[0];
-      if (first && ['question', 'record', 'trim', 'report'].includes(devOpen)) navRef.current.push({ name: devOpen as 'question', id: first.id });
-    } catch {
-      // yok say
-    }
-  }, [devOpen]);
-  useEffect(() => {
-    if (user) void openDev();
-  }, [user, openDev]);
-
   if (!ready) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
