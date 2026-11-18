@@ -1,8 +1,151 @@
 # Öğretmen Video Çözüm Platformu
 
-İşler Yayınevi için hazırlanan, öğretmenlerin sorulara video çözüm kaydettiği ve yöneticinin bu videoları onayladığı bir teknik değerlendirme projesidir. Yönetici paneli ve öğretmen web uygulaması (React) ile öğretmen mobil/tablet uygulamasından (React Native, Expo) oluşur.
+İşler Yayınevi için hazırlanan, öğretmenlerin sorulara video çözüm kaydettiği ve yöneticinin bu videoları onayladığı bir teknik değerlendirme projesidir. Üç istemci ve bir sunucudan oluşur:
 
-> **Durum:** Geliştirme aşamasında. Bu dosya şu an yalnızca alınan mimari kararları içerir; kurulum, çalıştırma ve diğer bölümler çalışan sürümle birlikte eklenecektir.
+- **Web (React):** yönetici paneli ve öğretmen uygulaması (tek uygulama, role göre ekranlar)
+- **Mobil/tablet (React Native, Expo):** öğretmen uygulaması (telefon ve tablet için tek uygulama)
+- **Sunucu (Node.js, Express):** tek API, MP4 üretimi, e-posta ve push; veri ve dosyalar Supabase'de
+
+## Hızlı başlangıç: hazır hesaplar
+
+| Rol | E-posta | Şifre |
+|---|---|---|
+| **Yönetici** | `admin@example.com` | `Admin12345!` |
+| Öğretmen (Türkçe, Matematik, Fizik, Kimya, Biyoloji; her branşta bir tane) | `turkce@`, `matematik@`, `fizik@`, `kimya@`, `biyoloji@` + `example.com` | `Ogretmen12345!` |
+
+Giriş ekranında **Yönetici girişi** ve **Öğretmen girişi** sekmeleri vardır. Herkese açık kayıt formu yoktur; öğretmenleri yönetici oluşturur. Hesaplar `npm run db:seed` ile yüklenir (aşağıda).
+
+## Kurulum
+
+**Gereksinimler:** Node.js 22 veya üzeri (25 ile denendi), npm, ücretsiz bir [Supabase](https://supabase.com) hesabı. Mobil için telefonda **Expo Go** (SDK 58) veya Xcode/Android simülatörü. ffmpeg ayrıca kurulmaz (`ffmpeg-static` paketiyle gelir).
+
+**1. Bağımlılıklar** (repo kökünde, tek komut dört paketi de kurar):
+
+```bash
+npm install
+```
+
+**2. Supabase projesi.** Yeni bir proje açın ve şu ayarları yapın (ayrıntı ve gerekçe: Karar 2):
+
+- *Authentication > Sign In / Providers:* **"Allow new users to sign up" kapalı**
+- *Data API:* kapalı olabilir (sunucu veritabanına doğrudan bağlanır)
+- Şu üç değeri not edin: **Project URL**, **Secret key** (`service_role`), **Session pooler** bağlantı adresi (*Connect* düğmesinden, port 5432)
+
+**3. Sunucu ayarı.** `server/.env.example` dosyasını `server/.env` olarak kopyalayıp doldurun (`SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `DATABASE_URL`). E-posta için bkz. [E-posta](#e-posta-yaklaşımı-ve-kurulumu). `.env` repoya girmez.
+
+**4. Veritabanı ve örnek veri:**
+
+```bash
+npm run check:supabase -w server   # (isteğe bağlı) bağlantıyı dener
+npm run db:migrate -w server       # tabloları oluşturur
+npm run db:seed -w server          # 6.411 kazanım, 10 soru (görselleriyle), yönetici ve 5 örnek öğretmen
+```
+
+Seed tekrar çalıştırılabilir; var olan kayıtlara dokunmaz. Soru paketi repoda `Örnek sorular/` klasöründedir (alan eşlemesi: Karar 10).
+
+## Çalıştırma
+
+Üç ayrı terminalde:
+
+```bash
+npm run dev:server   # API → http://localhost:4000
+npm run dev:web      # Web → http://localhost:5173 (/api isteklerini sunucuya yönlendirir)
+npm run dev:mobile   # Expo (Metro) başlar
+```
+
+**Web:** tarayıcıda `http://localhost:5173` adresini açın, yönetici hesabıyla girin. Kayıt stüdyosu için tarayıcıdan mikrofon izni verilmelidir (Chrome önerilir).
+
+**Mobil:** `npm run dev:mobile` çalışırken terminalde
+- iOS simülatörü için `i`, Android emülatörü için `a` tuşuna basın veya
+- **gerçek telefon/tablet** için Expo Go ile QR kodu okutun. Cihaz sunucuya `localhost` ile ulaşamaz; bilgisayarın yerel ağ adresini verin (cihaz ve bilgisayar aynı ağda olmalı):
+
+```bash
+EXPO_PUBLIC_API_URL=http://192.168.1.20:4000 npm run dev:mobile
+```
+
+Mobilde yalnızca öğretmen girişi vardır; aynı hesapla web ve mobilden girilebilir. Kayıt stüdyosu telefonda yatay, tablette serbest yönde çalışır.
+
+**Kontroller:** `npm run typecheck` dört paketin tip denetimini yapar.
+
+## Mimari özet
+
+```
+shared/   ortak tipler, sabitler ve çizim kodu (web, mobil ve sunucu aynı kodu kullanır)
+server/   Express API  ──►  Supabase (Postgres, Auth, Storage)
+web/      Vite + React   ─┐
+mobile/   Expo + RN       ─┴─► yalnızca Express API ile konuşur (Supabase'e doğrudan bağlanmaz)
+```
+
+- **Web: tek uygulama mı, iki uygulama mı?** **Tek React uygulaması**, role göre ayrılmış ekranlarla. Gerekçe: giriş, oturum, API istemcisi, bildirim ve video bileşenleri iki rolde ortaktır; iki uygulama bu kodu tekrarlatırdı. Yetki denetimi istemcide değil **sunucudadır** (öğretmen yönetici uç noktalarına 403, başkasının atamasına 404 alır). Ayrıntı: Karar 4.
+- **Rol ve oturum:** Supabase Auth hesapları; sunucu jetonu doğrular ve her istekte kullanıcının hâlâ aktif olduğunu kontrol eder. Silinen öğretmenin web ve mobildeki oturumu en geç 30 sn içinde otomatik kapanır (Karar 15).
+- **Dosyalar:** soru görselleri, kayıtlar ve hata ekleri özel Storage bucket'larındadır; istemciye süreli, imzalı adreslerle verilir.
+
+## Kullanılan teknolojiler ve servisler
+
+| Alan | Seçim |
+|---|---|
+| Web | React 19, Vite, TypeScript |
+| Mobil/tablet | React Native, Expo SDK 58 (Expo Go), `@shopify/react-native-skia` (çizim), `expo-audio`, `expo-camera`, `expo-video`, `expo-secure-store`, `expo-notifications` |
+| Sunucu | Node.js, Express, TypeScript, `pg`, `jose`, `multer` |
+| Veritabanı, kimlik doğrulama, dosya deposu | Supabase (Postgres, Auth, Storage) |
+| Video | `@napi-rs/canvas` (kare çizimi) + `ffmpeg-static` (MP4) |
+| E-posta | Nodemailer + Gmail SMTP |
+| Push | Expo Push API |
+
+## Veri paketi ve yükleme
+
+Paket (10 JPEG, soru bilgisi JSON'u, kazanım JSON'u) `npm run db:seed -w server` ile yüklenir. **Alan eşlemesi, branşın nasıl belirlendiği ve hesap tablosu: Karar 10.** Kazanım dosyası düz bir kod → açıklama listesidir; 6.411 kaydın tamamı yüklenir. Soru metni ve şıklar pakette olmadığı için hata bildiriminde bu alanlar, hata türü seçilerek ve görsel üzerinde yer işaretlenerek belirtilir (Karar 25).
+
+## E-posta yaklaşımı ve kurulumu
+
+Atama kaydedildiği anda öğretmene e-posta gider (branş, soru, kazanım kodları ve uygulama bağlantısı); yönetici öğretmen oluşturunca da giriş bilgileri e-postayla gider. Nodemailer ile **Gmail SMTP** kullanılır.
+
+1. Gönderici Gmail hesabında *Google Hesabı > Güvenlik > 2 Adımlı Doğrulama*'yı açın.
+2. *Güvenlik > Uygulama şifreleri*nden 16 haneli bir şifre üretin (normal Gmail şifreniz değil).
+3. `server/.env` içine `SMTP_USER=<gmail adresi>` ve `SMTP_PASS=<uygulama şifresi>` yazın; isteğe bağlı `MAIL_FROM` ve `APP_URL` (e-postadaki bağlantı; varsayılan `http://localhost:5173`).
+4. Sunucuyu yeniden başlatın.
+
+Ayar yoksa atama yine yapılır; ekranda "e-posta gönderilmedi (ayar yapılmamış)" uyarısı çıkar. **Test:** `example.com` adresleri gerçek posta kutusu değildir; e-postayı görmek için yönetici panelinden **kendi adresinizle bir öğretmen oluşturup** ona soru atayın. Ayrıntı: Karar 19 ve 22.
+
+## Push yaklaşımı ve kurulumu
+
+Öğretmen mobil uygulamaya girince Expo push jetonu sunucuya kaydedilir (`push_tokens`; bir öğretmenin birden çok cihazı olabilir). Atamada sunucu, öğretmenin jetonlarına **Expo Push API** ile bildirim gönderir; jeton yoksa (uygulama yüklü değil) sessizce geçilir. Bildirime dokunmak ilgili soruyu açar. Aynı bildirim web ve mobil dashboard'unda da görünür.
+
+**Kurulum:** sunucuda ek ayar gerekmez. Mobilde giriş yapınca bildirim izni istenir. **Push yalnızca gerçek cihazda çalışır** (simülatör uzaktan push alamaz); iOS'ta Expo Go'da jeton için cihazın Expo hesabına bağlı proje kimliği gerekebilir (Karar 28).
+
+## Kayıt, çizim ve MP4 yaklaşımı
+
+İstemciler ekranı video olarak kaydetmez. Web ve mobil kayıt sırasında **çizim olay günlüğünü** (kalem/silgi, noktalar, zamanlar), **mikrofon sesini** ve (isteğe bağlı) **kamera klibini** toplar ve sunucuya yükler. **Sunucu** soru görselini arka plan olarak alıp olayları zamanına göre kare kare çizer ve ffmpeg ile sesi ekleyerek **tek bir MP4** (1280×720, 15 kare/sn, H.264/AAC, en fazla 3 dk) üretir.
+
+- **Aynı sonuç:** iki istemci de aynı sunucu kodunu kullandığı için web ve mobil videoları birebir aynı biçimdedir.
+- **Akıcı çizim:** çizim canlı video kodlamasına bağlı değildir; istemci yalnızca nokta ekler (web: HTML canvas, mobil: Skia). Yumuşatma kodu ortaktır.
+- **Silgi:** değdiği çizginin tamamını siler; çizgi silindiği andan sonra videoda görünmez.
+- **Duraklatma:** duraklatılan kayıtta kalem ve silgi kullanılabilir; bu çizimler devam anında videoya girer. Duraklatılıp sürdürülen kayıt tek MP4 olur.
+- **Kamera:** yalnızca öğretmen açtıysa, sağ altta küçük dikdörtgen bindirme olarak girer; kapalıysa veya izin yoksa kayıt ekran ve sesle tamamlanır. Mikrofon izni yoksa kayıt bitirilemez ve anlaşılır bir uyarı gösterilir.
+- **MP4'e dönüşüm:** ara format yoktur; sunucu doğrudan MP4 üretir. **Kırpma ve ortadan kesme** de sunucuda ffmpeg ile yapılır (Karar 27 ve 30).
+- **Bilinen kısıt:** çıktı cihaz ekranının birebir kaydı değil, soru görseli ve çizimlerin yeniden çizimidir (Karar 1).
+
+Ayrıntılar: Karar 1, 11, 12, 13, 14.
+
+## Varsayımlar
+
+Görevin açık bıraktığı noktalarda alınan kararların tamamı aşağıdaki **Karar 15–30** bölümlerinde ve "Açık noktalar" listesindedir. Başlıcaları:
+
+- Soru ilk atamada da yalnızca **kendi branşındaki** öğretmene atanır; aynı soru aynı öğretmene ikinci kez atanamaz (Karar 8, 19).
+- Silinen öğretmenin verileri **silinmez, arşivde kalır** (yumuşak silme); hesabı kapanır (Karar 8).
+- Düzenleme/silme sonrası onaya gönderilmiş veya onaylı atama **Atandı**'ya döner; *Geri gönderildi* olan, düzenlenince de **Geri gönderildi** kalır (Karar 23).
+- Çapraz atanan öğretmen **başkalarının videolarını görmez** (Karar 27).
+- Öğretmene **cevap anahtarı gösterilmez**, kazanımlar gösterilir (Karar 21).
+- Hata bildirimi eki her türde eklenebilir: ekran görüntüsü (en fazla 5 MB) veya en fazla 1 dk video (en fazla 30 MB) (Karar 25).
+- Geri gönderme notu en fazla 500 karakterdir (Karar 23). Onay ve geri göndermede öğretmene bildirim gider.
+- Yönetici mobil uygulamaya girmez, yönetici web panelini kullanır (Karar 28).
+- Yeni soru ekleme ekranı ve kazanım ekleme/silme yapılmadı; zorunlu olan güncelleme vardır.
+
+---
+
+# Karar günlüğü
+
+Aşağıda, geliştirme sırasında alınan her kararın gerekçesi sırasıyla yer alır.
 
 ## Geliştirme yaklaşımı
 
