@@ -2,61 +2,48 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { DrawingEvent, InkController, Tool } from '@app/shared';
+import { VIDEO, type DrawingEvent, type InkController, type Tool } from '@app/shared';
 import { Board } from './src/studio/Board';
+import { RecordingTimer, StudioControls, formatTime } from './src/studio/StudioControls';
+import { useRecordingClock } from './src/studio/useRecordingClock';
 
-// Geçici deneme ekranı: Skia tahtasını denemek için. Gerçek ekranlar (giriş, dashboard, stüdyo) sonra gelecek.
-
-// compact: yatay modda yalnızca emoji gösteren küçük yuvarlak düğme.
-function ToolButton({
-  label,
-  emoji,
-  selected,
-  compact,
-  onPress,
-}: {
-  label: string;
-  emoji?: string;
-  selected?: boolean;
-  compact?: boolean;
-  onPress: () => void;
-}) {
-  if (compact) {
-    return (
-      <Pressable
-        accessibilityLabel={label}
-        onPress={onPress}
-        style={[styles.emojiButton, selected && styles.emojiButtonSelected]}
-      >
-        <Text style={styles.emojiText}>{emoji}</Text>
-      </Pressable>
-    );
-  }
-  return (
-    <Pressable onPress={onPress} style={[styles.button, selected && styles.buttonSelected]}>
-      <Text style={[styles.buttonText, selected && styles.buttonTextSelected]}>
-        {emoji ? `${emoji}  ` : ''}
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
+// Geçici deneme ekranı: Skia tahtası ve kayıt kontrolleri. Gerçek ekranlar (giriş, dashboard) sonra gelecek.
 
 function Studio() {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const landscape = width > height;
+  const clock = useRecordingClock();
   const [tool, setTool] = useState<Tool>('pen');
   const [counts, setCounts] = useState({ strokes: 0, erases: 0 });
+  const [boardKey, setBoardKey] = useState(0);
+  const [result, setResult] = useState<string | null>(null);
   const controllerRef = useRef<InkController | null>(null);
-  const startRef = useRef(Date.now());
 
-  // Deneme için saat uygulama açıldığından itibaren işler; gerçek kayıtta kayıt saati kullanılacak.
-  const getTimeMs = () => Date.now() - startRef.current;
+  const active = clock.status !== 'idle';
 
   function handleEvent(event: DrawingEvent) {
     setCounts((c) => (event.type === 'stroke' ? { ...c, strokes: c.strokes + 1 } : { ...c, erases: c.erases + 1 }));
   }
+
+  function handleStart() {
+    setResult(null);
+    clock.start();
+  }
+
+  // Kaydı bitirir. Mikrofon kaydı ve sunucuya yükleme henüz bağlı değil; şimdilik tahta temizlenir.
+  function handleFinish() {
+    const duration = clock.finish();
+    setResult(`Kayıt tamamlandı: ${formatTime(duration)}, ${counts.strokes} çizgi, ${counts.erases} silme`);
+    setCounts({ strokes: 0, erases: 0 });
+    setBoardKey((k) => k + 1);
+  }
+
+  // Süre sınırına (3 dk) gelince kayıt kendiliğinden biter.
+  useEffect(() => {
+    if (active && clock.elapsedMs >= VIDEO.maxSeconds * 1000) handleFinish();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clock.elapsedMs, active]);
 
   // Geliştirici denemesi: dokunmadan, programla birkaç çizgi çizer (görsel doğrulama için).
   function drawDemo() {
@@ -84,17 +71,32 @@ function Studio() {
     c.end();
   }
 
-  // Yalnızca geliştirici doğrulaması için: EXPO_PUBLIC_AUTO_DEMO=1 ile açılışta deneme çizimi yapılır.
+  // Yalnızca geliştirici doğrulaması için (düğmelere dokunmadan akışı denemek):
+  // EXPO_PUBLIC_AUTO_DEMO=1: kayıt başlar, çizer, duraklar, devam eder, bitirir. =2: başlar ve duraklatılmış bekler.
+  const demoMode = process.env.EXPO_PUBLIC_AUTO_DEMO;
   useEffect(() => {
-    if (!process.env.EXPO_PUBLIC_AUTO_DEMO) return;
-    const first = setTimeout(drawDemo, 1500);
-    const second = setTimeout(eraseFirstLineTip, 10000);
-    return () => {
-      clearTimeout(first);
-      clearTimeout(second);
-    };
+    if (!demoMode) return;
+    const steps: [number, () => void][] =
+      demoMode === '2'
+        ? [[1000, clock.start], [1500, drawDemo], [3000, clock.pause]]
+        : [[1000, clock.start], [1500, drawDemo], [4000, clock.pause], [6000, clock.resume], [8000, handleFinish]];
+    const timers = steps.map(([ms, fn]) => setTimeout(fn, ms));
+    return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const controls = (
+    <StudioControls
+      tool={tool}
+      onToolChange={setTool}
+      status={clock.status}
+      onStart={handleStart}
+      onPause={clock.pause}
+      onResume={clock.resume}
+      onFinish={handleFinish}
+      direction={landscape ? 'column' : 'row'}
+    />
+  );
 
   // Ekran dönse de aynı bileşen ağacı korunur (Board yeniden oluşmaz, çizimler kaybolmaz);
   // yalnızca stiller değişir.
@@ -102,34 +104,56 @@ function Studio() {
     <View
       style={[
         styles.container,
-        landscape ? styles.containerLandscape : { paddingTop: insets.top + 8, paddingHorizontal: 8, gap: 8 },
+        landscape ? styles.containerLandscape : { paddingTop: insets.top + 8, paddingHorizontal: 8, gap: 10 },
       ]}
     >
       <View style={landscape ? styles.boardLandscape : styles.boardPortrait}>
         <Board
+          key={boardKey}
           imageSource={require('./assets/dev/sample-question.jpg')}
           tool={tool}
-          getTimeMs={getTimeMs}
+          getTimeMs={clock.getTimeMs}
           onEvent={handleEvent}
           onReady={(controller) => {
             controllerRef.current = controller;
           }}
+          disabled={!active}
         />
       </View>
-      <View style={landscape ? [styles.floatingTools, { right: Math.max(insets.right, 12) + 8 }] : styles.toolbarPortrait}>
-        <ToolButton label="Kalem" emoji="✏️" selected={tool === 'pen'} compact={landscape} onPress={() => setTool('pen')} />
-        <ToolButton label="Silgi" emoji="🧽" selected={tool === 'eraser'} compact={landscape} onPress={() => setTool('eraser')} />
-        {!landscape && (
-          <>
-            <Text style={styles.counts}>
-              Çizgi: {counts.strokes}
-              {'\n'}Silme: {counts.erases}
+
+      {landscape ? (
+        <>
+          {/* Yatay: soru tam ekran; kontroller tahtanın sağ kenarında, süre sağ üstte yüzer. */}
+          <View style={[styles.floating, { right: Math.max(insets.right, 12) + 8, top: 0, bottom: 0, justifyContent: 'center' }]}>
+            {controls}
+          </View>
+          <View style={[styles.floating, { right: Math.max(insets.right, 12) + 8, top: 8 }]}>
+            <RecordingTimer status={clock.status} elapsedMs={clock.elapsedMs} />
+          </View>
+        </>
+      ) : (
+        <>
+          {/* Dikey: tahtanın altında aynı düğmeler yan yana, süre ortada. */}
+          <View style={styles.portraitBar}>
+            {controls}
+            <RecordingTimer status={clock.status} elapsedMs={clock.elapsedMs} />
+          </View>
+          {!active && !result && <Text style={styles.hint}>Çizmek için 🔴 ile kaydı başlatın.</Text>}
+          {result && <Text style={styles.hint}>{result}</Text>}
+          {/* Geliştirici yardımcıları (yalnızca dikey modda) */}
+          <View style={styles.devRow}>
+            <Pressable style={styles.devButton} onPress={drawDemo}>
+              <Text style={styles.devText}>Deneme çizimi</Text>
+            </Pressable>
+            <Pressable style={styles.devButton} onPress={eraseFirstLineTip}>
+              <Text style={styles.devText}>Çizgiyi sil (uç)</Text>
+            </Pressable>
+            <Text style={styles.devText}>
+              Çizgi: {counts.strokes}, silme: {counts.erases}
             </Text>
-            <ToolButton label="Deneme çizimi" onPress={drawDemo} />
-            <ToolButton label="Çizgiyi sil (uç)" onPress={eraseFirstLineTip} />
-          </>
-        )}
-      </View>
+          </View>
+        </>
+      )}
       {/* Yatayda soru tam ekran: durum çubuğu da gizlenir. */}
       <StatusBar hidden={landscape} style="auto" />
     </View>
@@ -146,28 +170,13 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f4f4f5' },
-  // Dikey: tahta üstte (oranını korur), araçlar altta.
   boardPortrait: { width: '100%', aspectRatio: 16 / 9 },
-  toolbarPortrait: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  // Yatay: tahta tüm ekrana sığar; kalem/silgi tahtanın sağ kenarında küçük emoji düğmeleri olarak durur.
   containerLandscape: { padding: 0 },
   boardLandscape: { flex: 1 },
-  floatingTools: { position: 'absolute', top: 0, bottom: 0, justifyContent: 'center', gap: 10 },
-  emojiButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-  },
-  emojiButtonSelected: { borderColor: '#2563eb', borderWidth: 3 },
-  emojiText: { fontSize: 20 },
-  button: { backgroundColor: '#ffffff', borderRadius: 8, borderWidth: 1, borderColor: '#d4d4d8', paddingVertical: 10, paddingHorizontal: 14 },
-  buttonSelected: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  buttonText: { fontSize: 15, color: '#18181b' },
-  buttonTextSelected: { color: '#ffffff', fontWeight: '600' },
-  counts: { fontSize: 13, color: '#52525b' },
+  floating: { position: 'absolute' },
+  portraitBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  hint: { fontSize: 13, color: '#52525b' },
+  devRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 },
+  devButton: { borderRadius: 6, borderWidth: 1, borderColor: '#d4d4d8', backgroundColor: '#ffffff', paddingVertical: 4, paddingHorizontal: 8 },
+  devText: { fontSize: 12, color: '#52525b' },
 });
