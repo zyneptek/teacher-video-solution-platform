@@ -3,11 +3,9 @@
 import * as Notifications from 'expo-notifications';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import type { TeacherAssignment } from '@app/shared';
-import { api } from './src/api';
 import type { Nav, Route } from './src/nav';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
