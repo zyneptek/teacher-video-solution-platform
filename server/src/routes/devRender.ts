@@ -1,7 +1,10 @@
-// GEÇİCİ geliştirme uç noktası: kimlik doğrulaması ve atama kontrolü YOKTUR.
-// Stüdyonun (kayıt → sunucuda MP4) uçtan uca denenmesi içindir; yalnızca geliştirme ortamında
-// açılır. Atamaya bağlı gerçek yükleme uç noktası yazılınca kaldırılacaktır.
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+// GEÇİCİ geliştirme uç noktaları: kimlik doğrulaması ve atama kontrolü YOKTUR.
+// Stüdyonun (kayıt → sunucuda MP4 → izle/kaydet) uçtan uca denenmesi içindir; yalnızca geliştirme
+// ortamında açılır. Atamaya bağlı gerçek yükleme uç noktası yazılınca kaldırılacaktır.
+//   POST /render      görsel + ses + çizim günlüğü + süre → MP4 üretir, { id, renderMs, sizeBytes } döner
+//   GET  /video/:id   üretilen MP4'ü sunar (tarayıcı/telefon oynatıcıları için aralık isteği destekli)
+import { randomUUID } from 'node:crypto';
+import { mkdir, mkdtemp, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Router } from 'express';
@@ -11,6 +14,10 @@ import { parseDrawingEvents } from '../render/parseDrawingEvents.js';
 import { renderVideo } from '../render/renderVideo.js';
 
 const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
+const STORE_DIR = path.join(tmpdir(), 'dev-render-store');
+const MAX_AGE_MS = 60 * 60 * 1000; // üretilen videolar bir saat sonra silinir
+const ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_UPLOAD_BYTES, files: 2 } });
 
 function parseJson(text: unknown): unknown {
@@ -19,6 +26,19 @@ function parseJson(text: unknown): unknown {
     return JSON.parse(text);
   } catch {
     return null;
+  }
+}
+
+// Eski videoları siler (her yüklemede çalışır).
+async function sweepOldVideos(): Promise<void> {
+  try {
+    const now = Date.now();
+    for (const name of await readdir(STORE_DIR)) {
+      const file = path.join(STORE_DIR, name);
+      if (now - (await stat(file)).mtimeMs > MAX_AGE_MS) await rm(file, { force: true });
+    }
+  } catch {
+    // klasör henüz yoksa yapılacak bir şey yok
   }
 }
 
@@ -47,21 +67,36 @@ devRenderRouter.post(
 
     let workDir: string | null = null;
     try {
+      await mkdir(STORE_DIR, { recursive: true });
+      await sweepOldVideos();
       workDir = await mkdtemp(path.join(tmpdir(), 'render-'));
-      const dir = workDir;
-      const audioPath = path.join(dir, 'audio.bin');
-      const outputPath = path.join(dir, 'out.mp4');
+      const audioPath = path.join(workDir, 'audio.bin');
       await writeFile(audioPath, audio.buffer);
 
+      const id = randomUUID();
+      const outputPath = path.join(STORE_DIR, `${id}.mp4`);
       const started = Date.now();
       await renderVideo({ image: image.buffer, events, durationMs, audioPath, outputPath });
-      res.setHeader('X-Render-Ms', String(Date.now() - started));
-      res.type('video/mp4');
-      res.sendFile(outputPath, () => void rm(dir, { recursive: true, force: true }));
+      const renderMs = Date.now() - started;
+      const { size } = await stat(outputPath);
+      res.json({ id, renderMs, sizeBytes: size });
     } catch (err) {
-      if (workDir) await rm(workDir, { recursive: true, force: true });
       console.error('Video üretilemedi:', err);
       res.status(500).json({ error: 'Video üretilemedi.' });
+    } finally {
+      if (workDir) await rm(workDir, { recursive: true, force: true });
     }
   },
 );
+
+devRenderRouter.get('/video/:id', (req, res) => {
+  const id = req.params.id;
+  if (!ID_PATTERN.test(id)) {
+    res.status(400).json({ error: 'Geçersiz video kimliği.' });
+    return;
+  }
+  res.type('video/mp4');
+  res.sendFile(path.join(STORE_DIR, `${id}.mp4`), (err) => {
+    if (err && !res.headersSent) res.status(404).json({ error: 'Video bulunamadı.' });
+  });
+});

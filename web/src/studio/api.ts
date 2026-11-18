@@ -2,8 +2,8 @@ import type { DrawingEvent } from '@app/shared';
 
 export type RenderInput = { image: File; audio: Blob; events: DrawingEvent[]; durationMs: number };
 
-// GEÇİCİ: geliştirme uç noktasına yükler, sunucunun ürettiği MP4'ü döndürür.
-export async function renderOnServer(input: RenderInput): Promise<{ video: Blob; renderMs: number }> {
+// GEÇİCİ: geliştirme uç noktasına yükler; sunucunun ürettiği MP4'ün adresini döndürür.
+export async function renderOnServer(input: RenderInput): Promise<{ videoUrl: string; sizeKb: number; renderMs: number }> {
   const form = new FormData();
   form.append('image', input.image);
   form.append('audio', input.audio, 'audio');
@@ -11,9 +11,11 @@ export async function renderOnServer(input: RenderInput): Promise<{ video: Blob;
   form.append('durationMs', String(input.durationMs));
 
   const response = await fetch('/api/dev/render', { method: 'POST', body: form });
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(body?.error ?? `Sunucu hatası (${response.status})`);
-  }
-  return { video: await response.blob(), renderMs: Number(response.headers.get('X-Render-Ms') ?? 0) };
+  const body = (await response.json().catch(() => null)) as { id?: string; renderMs?: number; sizeBytes?: number; error?: string } | null;
+  if (!response.ok || !body?.id) throw new Error(body?.error ?? `Sunucu hatası (${response.status})`);
+  return {
+    videoUrl: `/api/dev/video/${body.id}`,
+    sizeKb: Math.round((body.sizeBytes ?? 0) / 1024),
+    renderMs: body.renderMs ?? 0,
+  };
 }

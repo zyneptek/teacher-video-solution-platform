@@ -41,13 +41,13 @@ function App() {
       const { audio, durationMs } = await recorder.finish();
       if (!imageFile) return;
       setPhase('rendering');
-      const { video: blob, renderMs } = await renderOnServer({
+      const { videoUrl, sizeKb, renderMs } = await renderOnServer({
         image: imageFile,
         audio,
         events: eventsRef.current,
         durationMs,
       });
-      setVideo({ url: URL.createObjectURL(blob), sizeKb: Math.round(blob.size / 1024), renderMs });
+      setVideo({ url: videoUrl, sizeKb, renderMs });
       setPhase('done');
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Kayıt bitirilemedi.');
