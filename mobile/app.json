@@ -24,7 +24,8 @@
     "plugins": [
       "expo-audio",
       "expo-video",
-      "expo-asset"
+      "expo-asset",
+      ["expo-camera", { "cameraPermission": "Çözüm videosuna küçük bir kamera görüntüsü eklemek için kameraya erişilir.", "recordAudioAndroid": false }]
     ]
   }
 }

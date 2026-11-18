@@ -22,22 +22,24 @@ export function useRecorder() {
     }
   });
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (): Promise<boolean> => {
     setError(null);
     setStarting(true);
     try {
       const { granted } = await requestRecordingPermissionsAsync();
       if (!granted) {
         setError('Mikrofon izni verilmedi. Mikrofonsuz kayıt yapılamaz; Ayarlar’dan mikrofona izin verip tekrar deneyin.');
-        return;
+        return false;
       }
       micLostRef.current = false;
       await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
       await recorder.prepareToRecordAsync();
       recorder.record();
       clockStart(); // saat, ses kaydı başladığı anda sıfırdan başlar
+      return true;
     } catch {
       setError('Mikrofon açılamadı. Başka bir uygulama mikrofonu kullanıyor olabilir.');
+      return false;
     } finally {
       setStarting(false);
     }

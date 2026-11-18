@@ -2,7 +2,7 @@
 // kalem yumuşatılmış çizgi çizer, silgi değdiği çizgiyi tamamen siler.
 // Çizgiler, 1280x720 mantıksal boyutlu ekran dışı bir Skia yüzeyine çizilir ve ekrana görüntü olarak
 // verilir; etkileşim mantığı `shared/` içindeki InkController'dadır.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { GestureResponderEvent, LayoutChangeEvent, NativeTouchEvent } from 'react-native';
 import { Canvas, Fill, Image as SkiaImage, Skia, useImage, type DataSourceParam, type SkImage } from '@shopify/react-native-skia';
@@ -21,12 +21,14 @@ type Props = {
   onReady?: (controller: InkController) => void;
   // true iken çizim yapılamaz (kayıt başlamadan önce ve bittikten sonra).
   disabled?: boolean;
+  // Tahtanın üstünde (dokunmaları engellemeden) gösterilecek içerik; boyut ve konum için tahta ölçeği verilir.
+  renderOverlay?: (k: number) => ReactNode;
 };
 
 // Kalem kalktıktan sonra bu süre boyunca parmak dokunuşları yok sayılır (avuç içi reddi).
 const PALM_REJECTION_MS = 1200;
 
-export function Board({ imageSource, tool, getTimeMs, onEvent, onReady, disabled = false }: Props) {
+export function Board({ imageSource, tool, getTimeMs, onEvent, onReady, disabled = false, renderOverlay }: Props) {
   // Tahta, bulunduğu alana oranını koruyarak sığar (ekran dönse de taşmaz, kaydırma gerekmez).
   const [area, setArea] = useState({ width: 0, height: 0 });
   const width = Math.min(area.width, (area.height * BOARD.width) / BOARD.height);
@@ -146,6 +148,7 @@ export function Board({ imageSource, tool, getTimeMs, onEvent, onReady, disabled
             )}
             <SkiaImage image={inkImage} x={0} y={0} width={width} height={height} fit="fill" />
           </Canvas>
+          {renderOverlay?.(k)}
           {/* Dokunmaları alan saydam katman: dokunma konumu bu katmana göre gelir. */}
           <View
             style={StyleSheet.absoluteFill}

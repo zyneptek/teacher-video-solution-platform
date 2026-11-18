@@ -7,6 +7,7 @@ import { API_URL } from '../config';
 export type RenderInput = {
   imageModule: number; // require(...) ile paketlenmiş soru görseli (geçici; sonra sunucudan gelecek)
   audioUri: string;
+  cameraUris?: string[]; // kamera klipleri (kayıt sırasıyla); kamera kapalıysa boş
   events: DrawingEvent[];
   durationMs: number;
 };
@@ -21,6 +22,7 @@ export async function renderOnServer(input: RenderInput): Promise<{ videoUrl: st
   // Expo SDK 58'in fetch'i RN'nin eski { uri } dosya biçimini desteklemez; expo-file-system'ın File nesnesi kullanılır.
   form.append('image', new File(imageUri));
   form.append('audio', new File(input.audioUri));
+  for (const uri of input.cameraUris ?? []) form.append('camera', new File(uri));
   form.append('events', JSON.stringify(input.events));
   form.append('durationMs', String(input.durationMs));
 

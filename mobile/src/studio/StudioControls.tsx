@@ -48,11 +48,14 @@ type ControlsProps = {
   onResume: () => void;
   onFinish: () => void;
   direction: 'row' | 'column';
+  // Kamera düğmesi yalnızca tablette verilir (verilmezse gösterilmez).
+  cameraOn?: boolean;
+  onToggleCamera?: () => void;
 };
 
 // Kalem, silgi ve kayıt düğmeleri. Kayıt düğmeleri duruma göre değişir:
 // bekleme: kayıt (kırmızı daire) | kayıt sürüyor: duraklat, dur | duraklatıldı: devam et (üçgen), dur.
-export function StudioControls({ tool, onToolChange, status, startDisabled, onStart, onPause, onResume, onFinish, direction }: ControlsProps) {
+export function StudioControls({ tool, onToolChange, status, startDisabled, onStart, onPause, onResume, onFinish, direction, cameraOn, onToggleCamera }: ControlsProps) {
   const column = direction === 'column';
   return (
     <View style={[styles.group, column ? styles.groupColumn : styles.groupRow]}>
@@ -62,6 +65,11 @@ export function StudioControls({ tool, onToolChange, status, startDisabled, onSt
       <RoundButton label="Silgi" selected={tool === 'eraser'} onPress={() => onToolChange('eraser')}>
         <Text style={styles.emoji}>🧽</Text>
       </RoundButton>
+      {onToggleCamera && (
+        <RoundButton label={cameraOn ? 'Kamerayı kapat' : 'Kamerayı aç'} selected={cameraOn} disabled={status !== 'idle'} onPress={onToggleCamera}>
+          <Text style={styles.emoji}>📷</Text>
+        </RoundButton>
+      )}
       <View style={column ? styles.dividerHorizontal : styles.dividerVertical} />
       {status === 'idle' && (
         <RoundButton label="Kaydı başlat" disabled={startDisabled} onPress={onStart}>

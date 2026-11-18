@@ -10,6 +10,8 @@ import { Board } from './src/studio/Board';
 import { renderOnServer } from './src/studio/api';
 import { PreviewScreen, type SaveState } from './src/studio/PreviewScreen';
 import { RecordingTimer, StudioControls } from './src/studio/StudioControls';
+import { CameraView } from 'expo-camera';
+import { useCameraClips } from './src/studio/useCameraClips';
 import { useRecorder, type RecordingResult } from './src/studio/useRecorder';
 
 // Geçici stüdyo ekranı: kayıt → sunucuda MP4 → izle → kaydet akışı. Gerçek ekranlar (giriş, dashboard) sonra gelecek.
@@ -32,6 +34,7 @@ function Studio() {
   const isTablet = Math.min(width, height) >= 600;
   const [orientationWaitOver, setOrientationWaitOver] = useState(false);
   const recorder = useRecorder();
+  const camera = useCameraClips();
   const [tool, setTool] = useState<Tool>('pen');
   const [boardKey, setBoardKey] = useState(0);
   const [phase, setPhase] = useState<Phase>('studio');
@@ -41,6 +44,7 @@ function Studio() {
   const controllerRef = useRef<InkController | null>(null);
   const eventsRef = useRef<DrawingEvent[]>([]); // çizim günlüğü: biten her çizgi ve silme, gerçekleşme sırasıyla
   const pendingRef = useRef<RecordingResult | null>(null); // yüklenmeyi bekleyen kayıt
+  const cameraUrisRef = useRef<string[]>([]); // yüklenmeyi bekleyen kamera klipleri
 
   const active = recorder.status !== 'idle';
 
@@ -60,10 +64,25 @@ function Studio() {
     eventsRef.current.push(event);
   }
 
+  // Kayıt kontrolleri: ses ve çizim saati recorder'da; kamera açıksa klipler de aynı anda başlar/durur.
+  async function startRecording() {
+    if (await recorder.start()) camera.startClip(); // mikrofon açılamazsa kayıt başlamaz
+  }
+  async function pauseRecording() {
+    recorder.pause();
+    await camera.stopClip();
+  }
+  function resumeRecording() {
+    recorder.resume();
+    camera.startClip();
+  }
+
   // Kaydı bitirir: ses dosyasını alır, sunucuya yükler, hazır olunca izleme ekranına geçer.
   async function handleFinish() {
     try {
+      await camera.stopClip();
       pendingRef.current = await recorder.finish();
+      cameraUrisRef.current = camera.takeClips();
     } catch (err) {
       recorder.setError(errorMessage(err, 'Kayıt bitirilemedi.'));
       return;
@@ -80,6 +99,7 @@ function Studio() {
       const result = await renderOnServer({
         imageModule: QUESTION_IMAGE,
         audioUri: pending.audioUri,
+        cameraUris: cameraUrisRef.current,
         events: eventsRef.current,
         durationMs: pending.durationMs,
       });
@@ -94,6 +114,8 @@ function Studio() {
   // Yeni kayıt (veya vazgeç): tahta ve kayıt temizlenir.
   function resetStudio() {
     pendingRef.current = null;
+    cameraUrisRef.current = [];
+    camera.reset();
     eventsRef.current = [];
     setVideo(null);
     setUploadError(null);
@@ -209,6 +231,14 @@ function Studio() {
           onReady={(controller) => {
             controllerRef.current = controller;
           }}
+          renderOverlay={(k) =>
+            camera.enabled ? (
+              // Videodaki bindirmeyle aynı yer ve boyut: sağ altta 200 px çaplı daire (tahta 1280x720).
+              <View pointerEvents="none" style={{ position: 'absolute', right: 24 * k, bottom: 24 * k, width: 200 * k, height: 200 * k, borderRadius: 100 * k, overflow: 'hidden', borderWidth: 2, borderColor: '#fff' }}>
+                <CameraView ref={camera.cameraRef} style={{ flex: 1 }} facing="front" mode="video" mute onCameraReady={camera.onReady} />
+              </View>
+            ) : null
+          }
           // Kayıt başlamadan da çizilebilir: bu çizimler videonun ilk karesinden itibaren görünür.
           disabled={phase !== 'studio'}
         />
@@ -220,9 +250,11 @@ function Studio() {
           onToolChange={setTool}
           status={recorder.status}
           startDisabled={recorder.starting}
-          onStart={() => void recorder.start()}
-          onPause={recorder.pause}
-          onResume={recorder.resume}
+          onStart={() => void startRecording()}
+          onPause={() => void pauseRecording()}
+          onResume={resumeRecording}
+          cameraOn={camera.enabled}
+          onToggleCamera={isTablet ? () => void camera.toggle() : undefined}
           onFinish={() => void handleFinish()}
           direction="column"
         />
@@ -230,9 +262,9 @@ function Studio() {
       <View style={[styles.floating, { right: Math.max(insets.right, 12) + 8, top: insets.top + 8 }]}>
         <RecordingTimer status={recorder.status} elapsedMs={recorder.elapsedMs} />
       </View>
-      {recorder.error && (
+      {(recorder.error || camera.notice) && (
         <View style={[styles.floating, styles.toast, { left: Math.max(insets.left, 12) + 8, top: insets.top + 8 }]}>
-          <Text style={styles.error}>{recorder.error}</Text>
+          <Text style={styles.error}>{recorder.error ?? camera.notice}</Text>
         </View>
       )}
 
