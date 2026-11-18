@@ -233,8 +233,8 @@ function Studio() {
           }}
           renderOverlay={(k) =>
             camera.enabled ? (
-              // Videodaki bindirmeyle aynı yer ve boyut: sağ altta 200 px çaplı daire (tahta 1280x720).
-              <View pointerEvents="none" style={{ position: 'absolute', right: 24 * k, bottom: 24 * k, width: 200 * k, height: 200 * k, borderRadius: 100 * k, overflow: 'hidden', borderWidth: 2, borderColor: '#fff' }}>
+              // Videodaki bindirmeyle aynı yer ve boyut: sağ altta 240x180 dikdörtgen (tahta 1280x720).
+              <View pointerEvents="none" style={{ position: 'absolute', right: 24 * k, bottom: 24 * k, width: 240 * k, height: 180 * k, borderRadius: 4, overflow: 'hidden', borderWidth: 2, borderColor: '#fff' }}>
                 <CameraView ref={camera.cameraRef} style={{ flex: 1 }} facing="front" mode="video" mute onCameraReady={camera.onReady} />
               </View>
             ) : null

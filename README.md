@@ -344,7 +344,7 @@ Sırayla ele alınacak işler ve notlar:
 5. Planın devamı: giriş ve öğretmen yönetimi (Supabase Auth), soru/kazanım/cevap anahtarı yönetimi, atama, e-posta ve push bildirimleri, dashboard'lar, hata bildirimi, onay akışı ve çapraz atama, uçtan uca test, demo videosu ve teslim.
 
 ### Kamera bindirmesi ve tablet kalemi (uygulandı)
-- Kamera yalnızca **web ve tablette** vardır (telefonda düğme çıkmaz); isteğe bağlıdır. Açıksa tahtanın sağ altında 200 px çaplı daire olarak hem kayıt ekranında görünür hem de sunucuda ffmpeg ile videoya bindirilir. İzin yoksa/kamera kapalıysa ekran ve sesle devam eder.
+- Kamera yalnızca **web ve tablette** vardır (telefonda düğme çıkmaz); isteğe bağlıdır. Açıksa tahtanın sağ altında 240x180 px dikdörtgen olarak hem kayıt ekranında görünür hem de sunucuda ffmpeg ile videoya bindirilir. İzin yoksa/kamera kapalıysa ekran ve sesle devam eder.
 - Web: kamera ayrı bir MediaRecorder klibidir, duraklat/devam ses ile birlikte yürür. Mobil: expo-camera kaydı duraklatamadığı için her duraklatmada klip kapanır, devamda yenisi açılır; sunucu klipleri art arda ekler.
 - Tablet kalemi: Apple Pencil/S Pen normal işaretçi olarak çizer; kalem kullanılırken parmak/avuç dokunuşları 1,2 sn yok sayılır (iOS `touchType`, web `pointerType`).
 - Doğrulanmadı: gerçek kamera (simülatörde yok), gerçek Apple Pencil, iOS'ta kamera + mikrofonun aynı anda çalışması.

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { VIDEO, type DrawingEvent, type Tool } from '@app/shared';
 import { Board } from './studio/Board';
 import { renderOnServer } from './studio/api';
+import { StudioControls } from './studio/StudioControls';
 import { useCamera } from './studio/useCamera';
 import { CameraPreview } from './studio/CameraPreview';
 import { useRecorder } from './studio/useRecorder';
@@ -79,37 +80,26 @@ function App() {
     <main style={{ padding: 16, maxWidth: 1312, margin: '0 auto' }}>
       <h1 style={{ fontSize: 20 }}>Stüdyo denemesi</h1>
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
         <input
           type="file"
           accept="image/jpeg,image/png"
           disabled={active || phase !== 'recording'}
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
-        <button onClick={() => setTool('pen')} aria-pressed={tool === 'pen'}>
-          Kalem {tool === 'pen' ? '✓' : ''}
-        </button>
-        <button onClick={() => void camera.toggle()} aria-pressed={camera.stream !== null} disabled={active || phase !== 'recording'} data-testid="camera-toggle">
-          Kamera {camera.stream ? 'açık ✓' : 'kapalı'}
-        </button>
-        <button onClick={() => setTool('eraser')} aria-pressed={tool === 'eraser'}>
-          Silgi {tool === 'eraser' ? '✓' : ''}
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-        <button onClick={() => void recorder.start(camera.stream)} disabled={status !== 'idle' || !imageUrl || phase !== 'recording'}>
-          Başlat
-        </button>
-        <button onClick={recorder.pause} disabled={status !== 'recording'}>
-          Duraklat
-        </button>
-        <button onClick={recorder.resume} disabled={status !== 'paused'}>
-          Devam et
-        </button>
-        <button onClick={() => void handleFinish()} disabled={!active}>
-          Bitir
-        </button>
+        <StudioControls
+          tool={tool}
+          onToolChange={setTool}
+          status={status}
+          startDisabled={!imageUrl || phase !== 'recording'}
+          onStart={() => void recorder.start(camera.stream)}
+          onPause={recorder.pause}
+          onResume={recorder.resume}
+          onFinish={() => void handleFinish()}
+          cameraOn={camera.stream !== null}
+          cameraDisabled={active || phase !== 'recording'}
+          onToggleCamera={() => void camera.toggle()}
+        />
         <span data-testid="timer" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {formatTime(elapsedMs)} / {formatTime(VIDEO.maxSeconds * 1000)}
         </span>
@@ -165,7 +155,8 @@ function App() {
           tool={tool}
           getTimeMs={recorder.getTimeMs}
           onEvent={(event) => eventsRef.current.push(event)}
-          disabled={!active}
+          // Kayıt başlamadan da çizilebilir: bu çizimler videonun ilk karesinden itibaren görünür.
+          disabled={!imageUrl || phase !== 'recording'}
         />
         {camera.stream && <CameraPreview stream={camera.stream} />}
         </div>
