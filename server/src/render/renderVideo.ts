@@ -11,8 +11,14 @@ export type RenderOptions = {
   events: DrawingEvent[];
   durationMs: number; // kayıt süresi (duraklatmalar hariç)
   audioPath?: string;
+  // Öğretmen kamerayı açtıysa kamera klipleri (yalnızca görüntü, kayıt sırasıyla); videoda küçük yuvarlak
+  // bindirme olur. Duraklatılan kayıtta kamera her devamda yeni klip başlatabilir; klipler art arda eklenir.
+  cameraPaths?: string[];
   outputPath: string;
 };
+
+// Kamera bindirmesi: sağ altta, 200 px çaplı daire (tahta 1280x720).
+const CAMERA_OVERLAY = { size: 200, margin: 24 };
 
 export function getFfmpegPath(): string {
   if (!ffmpegPath) throw new Error('ffmpeg ikili dosyası bulunamadı (ffmpeg-static)');
@@ -28,7 +34,7 @@ function write(stream: Writable, data: Buffer): Promise<void> {
 }
 
 export async function renderVideo(options: RenderOptions): Promise<void> {
-  const { image: imageSource, events, durationMs, audioPath, outputPath } = options;
+  const { image: imageSource, events, durationMs, audioPath, cameraPaths, outputPath } = options;
   const { width, height } = BOARD;
 
   // Sabit zemin: beyaz + soru görseli.
@@ -48,6 +54,27 @@ export async function renderVideo(options: RenderOptions): Promise<void> {
 
   const args = ['-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${width}x${height}`, '-r', String(VIDEO.fps), '-i', 'pipe:0'];
   if (audioPath) args.push('-i', audioPath);
+  if (cameraPaths && cameraPaths.length > 0) {
+    // Kamera: kareye kırp, bindirme boyutuna küçült, 15 kare/sn'ye sabitle, klipleri art arda ekle,
+    // yuvarlak maskele ve sağ alta yerleştir.
+    const size = CAMERA_OVERLAY.size;
+    const firstCamera = audioPath ? 2 : 1;
+    const prepared = cameraPaths.map((cameraPath, i) => {
+      args.push('-i', cameraPath);
+      return `[${firstCamera + i}:v]setpts=PTS-STARTPTS,fps=${VIDEO.fps},crop='min(iw,ih)':'min(iw,ih)',scale=${size}:${size},format=yuv420p,setsar=1[c${i}]`;
+    });
+    const joined = cameraPaths.length > 1 ? `${cameraPaths.map((_, i) => `[c${i}]`).join('')}concat=n=${cameraPaths.length}:v=1:a=0[cj]` : '[c0]null[cj]';
+    args.push(
+      '-filter_complex',
+      `${prepared.join(';')};${joined};` +
+        `[cj]format=yuva420p,geq=lum='lum(X,Y)':cb='cb(X,Y)':cr='cr(X,Y)':a='if(lte(hypot(X-${size / 2},Y-${size / 2}),${size / 2}),255,0)'[cam];` +
+        `[0:v][cam]overlay=x=W-w-${CAMERA_OVERLAY.margin}:y=H-h-${CAMERA_OVERLAY.margin}:eof_action=repeat[v]`,
+      '-map',
+      '[v]',
+    );
+    if (audioPath) args.push('-map', '1:a');
+    args.push('-t', (durationMs / 1000).toFixed(3));
+  }
   args.push('-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p');
   if (audioPath) args.push('-c:a', 'aac', '-b:a', '96k', '-shortest');
   args.push('-movflags', '+faststart', outputPath);

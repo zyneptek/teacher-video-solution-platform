@@ -5,11 +5,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type RecorderStatus = 'idle' | 'starting' | 'recording' | 'paused';
 
-export type RecordingResult = { audio: Blob; durationMs: number };
+export type RecordingResult = { audio: Blob; camera: Blob | null; durationMs: number };
 
 // Tarayıcının desteklediği ilk ses biçimi (Chrome: webm/opus, Safari: mp4).
 function pickMimeType(): string | undefined {
   return ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((type) => MediaRecorder.isTypeSupported(type));
+}
+
+// Kamera klibi yalnızca görüntü içerir (ses ayrı kaydedilir).
+function pickVideoMimeType(): string | undefined {
+  return ['video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((type) => MediaRecorder.isTypeSupported(type));
 }
 
 function micErrorMessage(err: unknown): string {
@@ -31,6 +36,8 @@ export function useRecorder() {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const cameraRecorderRef = useRef<MediaRecorder | null>(null);
+  const cameraChunksRef = useRef<Blob[]>([]);
   const micLostRef = useRef(false);
 
   const getTimeMs = useCallback((): number => {
@@ -50,7 +57,8 @@ export function useRecorder() {
     return () => streamRef.current?.getTracks().forEach((track) => track.stop());
   }, []);
 
-  const start = useCallback(async () => {
+  // cameraStream verilirse kamera da kaydedilir; ses/ekran kaydı kameradan bağımsızdır.
+  const start = useCallback(async (cameraStream?: MediaStream | null) => {
     setError(null);
     setStatus('starting');
     let stream: MediaStream;
@@ -84,12 +92,29 @@ export function useRecorder() {
       setStatus('recording');
     };
     recorderRef.current = recorder;
+
+    cameraRecorderRef.current = null;
+    cameraChunksRef.current = [];
+    const videoTracks = cameraStream?.getVideoTracks().filter((track) => track.readyState === 'live') ?? [];
+    if (cameraStream && videoTracks.length > 0) {
+      try {
+        const cameraRecorder = new MediaRecorder(new MediaStream(videoTracks), { mimeType: pickVideoMimeType() });
+        cameraRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) cameraChunksRef.current.push(event.data);
+        };
+        cameraRecorderRef.current = cameraRecorder;
+        cameraRecorder.start(1000);
+      } catch {
+        cameraRecorderRef.current = null; // kamera kaydedilemezse ekran ve sesle devam
+      }
+    }
     recorder.start(1000); // 1 sn'lik parçalarla topla
   }, []);
 
   const pause = useCallback(() => {
     if (recorderRef.current?.state !== 'recording') return;
     recorderRef.current.pause();
+    if (cameraRecorderRef.current?.state === 'recording') cameraRecorderRef.current.pause();
     clock.current = { base: getTimeMs(), resumedAt: null };
     setElapsedMs(clock.current.base);
     setStatus('paused');
@@ -98,6 +123,7 @@ export function useRecorder() {
   const resume = useCallback(() => {
     if (recorderRef.current?.state !== 'paused') return;
     recorderRef.current.resume();
+    if (cameraRecorderRef.current?.state === 'paused') cameraRecorderRef.current.resume();
     clock.current = { base: clock.current.base, resumedAt: performance.now() };
     setStatus('recording');
   }, []);
@@ -109,15 +135,27 @@ export function useRecorder() {
     if (micLostRef.current) return Promise.reject(new Error('Mikrofon bağlantısı kesildi. Ses olmadan kayıt bitirilemez.'));
 
     const durationMs = getTimeMs();
+    // Kamera klibi (varsa) ses kaydı durmadan önce kapatılır.
+    const cameraRecorder = cameraRecorderRef.current;
+    const cameraDone = new Promise<Blob | null>((resolve) => {
+      if (!cameraRecorder || cameraRecorder.state === 'inactive') {
+        resolve(cameraChunksRef.current.length > 0 ? new Blob(cameraChunksRef.current) : null);
+        return;
+      }
+      cameraRecorder.onstop = () => resolve(cameraChunksRef.current.length > 0 ? new Blob(cameraChunksRef.current, { type: cameraRecorder.mimeType }) : null);
+      cameraRecorder.stop();
+    });
     return new Promise((resolve) => {
       recorder.onstop = () => {
         streamRef.current?.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
         recorderRef.current = null;
+        cameraRecorderRef.current = null;
         clock.current = { base: durationMs, resumedAt: null };
         setElapsedMs(durationMs);
         setStatus('idle');
-        resolve({ audio: new Blob(chunksRef.current, { type: recorder.mimeType }), durationMs });
+        const audio = new Blob(chunksRef.current, { type: recorder.mimeType });
+        void cameraDone.then((camera) => resolve({ audio, camera, durationMs }));
       };
       recorder.stop();
     });

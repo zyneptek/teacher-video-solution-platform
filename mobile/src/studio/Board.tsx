@@ -23,6 +23,9 @@ type Props = {
   disabled?: boolean;
 };
 
+// Kalem kalktıktan sonra bu süre boyunca parmak dokunuşları yok sayılır (avuç içi reddi).
+const PALM_REJECTION_MS = 1200;
+
 export function Board({ imageSource, tool, getTimeMs, onEvent, onReady, disabled = false }: Props) {
   // Tahta, bulunduğu alana oranını koruyarak sığar (ekran dönse de taşmaz, kaydırma gerekmez).
   const [area, setArea] = useState({ width: 0, height: 0 });
@@ -35,6 +38,9 @@ export function Board({ imageSource, tool, getTimeMs, onEvent, onReady, disabled
   const inkImage = useSharedValue<SkImage | null>(null);
   const controllerRef = useRef<InkController | null>(null);
   const touchIdRef = useRef<number | null>(null);
+  const touchIsStylusRef = useRef(false);
+  // Kalemin en son ne zaman görüldüğü: kalem kullanılırken avuç içi / parmak dokunuşları yok sayılır.
+  const lastStylusAtRef = useRef(0);
 
   // Olay işleyicilerinin her çizimde yeniden kurulmaması için en güncel değerler burada tutulur.
   const latest = useRef({ tool, getTimeMs, onEvent, onReady, disabled, scale });
@@ -86,10 +92,25 @@ export function Board({ imageSource, tool, getTimeMs, onEvent, onReady, disabled
   }
 
   function handleTouchStart(event: GestureResponderEvent) {
-    if (latest.current.disabled || touchIdRef.current !== null) return; // tek parmak
+    if (latest.current.disabled) return;
     const touch = event.nativeEvent.changedTouches[0];
     if (!touch) return;
+    // iOS dokunuşun türünü bildirir ('stylus' = Apple Pencil). Türü bilmeyen cihazlarda parmak sayılır.
+    const isStylus = (touch as NativeTouchEvent & { touchType?: string }).touchType === 'stylus';
+    const now = Date.now();
+    if (isStylus) {
+      lastStylusAtRef.current = now;
+      // Çizim sırasında avuç içi/parmak çizgisi başlamışsa kalem öncelik alır.
+      if (touchIdRef.current !== null && !touchIsStylusRef.current) {
+        controllerRef.current?.end();
+        touchIdRef.current = null;
+      }
+    } else if (now - lastStylusAtRef.current < PALM_REJECTION_MS) {
+      return; // kalem kullanılırken parmak/avuç dokunuşu
+    }
+    if (touchIdRef.current !== null) return; // tek işaretçi
     touchIdRef.current = touch.identifier;
+    touchIsStylusRef.current = isStylus;
     controllerRef.current?.begin(latest.current.tool, toSample(touch));
   }
 
@@ -104,6 +125,7 @@ export function Board({ imageSource, tool, getTimeMs, onEvent, onReady, disabled
     const id = touchIdRef.current;
     if (id === null || !event.nativeEvent.changedTouches.some((touch) => touch.identifier === id)) return;
     touchIdRef.current = null;
+    if (touchIsStylusRef.current) lastStylusAtRef.current = Date.now();
     controllerRef.current?.end();
   }
 

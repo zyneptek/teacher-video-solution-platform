@@ -18,7 +18,7 @@ const STORE_DIR = path.join(tmpdir(), 'dev-render-store');
 const MAX_AGE_MS = 60 * 60 * 1000; // üretilen videolar bir saat sonra silinir
 const ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_UPLOAD_BYTES, files: 2 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_UPLOAD_BYTES, files: 12 } });
 
 function parseJson(text: unknown): unknown {
   if (typeof text !== 'string') return null;
@@ -49,6 +49,7 @@ devRenderRouter.post(
   upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'audio', maxCount: 1 },
+    { name: 'camera', maxCount: 10 },
   ]),
   async (req, res) => {
     // Çok parçalı (multipart) olmayan bir istekte gövde tanımsız olabilir.
@@ -56,6 +57,7 @@ devRenderRouter.post(
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     const image = files?.image?.[0];
     const audio = files?.audio?.[0];
+    const cameraClips = files?.camera ?? []; // isteğe bağlı; kayıt sırasıyla klipler
     const events = parseDrawingEvents(parseJson(body.events));
     const durationMs = Number(body.durationMs);
     const maxMs = VIDEO.maxSeconds * 1000 + 2000; // süre sınırına küçük bir pay
@@ -72,11 +74,17 @@ devRenderRouter.post(
       workDir = await mkdtemp(path.join(tmpdir(), 'render-'));
       const audioPath = path.join(workDir, 'audio.bin');
       await writeFile(audioPath, audio.buffer);
+      const cameraPaths: string[] = [];
+      for (const [i, clip] of cameraClips.entries()) {
+        const clipPath = path.join(workDir, `camera${i}.bin`);
+        await writeFile(clipPath, clip.buffer);
+        cameraPaths.push(clipPath);
+      }
 
       const id = randomUUID();
       const outputPath = path.join(STORE_DIR, `${id}.mp4`);
       const started = Date.now();
-      await renderVideo({ image: image.buffer, events, durationMs, audioPath, outputPath });
+      await renderVideo({ image: image.buffer, events, durationMs, audioPath, cameraPaths, outputPath });
       const renderMs = Date.now() - started;
       const { size } = await stat(outputPath);
       res.json({ id, renderMs, sizeBytes: size });

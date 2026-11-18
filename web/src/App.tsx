@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { VIDEO, type DrawingEvent, type Tool } from '@app/shared';
 import { Board } from './studio/Board';
 import { renderOnServer } from './studio/api';
+import { useCamera } from './studio/useCamera';
+import { CameraPreview } from './studio/CameraPreview';
 import { useRecorder } from './studio/useRecorder';
 import { VideoPreview } from './studio/VideoPreview';
 
@@ -15,6 +17,7 @@ function formatTime(ms: number): string {
 // Geçici stüdyo sayfası: kayıt akışını denemek için. Gerçek ekranlar giriş ve yönlendirme eklenince gelecek.
 function App() {
   const recorder = useRecorder();
+  const camera = useCamera();
   const [tool, setTool] = useState<Tool>('pen');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -38,15 +41,17 @@ function App() {
   async function handleFinish() {
     setMessage(null);
     try {
-      const { audio, durationMs } = await recorder.finish();
+      const { audio, camera: cameraClip, durationMs } = await recorder.finish();
       if (!imageFile) return;
       setPhase('rendering');
       const { videoUrl, sizeKb, renderMs } = await renderOnServer({
         image: imageFile,
         audio,
+        camera: cameraClip,
         events: eventsRef.current,
         durationMs,
       });
+      camera.stop();
       setVideo({ url: videoUrl, sizeKb, renderMs });
       setPhase('done');
     } catch (err) {
@@ -84,13 +89,16 @@ function App() {
         <button onClick={() => setTool('pen')} aria-pressed={tool === 'pen'}>
           Kalem {tool === 'pen' ? '✓' : ''}
         </button>
+        <button onClick={() => void camera.toggle()} aria-pressed={camera.stream !== null} disabled={active || phase !== 'recording'} data-testid="camera-toggle">
+          Kamera {camera.stream ? 'açık ✓' : 'kapalı'}
+        </button>
         <button onClick={() => setTool('eraser')} aria-pressed={tool === 'eraser'}>
           Silgi {tool === 'eraser' ? '✓' : ''}
         </button>
       </div>
 
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-        <button onClick={() => void recorder.start()} disabled={status !== 'idle' || !imageUrl || phase !== 'recording'}>
+        <button onClick={() => void recorder.start(camera.stream)} disabled={status !== 'idle' || !imageUrl || phase !== 'recording'}>
           Başlat
         </button>
         <button onClick={recorder.pause} disabled={status !== 'recording'}>
@@ -116,6 +124,11 @@ function App() {
       {recorder.error && (
         <p role="alert" data-testid="error" style={{ color: '#b91c1c', margin: '4px 0' }}>
           {recorder.error}
+        </p>
+      )}
+      {camera.notice && (
+        <p role="status" data-testid="camera-notice" style={{ margin: '4px 0' }}>
+          {camera.notice}
         </p>
       )}
       {message && (
@@ -145,6 +158,7 @@ function App() {
           </p>
         </section>
       ) : (
+        <div style={{ position: 'relative', maxWidth: 1280 }}>
         <Board
           key={boardKey}
           imageUrl={imageUrl}
@@ -153,6 +167,8 @@ function App() {
           onEvent={(event) => eventsRef.current.push(event)}
           disabled={!active}
         />
+        {camera.stream && <CameraPreview stream={camera.stream} />}
+        </div>
       )}
     </main>
   );
