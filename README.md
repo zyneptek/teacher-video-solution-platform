@@ -389,3 +389,11 @@ Veritabanı ve Storage uzak (Supabase) olduğundan her ağ gidiş-dönüşü ~0,
 - **Görseller sunucudan:** soru görselleri Storage'dan bir kez alınıp sunucu belleğinde tutulur (açılışta ısıtılır) ve HMAC imzalı, süreli, tarayıcı önbellekli bir adresle (`/api/question-images/...`) verilir. Görsel hâlâ özel bucket'tadır; adres yalnızca yetkili kullanıcıya üretilir.
 - **Ekran:** soru listesi bellekte tutulur; listeden detaya geçişte ekran hemen dolar, arkada yenilenir.
 Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
+
+### Karar 21 — Öğretmen dashboard'u (web)
+- **Ekranlar:** Panel (atama durumu sayıları, okunmamış bildirimler, sorular), Sorularım (liste) ve soru sayfası, Bildirimler. Yönetici ve öğretmen aynı menülü düzeni (`AppShell`) kullanır.
+- **Soru listesi:** branş, soru bilgisi (soru no, kazanım kodları), görsel ve çözüm durumu (Atandı, Onaya gönderildi, Onaylandı, Geri gönderildi; "Kayıt bekleniyor" ipucuyla). Soru atanmamışsa liste boş kalır ve kısa bir açıklama gösterilir.
+- **Bildirimler:** okunmamışlar vurgulanır, menüde rozet görünür; bildirime tıklayınca okundu olur ve ilgili soruya gidilir. Liste 30 sn'de bir yenilenir (yeni atama kısa sürede görünür). "Tümünü okundu yap" vardır.
+- **Görünürlük:** öğretmen yalnızca kendi atamalarını görür; başkasının atamasına erişim 404 döner (varlığı belli edilmez), yönetici rotalarına erişim 403 döner.
+- **Varsayım (açık nokta):** öğretmene **cevap anahtarı gösterilmez**, sorunun **kazanımları gösterilir**.
+- Soru sayfasındaki "Kayıt oluştur" stüdyoyu açar ve soru görselini otomatik yükler. Kaydı sisteme kaydetme, izleme, silme, kırpma ve onaya gönderme sıradaki adımdır.

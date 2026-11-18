@@ -16,7 +16,7 @@ function formatTime(ms: number): string {
 }
 
 // Geçici stüdyo sayfası: kayıt akışını denemek için. Gerçek ekranlar giriş ve yönlendirme eklenince gelecek.
-function StudioPage() {
+function StudioPage({ questionImageUrl }: { questionImageUrl?: string }) {
   const recorder = useRecorder();
   const camera = useCamera();
   const [tool, setTool] = useState<Tool>('pen');
@@ -70,6 +70,22 @@ function StudioPage() {
     setBoardKey((k) => k + 1);
   }
 
+  // Soru sayfasından gelindiyse soru görseli otomatik yüklenir (görsel seçme alanı gösterilmez).
+  useEffect(() => {
+    if (!questionImageUrl) return;
+    let cancelled = false;
+    fetch(questionImageUrl)
+      .then((r) => r.blob())
+      .then((blob) => {
+        if (!cancelled) handleFile(new File([blob], 'soru.jpg', { type: blob.type || 'image/jpeg' }));
+      })
+      .catch(() => setMessage('Soru görseli yüklenemedi.'));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionImageUrl]);
+
   // Kayıt süre sınırına gelince otomatik bitir.
   useEffect(() => {
     if (active && elapsedMs >= VIDEO.maxSeconds * 1000) void handleFinish();
@@ -78,15 +94,15 @@ function StudioPage() {
 
   return (
     <main style={{ padding: 16, maxWidth: 1312, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 20 }}>Stüdyo denemesi</h1>
+      {!questionImageUrl && <h1 style={{ fontSize: 20 }}>Stüdyo denemesi</h1>}
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-        <input
+        {!questionImageUrl && (<input
           type="file"
           accept="image/jpeg,image/png"
           disabled={active || phase !== 'recording'}
           onChange={(e) => handleFile(e.target.files?.[0])}
-        />
+        />)}
         <StudioControls
           tool={tool}
           onToolChange={setTool}

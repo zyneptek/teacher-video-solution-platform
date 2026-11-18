@@ -1,7 +1,7 @@
 import { AdminApp } from './admin/AdminApp';
 import { LoginPage } from './auth/LoginPage';
 import { SessionProvider, useSession } from './auth/session';
-import StudioPage from './studio/StudioPage';
+import { TeacherApp } from './teacher/TeacherApp';
 
 // Giriş yapılmamışsa giriş ekranı; yönetici ve öğretmen aynı uygulamada rolüne göre ekranlar görür.
 function Shell() {
@@ -9,24 +9,7 @@ function Shell() {
   if (!user) return <LoginPage />;
   if (user.role === 'admin') return <AdminApp user={user} onLogout={() => void logout()} />;
 
-  // Geçici: öğretmen ekranları (dashboard, sorular) sonraki adımda; şimdilik stüdyo denemesi.
-  return (
-    <>
-      <header className="topbar">
-        <strong>Video Çözüm Platformu</strong>
-        <span className="spacer" />
-        <span data-testid="whoami">
-          {user.firstName} {user.lastName} · Öğretmen ({user.branch})
-        </span>
-        <button type="button" onClick={() => void logout()} data-testid="logout">
-          Çıkış
-        </button>
-      </header>
-      <div className="content">
-        <StudioPage />
-      </div>
-    </>
-  );
+  return <TeacherApp user={user} onLogout={() => void logout()} />;
 }
 
 export default function App() {

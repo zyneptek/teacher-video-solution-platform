@@ -8,6 +8,7 @@ import { adminOutcomesRouter, adminQuestionsRouter } from './routes/adminQuestio
 import { adminTeachersRouter } from './routes/adminTeachers.js';
 import { authRouter } from './routes/auth.js';
 import { questionImagesRouter, warmQuestionImages } from './questionImages.js';
+import { teacherRouter } from './routes/teacher.js';
 import { pushTokensRouter } from './routes/pushTokens.js';
 import { devRenderRouter } from './routes/devRender.js';
 
@@ -23,6 +24,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/admin/assignments', adminAssignmentsRouter);
 app.use('/api/question-images', questionImagesRouter);
+app.use('/api/teacher', teacherRouter);
 app.use('/api/push-token', pushTokensRouter);
 app.use('/api/admin/dashboard', adminDashboardRouter);
 app.use('/api/admin/questions', adminQuestionsRouter);

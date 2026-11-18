@@ -126,3 +126,20 @@ a { color: var(--brand-dark); }
 .status-submitted { background: #fde6dc; color: var(--brand-dark); }
 .status-approved { background: #dff1e4; color: #1f6b3a; }
 .status-returned { background: #f5dcdc; color: var(--danger); }
+
+/* Menü rozeti ve öğretmen ekranları */
+.nav { display: flex; justify-content: space-between; align-items: center; }
+.nav-badge { background: var(--brand); color: #fff; border-radius: 999px; font-size: 12px; font-weight: 700; padding: 1px 8px; }
+.nav.active .nav-badge { background: #fff; color: var(--brand-dark); }
+.notif-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.notif { display: flex; justify-content: space-between; gap: 12px; align-items: center; width: 100%; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; cursor: pointer; font-size: 14px; }
+.notif.unread { border-left: 4px solid var(--brand); background: #fff7f3; font-weight: 600; }
+.notif:hover { border-color: var(--brand); }
+.notif small { color: var(--muted); font-weight: 400; white-space: nowrap; }
+.empty { background: #fff; border: 1px dashed var(--sage); border-radius: 12px; padding: 24px; text-align: center; color: var(--muted); }
+.t-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; gap: 14px; align-items: center; text-decoration: none; color: inherit; }
+.t-card:hover { border-color: var(--brand); }
+.t-card img { width: 120px; height: 84px; object-fit: contain; border-radius: 8px; background: #fff; flex-shrink: 0; }
+.t-list { display: flex; flex-direction: column; gap: 10px; }
+.t-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.return-note { background: #f5dcdc; color: var(--danger); border-radius: 8px; padding: 10px 12px; font-size: 14px; }

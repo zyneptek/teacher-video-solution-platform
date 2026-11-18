@@ -94,3 +94,22 @@ export type AssignmentDelivery = {
   email: 'sent' | 'not_configured' | 'failed';
   pushDevices: number;
 };
+
+// Öğretmen: atanan soru ve bildirim tipleri.
+export type TeacherAssignment = {
+  id: string;
+  status: AssignmentStatus;
+  returnNote: string | null;
+  assignedAt: string;
+  hasRecording: boolean;
+  question: { id: string; branch: Branch; questionNumber: number | null; imageUrl: string; outcomes: OutcomeInfo[] };
+};
+
+export type NotificationInfo = {
+  id: string;
+  assignmentId: string;
+  type: 'assignment_created';
+  text: string;
+  readAt: string | null;
+  createdAt: string;
+};
