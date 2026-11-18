@@ -3,8 +3,8 @@ import type { UserInfo } from '@app/shared';
 import { AppShell, type Page } from '../layout/AppShell';
 import { AssignmentsPage } from './AssignmentsPage';
 import { DashboardPage } from './DashboardPage';
+import { ErrorReportsPage } from './ErrorReportsPage';
 import { OutcomesPage } from './OutcomesPage';
-import { PlaceholderPage } from './PlaceholderPage';
 import { ReviewQueuePage } from './ReviewQueuePage';
 import { QuestionsPage } from './QuestionsPage';
 import { TeachersPage } from './TeachersPage';
@@ -17,11 +17,7 @@ const PAGES: Page[] = [
   { path: '/kazanimlar', label: 'Kazanımlar', render: () => <OutcomesPage /> },
   { path: '/atamalar', label: 'Atamalar', render: () => <AssignmentsPage /> },
   { path: '/onay-kuyrugu', label: 'Onay kuyruğu', render: () => <ReviewQueuePage /> },
-  {
-    path: '/hata-bildirimleri',
-    label: 'Hata bildirimleri',
-    render: () => <PlaceholderPage title="Hata bildirimleri" description="Öğretmenlerin gönderdiği hata bildirimleri: tür, açıklama, ek ve gönderen öğretmen; ilgili soruyla birlikte görünecek." />,
-  },
+  { path: '/hata-bildirimleri', label: 'Hata bildirimleri', render: () => <ErrorReportsPage /> },
 ];
 
 // Adres #/sayfa veya #/sayfa/parametre biçimindedir.

@@ -1,10 +1,13 @@
 // Öğretmen sayfaları: Panel, Sorularım (liste + soru sayfası) ve Bildirimler.
 import { useCallback, useEffect, useState } from 'react';
-import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus, type TeacherAssignment } from '@app/shared';
+import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus, type ErrorReportInfo, type TeacherAssignment } from '@app/shared';
 import { StatusBadge } from '../admin/AssignmentsTable';
 import { api } from '../auth/session';
 import StudioPage from '../studio/StudioPage';
 import { VideoPreview } from '../studio/VideoPreview';
+import { ErrorReportForm } from '../reports/ErrorReportForm';
+import { MarkedImage, type Marker } from '../reports/MarkedImage';
+import { ReportCard } from '../reports/ReportViews';
 import { AssignmentCards } from './AssignmentCards';
 
 function useAssignments() {
@@ -84,6 +87,15 @@ function QuestionPage({ id }: { id: string }) {
   const { assignment, setAssignment, error } = useAssignment(id);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Hata bildirimi: form açık mı, görselde işaret konumu ve gönderilen bildirimler
+  const [reporting, setReporting] = useState(false);
+  const [picking, setPicking] = useState(false);
+  const [marker, setMarker] = useState<Marker | null>(null);
+  const [reports, setReports] = useState<ErrorReportInfo[]>([]);
+  const [reportSent, setReportSent] = useState(false);
+  useEffect(() => {
+    api<{ reports: ErrorReportInfo[] }>(`/api/teacher/assignments/${id}/error-reports`).then((r) => setReports(r.reports)).catch(() => undefined);
+  }, [id]);
   if (error) return (<div><p><a href="#/sorularim">← Sorularım</a></p><p role="alert" className="error" data-testid="q-error">{error}</p></div>);
   if (!assignment) return <p>Yükleniyor…</p>;
   const q = assignment.question;
@@ -110,7 +122,14 @@ function QuestionPage({ id }: { id: string }) {
       <p><a href="#/sorularim">← Sorularım</a></p>
       <h2>{q.branch} sorusu{q.questionNumber ? ` (Soru ${q.questionNumber})` : ''}</h2>
       <div className="q-detail">
-        <div className="q-image"><img src={q.imageUrl} alt="Soru görseli" /></div>
+        <div className="q-image">
+          <MarkedImage
+            src={q.imageUrl}
+            alt="Soru görseli"
+            marker={marker}
+            onPick={picking ? (m) => { setMarker(m); setPicking(false); } : undefined}
+          />
+        </div>
         <div>
           <div className="card">
             <div className="row" style={{ marginBottom: 0 }}>
@@ -162,6 +181,41 @@ function QuestionPage({ id }: { id: string }) {
                 <li key={o.id}><span><strong>{o.code}</strong> {o.description}</span></li>
               ))}
             </ul>
+          </div>
+
+          <div className="card" data-testid="report-card-area">
+            <div className="row" style={{ marginBottom: 0 }}>
+              <strong>Soruda hata mı var?</strong>
+              {!reporting && <button type="button" className="link" onClick={() => { setReporting(true); setReportSent(false); }} data-testid="open-report">Hata bildir</button>}
+            </div>
+            {reportSent && <p className="notice" style={{ margin: 0 }} data-testid="report-sent">Hata bildiriminiz yöneticiye gönderildi.</p>}
+            {reporting && (
+              <ErrorReportForm
+                assignmentId={assignment.id}
+                marker={marker}
+                picking={picking}
+                onPickingChange={setPicking}
+                onClearMarker={() => setMarker(null)}
+                onSent={(report) => {
+                  setReports((list) => [report, ...list]);
+                  setReporting(false);
+                  setPicking(false);
+                  setMarker(null);
+                  setReportSent(true);
+                }}
+                onClose={() => { setReporting(false); setPicking(false); setMarker(null); }}
+              />
+            )}
+            {reports.length > 0 && (
+              <>
+                <strong className="small">Gönderdiğiniz bildirimler</strong>
+                <div className="t-list" data-testid="my-reports">
+                  {reports.map((r) => (
+                    <ReportCard key={r.id} report={r} imageUrl={q.imageUrl} />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

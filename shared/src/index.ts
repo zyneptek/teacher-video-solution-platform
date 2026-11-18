@@ -118,3 +118,37 @@ export type NotificationInfo = {
   readAt: string | null;
   createdAt: string;
 };
+
+// Hata bildirimi türleri (en az görevdeki altısı + serbest metin).
+export const ERROR_REPORT_TYPES = [
+  { value: 'question_text', label: 'Soru metninde hata' },
+  { value: 'options', label: 'Şıklarda hata' },
+  { value: 'typo', label: 'Yazım yanlışı' },
+  { value: 'trim', label: 'Kırpma hatası' },
+  { value: 'answer_key', label: 'Cevap anahtarı hatası' },
+  { value: 'outcome', label: 'Kazanım hatası' },
+  { value: 'other', label: 'Diğer (serbest metin)' },
+] as const;
+
+export type ErrorReportType = (typeof ERROR_REPORT_TYPES)[number]['value'];
+
+export const ERROR_REPORT_LIMITS = {
+  descriptionMax: 1000,
+  imageBytes: 5 * 1024 * 1024,
+  videoBytes: 30 * 1024 * 1024,
+  videoSeconds: 60,
+  imageTypes: ['image/jpeg', 'image/png', 'image/webp'],
+  videoTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
+} as const;
+
+export type ErrorReportInfo = {
+  id: string;
+  questionId: string;
+  questionLabel: string; // örn. "Fizik — Soru 2"
+  reporterName: string;
+  type: ErrorReportType;
+  description: string;
+  marker: { x: number; y: number } | null;
+  attachment: { url: string; type: 'image' | 'video' } | null;
+  createdAt: string;
+};

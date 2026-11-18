@@ -157,3 +157,17 @@ a { color: var(--brand-dark); }
 @media (max-width: 800px) {
   .admin .main-col { width: 100%; }
 }
+
+/* Hata bildirimi */
+.marked { position: relative; display: block; line-height: 0; }
+.marked img { width: 100%; display: block; }
+.marked.picking { cursor: crosshair; outline: 3px dashed var(--brand); outline-offset: 2px; }
+.pin { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border: 3px solid #e11d48; border-radius: 50%; background: rgba(225, 29, 72, 0.18); pointer-events: none; box-shadow: 0 0 0 2px #fff; }
+.report { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.report-media { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+.report-media .marked { max-width: 260px; }
+.attach { max-width: 260px; max-height: 200px; border-radius: 8px; border: 1px solid var(--line); background: #000; }
+.report-form { display: flex; flex-direction: column; gap: 12px; }
+.report-form textarea { padding: 8px; border: 1px solid var(--sage); border-radius: 8px; font: inherit; }
+.marker-row { display: flex; gap: 10px; align-items: center; }
+.ghost-btn { padding: 8px 14px; background: #fff; border: 1px solid var(--sage); border-radius: 8px; cursor: pointer; color: var(--ink); }

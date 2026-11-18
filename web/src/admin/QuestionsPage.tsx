@@ -1,10 +1,11 @@
 // Yönetici: soru listesi ve soru detayı (görsel, branş, cevap anahtarı, kazanımlar).
 // Cevap anahtarı ve kazanım değişiklikleri anında veritabanına yazılır.
 import { useCallback, useEffect, useState } from 'react';
-import { ANSWER_KEYS, BRANCHES, type AssignmentInfo, type Branch, type OutcomeInfo, type QuestionInfo } from '@app/shared';
+import { ANSWER_KEYS, BRANCHES, type AssignmentInfo, type ErrorReportInfo, type Branch, type OutcomeInfo, type QuestionInfo } from '@app/shared';
 import { api } from '../auth/session';
 import { AssignForm } from './AssignForm';
 import { AssignmentsTable } from './AssignmentsTable';
+import { ReportCard } from '../reports/ReportViews';
 import { OutcomePicker } from './OutcomePicker';
 
 // Son okunan soru listesi: liste ve detay sayfaları arasında geçişte ekran hemen dolar, arkada yenilenir.
@@ -94,6 +95,7 @@ function QuestionDetail({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<AssignmentInfo[]>([]);
+  const [reports, setReports] = useState<ErrorReportInfo[]>([]);
 
   const loadAssignments = useCallback(async () => {
     try {
@@ -116,7 +118,8 @@ function QuestionDetail({ id }: { id: string }) {
   useEffect(() => {
     void load();
     void loadAssignments();
-  }, [load, loadAssignments]);
+    api<{ reports: ErrorReportInfo[] }>(`/api/admin/error-reports?questionId=${id}`).then((r) => setReports(r.reports)).catch(() => undefined);
+  }, [load, loadAssignments, id]);
 
   // Her değişiklik veritabanına yazılır, ardından soru yeniden okunur (ekranda görünen = kayıtlı olan).
   async function change(action: () => Promise<unknown>, message: string) {
@@ -171,6 +174,17 @@ function QuestionDetail({ id }: { id: string }) {
               fixedQuestionId={question.id}
               onAssigned={() => void loadAssignments()}
             />
+          </div>
+
+          <div className="card" data-testid="question-reports">
+            <strong>Hata bildirimleri ({reports.length})</strong>
+            {reports.length === 0 ? <p className="muted" style={{ margin: 0 }}>Bu soru için hata bildirimi yok.</p> : (
+              <div className="t-list">
+                {reports.map((r) => (
+                  <ReportCard key={r.id} report={r} imageUrl={question.imageUrl ?? undefined} />
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="card">
