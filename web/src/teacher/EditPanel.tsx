@@ -47,6 +47,7 @@ export function EditPanel({ assignmentId, recording, notice, onEdited, onClose }
   return (
     <div className="trim" data-testid="edit-panel">
       <video ref={videoRef} src={recording.videoUrl} controls className="trim-video" />
+      <div className="trim-controls">
       <div className="muted small">Önce videoda bir aralık seçin; sonra o aralığı tutabilir veya videodan silebilirsiniz.</div>
       <label>
         Aralık başlangıcı: <strong>{fmt(start)}</strong>
@@ -71,6 +72,7 @@ export function EditPanel({ assignmentId, recording, notice, onEdited, onClose }
           Bu aralığı sil (video {cutSeconds.toFixed(1)} sn kalır)
         </button>
         <button type="button" className="link" onClick={onClose} data-testid="edit-close">Kapat</button>
+      </div>
       </div>
     </div>
   );

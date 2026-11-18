@@ -173,6 +173,8 @@ a { color: var(--brand-dark); }
 .ghost-btn { padding: 8px 14px; background: #fff; border: 1px solid var(--sage); border-radius: 8px; cursor: pointer; color: var(--ink); }
 
 /* Kırpma */
-.trim { display: flex; flex-direction: column; gap: 12px; }
+.trim { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.trim-controls { display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 800px) { .trim { grid-template-columns: 1fr; } }
 .trim-video { width: 100%; border-radius: 8px; background: #000; }
 .trim input[type=range] { width: 100%; accent-color: var(--brand); padding: 0; }
