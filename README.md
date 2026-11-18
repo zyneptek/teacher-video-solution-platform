@@ -348,3 +348,10 @@ Sırayla ele alınacak işler ve notlar:
 - Web: kamera ayrı bir MediaRecorder klibidir, duraklat/devam ses ile birlikte yürür. Mobil: expo-camera kaydı duraklatamadığı için her duraklatmada klip kapanır, devamda yenisi açılır; sunucu klipleri art arda ekler.
 - Tablet kalemi: Apple Pencil/S Pen normal işaretçi olarak çizer; kalem kullanılırken parmak/avuç dokunuşları 1,2 sn yok sayılır (iOS `touchType`, web `pointerType`).
 - Doğrulanmadı: gerçek kamera (simülatörde yok), gerçek Apple Pencil, iOS'ta kamera + mikrofonun aynı anda çalışması.
+
+### Karar 15 — Giriş, oturum ve öğretmen yönetimi (başlandı)
+- **Tek web uygulaması, rol bazlı:** yönetici ve öğretmen aynı React uygulamasında, giriş yapan kullanıcının rolüne göre farklı ekranlar görür. Gerekçe: giriş, oturum ve stüdyo kodu tek yerde kalır; iki ayrı uygulama bakım ve zaman yükünü ikiye katlardı.
+- **Ortak giriş ekranı, iki sekme:** "Yönetici girişi" ve "Öğretmen girişi". Sekme, hesabın gerçek rolüyle karşılaştırılır; yönetici hesabı öğretmen sekmesinden (veya tersi) giremez ve doğru sekmeyi seçmesi söylenir. Hatalı e-posta/şifre ve silinmiş hesap aynı genel mesajı alır.
+- **Oturum:** istemciler Supabase'e bağlanmaz; `POST /api/auth/login` sunucuda Supabase Auth ile şifreyi doğrular, erişim + yenileme jetonu döner. Her istek `Authorization: Bearer` taşır, sunucu jetonu Supabase'e doğrulatır ve `profiles` kaydını (silinmemiş) okur. 401'de istemci bir kez yeniler, olmazsa oturumu kapatır. Web her 30 sn `/api/auth/me` sorgular (silinen öğretmenin oturumu otomatik kapanır).
+- **Öğretmen ekleme:** yönetici ad, soyad, e-posta, şifre (en az 8) ve branşı girer; sunucu Auth kullanıcısını açar, profil satırını yazar (profil yazılamazsa Auth kaydı geri silinir). Aynı e-posta ikinci kez eklenemez.
+- Şimdilik yapılan: giriş/çıkış, öğretmen listesi, öğretmen ekleme (web). **Sıradakiler:** mobil giriş, öğretmen güncelleme/silme.

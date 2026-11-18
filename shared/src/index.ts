@@ -22,3 +22,22 @@ export function branchFromOutcomeCode(code: string): Branch | null {
 
 export * from './drawing';
 export * from './inkController';
+
+// ---- Kimlik doğrulama ve kullanıcı tipleri (sunucu, web ve mobil ortak) ----
+
+export type Role = 'admin' | 'teacher';
+
+// İstemcilere dönen kullanıcı bilgisi (şifre gibi hassas alan yok).
+export type UserInfo = {
+  id: string;
+  role: Role;
+  firstName: string;
+  lastName: string;
+  email: string;
+  branch: Branch | null;
+};
+
+export type LoginResponse = { accessToken: string; refreshToken: string; user: UserInfo };
+
+// Öğretmen listesi satırı (yönetici ekranı).
+export type TeacherInfo = Omit<UserInfo, 'role'> & { createdAt: string };

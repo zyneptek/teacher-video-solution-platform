@@ -6,3 +6,29 @@
 body {
   margin: 0;
 }
+
+/* Genel düzen ve giriş/yönetici ekranları (geçici, sade görünüm; görsel standart sonra) */
+body { background: #f4f4f5; color: #18181b; }
+.topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #fff; border-bottom: 1px solid #e4e4e7; }
+.spacer { flex: 1; }
+.content { padding: 16px; max-width: 1312px; margin: 0 auto; }
+.login { max-width: 380px; margin: 60px auto; padding: 0 16px; }
+.login h1 { font-size: 22px; text-align: center; }
+.tabs { display: flex; margin-top: 16px; }
+.tab { flex: 1; padding: 10px; border: 1px solid #d4d4d8; background: #fafafa; cursor: pointer; font-size: 14px; }
+.tab:first-child { border-radius: 8px 0 0 0; }
+.tab:last-child { border-radius: 0 8px 0 0; }
+.tab.active { background: #fff; border-bottom-color: #fff; font-weight: 600; }
+.card { background: #fff; border: 1px solid #d4d4d8; border-top: 0; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.content .card { border-top: 1px solid #d4d4d8; border-radius: 8px; margin-bottom: 16px; }
+.card.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+input, select { padding: 8px; border: 1px solid #a1a1aa; border-radius: 6px; font-size: 14px; }
+button { font-size: 14px; }
+.primary { padding: 8px 16px; background: #2563eb; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+.primary:disabled { opacity: .5; cursor: wait; }
+.error { color: #b91c1c; margin: 0; font-size: 13px; }
+.notice { background: #ecfdf5; color: #065f46; padding: 8px 12px; border-radius: 6px; margin: 0; font-size: 13px; }
+.row { display: flex; align-items: center; justify-content: space-between; }
+table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e4e4e7; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #f0f0f2; font-size: 14px; }
