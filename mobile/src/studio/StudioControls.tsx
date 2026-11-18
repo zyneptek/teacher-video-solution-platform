@@ -1,25 +1,40 @@
 // Stüdyo kontrolleri: kalem, silgi ve kayıt düğmeleri ile süre göstergesi.
-// Hepsi aynı küçük yuvarlak emoji düğmesi tasarımındadır; dikey ve yatay modda aynı bileşenler kullanılır.
+// Hepsi aynı küçük yuvarlak düğme tasarımındadır; dikey ve yatay modda aynı bileşenler kullanılır.
+// Kalem ve silgi emoji, kayıt düğmeleri kendi çizdiğimiz simgelerdir (icons.tsx).
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { Tool } from '@app/shared';
-import { VIDEO } from '@app/shared';
+import { VIDEO, type Tool } from '@app/shared';
+import { PauseIcon, PlayIcon, RecordIcon, StopIcon } from './icons';
 import type { RecordingStatus } from './useRecordingClock';
 
-function RoundButton({ emoji, label, selected, onPress }: { emoji: string; label: string; selected?: boolean; onPress: () => void }) {
+export function RoundButton({
+  label,
+  selected,
+  disabled,
+  onPress,
+  children,
+}: {
+  label: string;
+  selected?: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+  children: ReactNode;
+}) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      disabled={disabled}
       onPress={onPress}
-      style={[styles.round, selected && styles.roundSelected]}
+      style={[styles.round, selected && styles.roundSelected, disabled && styles.roundDisabled]}
     >
-      <Text style={styles.emoji}>{emoji}</Text>
+      {children}
     </Pressable>
   );
 }
 
 export function formatTime(ms: number): string {
-  const total = Math.floor(ms / 1000);
+  const total = Math.max(0, Math.floor(ms / 1000));
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
@@ -27,6 +42,7 @@ type ControlsProps = {
   tool: Tool;
   onToolChange: (tool: Tool) => void;
   status: RecordingStatus;
+  startDisabled?: boolean; // mikrofon açılırken tekrar basılmasın
   onStart: () => void;
   onPause: () => void;
   onResume: () => void;
@@ -35,18 +51,38 @@ type ControlsProps = {
 };
 
 // Kalem, silgi ve kayıt düğmeleri. Kayıt düğmeleri duruma göre değişir:
-// bekleme: 🔴 başlat | kayıt: ⏸️ duraklat, ⏹️ bitir | duraklatıldı: ▶️ devam et, ⏹️ bitir.
-export function StudioControls({ tool, onToolChange, status, onStart, onPause, onResume, onFinish, direction }: ControlsProps) {
+// bekleme: kayıt (kırmızı daire) | kayıt sürüyor: duraklat, dur | duraklatıldı: devam et (üçgen), dur.
+export function StudioControls({ tool, onToolChange, status, startDisabled, onStart, onPause, onResume, onFinish, direction }: ControlsProps) {
   const column = direction === 'column';
   return (
     <View style={[styles.group, column ? styles.groupColumn : styles.groupRow]}>
-      <RoundButton emoji="✏️" label="Kalem" selected={tool === 'pen'} onPress={() => onToolChange('pen')} />
-      <RoundButton emoji="🧽" label="Silgi" selected={tool === 'eraser'} onPress={() => onToolChange('eraser')} />
+      <RoundButton label="Kalem" selected={tool === 'pen'} onPress={() => onToolChange('pen')}>
+        <Text style={styles.emoji}>✏️</Text>
+      </RoundButton>
+      <RoundButton label="Silgi" selected={tool === 'eraser'} onPress={() => onToolChange('eraser')}>
+        <Text style={styles.emoji}>🧽</Text>
+      </RoundButton>
       <View style={column ? styles.dividerHorizontal : styles.dividerVertical} />
-      {status === 'idle' && <RoundButton emoji="🔴" label="Kaydı başlat" onPress={onStart} />}
-      {status === 'recording' && <RoundButton emoji="⏸️" label="Duraklat" onPress={onPause} />}
-      {status === 'paused' && <RoundButton emoji="▶️" label="Devam et" onPress={onResume} />}
-      {status !== 'idle' && <RoundButton emoji="⏹️" label="Kaydı bitir" onPress={onFinish} />}
+      {status === 'idle' && (
+        <RoundButton label="Kaydı başlat" disabled={startDisabled} onPress={onStart}>
+          <RecordIcon />
+        </RoundButton>
+      )}
+      {status === 'recording' && (
+        <RoundButton label="Duraklat" onPress={onPause}>
+          <PauseIcon />
+        </RoundButton>
+      )}
+      {status === 'paused' && (
+        <RoundButton label="Devam et" onPress={onResume}>
+          <PlayIcon />
+        </RoundButton>
+      )}
+      {status !== 'idle' && (
+        <RoundButton label="Kaydı bitir" onPress={onFinish}>
+          <StopIcon />
+        </RoundButton>
+      )}
     </View>
   );
 }
@@ -55,9 +91,7 @@ export function StudioControls({ tool, onToolChange, status, onStart, onPause, o
 export function RecordingTimer({ status, elapsedMs }: { status: RecordingStatus; elapsedMs: number }) {
   return (
     <View style={styles.timer} accessibilityLabel={`Kayıt süresi ${formatTime(elapsedMs)}`}>
-      <Text style={[styles.timerMark, status === 'recording' && styles.timerMarkRecording]}>
-        {status === 'paused' ? '❚❚' : '●'}
-      </Text>
+      {status === 'paused' ? <PauseIcon size={10} color="#a1a1aa" /> : <View style={[styles.dot, status === 'recording' && styles.dotRecording]} />}
       <Text style={styles.timerText}>
         {formatTime(elapsedMs)} / {formatTime(VIDEO.maxSeconds * 1000)}
       </Text>
@@ -80,6 +114,7 @@ const styles = StyleSheet.create({
     borderColor: '#d4d4d8',
   },
   roundSelected: { borderColor: '#2563eb', borderWidth: 3 },
+  roundDisabled: { opacity: 0.4 },
   emoji: { fontSize: 20 },
   dividerVertical: { width: 1, height: 28, backgroundColor: '#d4d4d8' },
   dividerHorizontal: { width: 28, height: 1, backgroundColor: '#d4d4d8' },
@@ -94,7 +129,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#d4d4d8',
   },
-  timerMark: { fontSize: 12, color: '#a1a1aa' },
-  timerMarkRecording: { color: '#dc2626' },
+  dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#a1a1aa' },
+  dotRecording: { backgroundColor: '#dc2626' },
   timerText: { fontSize: 13, fontVariant: ['tabular-nums'], color: '#27272a' },
 });
