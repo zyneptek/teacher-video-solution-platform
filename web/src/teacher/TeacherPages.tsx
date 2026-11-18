@@ -188,14 +188,14 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
             )}
           </div>
 
-          <div className="card">
+          {!editing && <div className="card">
             <strong>Kazanımlar</strong>
             <ul className="outcomes">
               {q.outcomes.map((o) => (
                 <li key={o.id}><span><strong>{o.code}</strong> {o.description}</span></li>
               ))}
             </ul>
-          </div>
+          </div>}
 
           <div className="card" data-testid="report-card-area">
             <div className="row" style={{ marginBottom: 0 }}>
