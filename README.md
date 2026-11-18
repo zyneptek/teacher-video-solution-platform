@@ -416,8 +416,13 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 - **Bildirimler:** ayrı sayfa kaldırıldı; sağ üstte zil düğmesi ve okunmamış sayısı rozeti vardır. Tıklayınca bildirimler açılır liste olarak gelir (Esc veya dışarı tıklayınca kapanır); bildirime tıklamak onu okundu yapar ve ilgili soruya götürür; "Tümünü okundu yap" vardır. Okunmamış bildirimler vurgulanır, okunanlar listede soluk kalır.
 
 ### Karar 25 — Hata bildirimi
-- **Türler:** Soru metninde hata, Şıklarda hata, Yazım yanlışı, Kırpma hatası, Cevap anahtarı hatası, Kazanım hatası + **Diğer (serbest metin)**. Kısa açıklama yazılır (en fazla 1000 karakter); yalnızca "Diğer"de zorunludur.
+- **Türler:** Soru metninde hata, Şıklarda hata, Yazım yanlışı, Kırpma hatası, Cevap anahtarı hatası, Kazanım hatası + **Diğer** (serbest metin). Kısa açıklama yazılır (en fazla 1000 karakter); yalnızca "Diğer"de zorunludur.
 - **Ek (açık nokta kararı):** ek her türde eklenebilir (görev yalnızca serbest bildirimi şart koşuyor, bu bir üst kümedir). Ek tek dosyadır: **ekran görüntüsü** (JPEG/PNG/WebP, en fazla 5 MB) **veya en fazla 1 dakikalık video** (MP4/WebM/MOV, en fazla 30 MB). Süre hem tarayıcıda hem sunucuda (ffmpeg ile) denetlenir; süre okunamayan dosyalar (bazı tarayıcı kayıtları) kabul edilir. Ekler özel Storage bucket'ında (`error-attachments`) saklanır, imzalı süreli adresle sunulur.
 - **"Soru metni ve şıklara işaret etme":** soru paketinde metin ve şıklar ayrı alan olarak yoktur (yalnızca görsel), bu yüzden öğretmen sorunun **görseli üzerinde hatanın yerini işaretler** (oransal konum olarak saklanır: `marker_x/marker_y`); ayrıca "Soru metninde hata" / "Şıklarda hata" türleri vardır. Yönetici işareti görsel üzerinde kırmızı halka olarak görür.
 - **Görünürlük:** yalnızca soruyu atanmış öğretmen o soru için bildirim gönderebilir (başkası 404). Öğretmen kendi gönderdiklerini soru sayfasında görür. Yönetici bildirimleri hem **ilgili sorunun üzerinde** (soru detayı) hem **Hata bildirimleri** sayfasında (türe göre süzme), **gönderen öğretmenin adıyla** görür; panelde toplam sayı vardır.
 - Yapılmadı: bildirimin "çözüldü" işaretlenmesi ve yöneticiye anlık bildirim (isteğe bağlı iyileştirme).
+
+### Karar 26 — Yöneticiye bildirim
+- Öğretmen **videoyu onaya gönderince** veya **hata bildirimi oluşturunca** tüm aktif yöneticilere bildirim yazılır: "<Öğretmen> videoyu onaya gönderdi: <Branş - Soru>" ve "<Öğretmen> hata bildirdi (<tür>): <Branş - Soru>". Yönetici de sağ üstteki zil düğmesinde okunmamış sayısını görür; bildirime tıklayınca okundu olur ve ilgili sayfaya gider (video için Onay kuyruğu, hata için sorunun detayı).
+- Bildirim sistemi iki role ortaktır (`/api/notifications`): bildirim bir atamaya veya bir hata bildirimine bağlıdır, metin ve gidilecek sayfa türden üretilir. Yöneticiye push gönderilmez (yönetici mobil uygulamaya girmez).
+- Hata türü "Diğer (serbest metin)" etiketi "Diğer" olarak sadeleştirildi.

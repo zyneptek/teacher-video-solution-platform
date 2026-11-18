@@ -11,6 +11,7 @@ import { questionImagesRouter, warmQuestionImages } from './questionImages.js';
 import { teacherRouter } from './routes/teacher.js';
 import { recordingVideosRouter } from './recordings.js';
 import { adminErrorReportsRouter, errorAttachmentsRouter, teacherErrorReportsRouter } from './errorReports.js';
+import { notificationsRouter } from './notifications.js';
 import { pushTokensRouter } from './routes/pushTokens.js';
 import { devRenderRouter } from './routes/devRender.js';
 
@@ -26,6 +27,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/admin/assignments', adminAssignmentsRouter);
 app.use('/api/question-images', questionImagesRouter);
+app.use('/api/notifications', notificationsRouter);
 app.use('/api/teacher/assignments', teacherErrorReportsRouter);
 app.use('/api/teacher', teacherRouter);
 app.use('/api/admin/error-reports', adminErrorReportsRouter);

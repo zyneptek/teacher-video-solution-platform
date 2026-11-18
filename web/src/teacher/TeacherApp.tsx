@@ -1,9 +1,9 @@
 // Öğretmen arayüzü: Panel ve Sorularım. Bildirimler sağ üstteki zil düğmesinden açılır.
 import type { UserInfo } from '@app/shared';
 import { AppShell, type Page } from '../layout/AppShell';
-import { NotificationBell } from './NotificationBell';
+import { NotificationBell } from '../notifications/NotificationBell';
+import { useNotifications } from '../notifications/useNotifications';
 import { MyQuestionsPage, TeacherDashboard } from './TeacherPages';
-import { useNotifications } from './useTeacherData';
 
 export function TeacherApp({ user, onLogout }: { user: UserInfo; onLogout: () => void }) {
   const { notifications, unread, refresh } = useNotifications();

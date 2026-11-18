@@ -25,7 +25,7 @@ export function NotificationBell({ notifications, unread, refresh }: { notificat
   }, [open]);
 
   async function readAll() {
-    await api('/api/teacher/notifications/read-all', { method: 'POST' }).catch(() => undefined);
+    await api('/api/notifications/read-all', { method: 'POST' }).catch(() => undefined);
     refresh();
   }
 

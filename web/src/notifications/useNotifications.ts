@@ -1,4 +1,4 @@
-// Öğretmenin bildirimleri: açılışta ve her 30 sn'de bir sunucudan okunur (yeni atama kısa sürede görünür).
+// Giriş yapan kullanıcının (öğretmen veya yönetici) bildirimleri: açılışta ve her 30 sn'de bir sunucudan okunur (yeni atama kısa sürede görünür).
 import { useCallback, useEffect, useState } from 'react';
 import type { NotificationInfo } from '@app/shared';
 import { api } from '../auth/session';
@@ -11,7 +11,7 @@ export function useNotifications() {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await api<{ notifications: NotificationInfo[]; unread: number }>('/api/teacher/notifications');
+      const r = await api<{ notifications: NotificationInfo[]; unread: number }>('/api/notifications');
       setNotifications(r.notifications);
       setUnread(r.unread);
     } catch {

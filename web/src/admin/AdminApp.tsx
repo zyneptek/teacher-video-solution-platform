@@ -1,6 +1,8 @@
 // Yönetici arayüzü: sayfa listesi; düzeni AppShell sağlar.
 import type { UserInfo } from '@app/shared';
 import { AppShell, type Page } from '../layout/AppShell';
+import { NotificationBell } from '../notifications/NotificationBell';
+import { useNotifications } from '../notifications/useNotifications';
 import { AssignmentsPage } from './AssignmentsPage';
 import { DashboardPage } from './DashboardPage';
 import { ErrorReportsPage } from './ErrorReportsPage';
@@ -22,5 +24,14 @@ const PAGES: Page[] = [
 
 // Adres #/sayfa veya #/sayfa/parametre biçimindedir.
 export function AdminApp({ user, onLogout }: { user: UserInfo; onLogout: () => void }) {
-  return <AppShell pages={PAGES} userName={`${user.firstName} ${user.lastName}`} roleLabel="Yönetici" onLogout={onLogout} />;
+  const { notifications, unread, refresh } = useNotifications();
+  return (
+    <AppShell
+      pages={PAGES}
+      userName={`${user.firstName} ${user.lastName}`}
+      roleLabel="Yönetici"
+      onLogout={onLogout}
+      topRight={<NotificationBell notifications={notifications} unread={unread} refresh={() => void refresh()} />}
+    />
+  );
 }

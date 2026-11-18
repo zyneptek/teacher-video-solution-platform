@@ -10,6 +10,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { ERROR_REPORT_LIMITS, ERROR_REPORT_TYPES, type ErrorReportInfo, type ErrorReportType } from '@app/shared';
 import { requireAuth } from './auth.js';
+import { notifyAdmins } from './notifications.js';
 import { config } from './config.js';
 import { pool } from './db.js';
 import { getFfmpegPath } from './render/renderVideo.js';
@@ -187,6 +188,7 @@ teacherErrorReportsRouter.post('/:assignmentId/error-reports', upload.single('at
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [id, questionId, req.user?.id, type, description, attachmentPath, attachmentType, markerX, markerY],
     );
+    await notifyAdmins({ type: 'error_reported', errorReportId: id }).catch((err) => console.error('Yönetici bildirimi yazılamadı:', err));
     const { rows } = await pool.query<ReportRow>(`${SELECT} where e.id = $1`, [id]);
     res.status(201).json({ report: toInfo(rows[0] as ReportRow) });
   } catch (err) {

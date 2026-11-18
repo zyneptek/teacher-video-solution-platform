@@ -6,10 +6,10 @@ export function NotificationList({ notifications, onChanged, onOpened }: { notif
   if (notifications.length === 0) return <div className="empty">Henüz bildiriminiz yok.</div>;
 
   async function open(n: NotificationInfo) {
-    if (!n.readAt) await api(`/api/teacher/notifications/${n.id}/read`, { method: 'POST' }).catch(() => undefined);
+    if (!n.readAt) await api(`/api/notifications/${n.id}/read`, { method: 'POST' }).catch(() => undefined);
     onChanged();
     onOpened?.();
-    window.location.hash = `#/sorularim/${n.assignmentId}`;
+    window.location.hash = n.href;
   }
 
   return (

@@ -112,9 +112,9 @@ export type TeacherAssignment = {
 
 export type NotificationInfo = {
   id: string;
-  assignmentId: string;
-  type: 'assignment_created' | 'recording_approved' | 'recording_returned';
+  type: 'assignment_created' | 'recording_approved' | 'recording_returned' | 'recording_submitted' | 'error_reported';
   text: string;
+  href: string; // tıklayınca gidilecek sayfa (#/...)
   readAt: string | null;
   createdAt: string;
 };
@@ -127,7 +127,7 @@ export const ERROR_REPORT_TYPES = [
   { value: 'trim', label: 'Kırpma hatası' },
   { value: 'answer_key', label: 'Cevap anahtarı hatası' },
   { value: 'outcome', label: 'Kazanım hatası' },
-  { value: 'other', label: 'Diğer (serbest metin)' },
+  { value: 'other', label: 'Diğer' },
 ] as const;
 
 export type ErrorReportType = (typeof ERROR_REPORT_TYPES)[number]['value'];
