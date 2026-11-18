@@ -9,6 +9,7 @@ import { ErrorReportForm } from '../reports/ErrorReportForm';
 import { MarkedImage, type Marker } from '../reports/MarkedImage';
 import { ReportCard } from '../reports/ReportViews';
 import { AssignmentCards } from './AssignmentCards';
+import { TrimPanel } from './TrimPanel';
 
 function useAssignments() {
   const [assignments, setAssignments] = useState<TeacherAssignment[] | null>(null);
@@ -93,6 +94,7 @@ function QuestionPage({ id }: { id: string }) {
   const [marker, setMarker] = useState<Marker | null>(null);
   const [reports, setReports] = useState<ErrorReportInfo[]>([]);
   const [reportSent, setReportSent] = useState(false);
+  const [trimming, setTrimming] = useState(false);
   useEffect(() => {
     api<{ reports: ErrorReportInfo[] }>(`/api/teacher/assignments/${id}/error-reports`).then((r) => setReports(r.reports)).catch(() => undefined);
   }, [id]);
@@ -147,7 +149,16 @@ function QuestionPage({ id }: { id: string }) {
             {actionError && <p role="alert" className="error" data-testid="action-error">{actionError}</p>}
             {assignment.recording ? (
               <>
-                <VideoPreview key={assignment.recording.videoUrl} src={assignment.recording.videoUrl} />
+                {trimming ? (
+                  <TrimPanel
+                    assignmentId={assignment.id}
+                    recording={assignment.recording}
+                    onTrimmed={(a) => { setAssignment(a); setTrimming(false); }}
+                    onClose={() => setTrimming(false)}
+                  />
+                ) : (
+                  <VideoPreview key={assignment.recording.videoUrl} src={assignment.recording.videoUrl} />
+                )}
                 <div className="muted small">Süre: {Math.round(assignment.recording.durationSeconds)} sn · Kaydedilme: {new Date(assignment.recording.updatedAt).toLocaleString('tr-TR')}</div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                   {canSubmit && (
@@ -156,12 +167,13 @@ function QuestionPage({ id }: { id: string }) {
                     </button>
                   )}
                   {locked && <span className="muted small" data-testid="locked">Onaya gönderildi; yönetici değerlendirmesini bekliyor.</span>}
+                  {!trimming && <button type="button" className="link" disabled={busy} onClick={() => setTrimming(true)} data-testid="trim-open">Kırp</button>}
                   <a href={`#/sorularim/${assignment.id}/kayit`} className="link" data-testid="re-record">Yeniden kaydet</a>
                   <button type="button" className="link danger" disabled={busy} onClick={() => void act('/recording', 'DELETE', 'Kayıt silinsin mi? Onaya gönderilmişse yönetici de artık izleyemez.')} data-testid="delete-recording">
                     Kaydı sil
                   </button>
                 </div>
-                {assignment.status === 'approved' && <span className="muted small">Yeniden kaydederseniz veya silerseniz onay durumu sıfırlanır; yeniden onaya göndermeniz gerekir.</span>}
+                {assignment.status === 'approved' && <span className="muted small">Yeniden kaydederseniz, kırparsanız veya silerseniz onay durumu sıfırlanır; yeniden onaya göndermeniz gerekir.</span>}
               </>
             ) : (
               <>
@@ -171,8 +183,20 @@ function QuestionPage({ id }: { id: string }) {
                 </a>
               </>
             )}
-            <span className="muted small">Kırpma ve düzenleme sonraki adımda eklenecek.</span>
           </div>
+
+          {assignment.referenceVideos && assignment.referenceVideos.length > 0 && (
+            <div className="card" data-testid="reference-videos">
+              <strong>Bu soru için onaylanmış çözüm videosu</strong>
+              <span className="muted small">Başka bir öğretmenin yöneticice onaylanmış çözümüdür; izleyip kendi kaydınızı oluşturabilirsiniz.</span>
+              {assignment.referenceVideos.map((v) => (
+                <div key={v.recording.id}>
+                  <div className="muted small" style={{ marginBottom: 4 }}>{v.teacherName}</div>
+                  <VideoPreview src={v.recording.videoUrl} />
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="card">
             <strong>Kazanımlar</strong>

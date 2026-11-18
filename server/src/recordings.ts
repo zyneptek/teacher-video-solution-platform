@@ -86,7 +86,7 @@ export async function deleteRecording(assignmentId: string): Promise<boolean> {
 }
 
 // Her istekte önce veritabanına bakılır: silinmiş veya yeniden çekilerek değişmiş kayıt, diskte dosyası kalsa bile sunulmaz.
-async function fileFor(id: string, version: number): Promise<string | null> {
+export async function fileFor(id: string, version: number): Promise<string | null> {
   const { rows } = await pool.query<{ video_path: string | null; updated_at: Date }>(
     "select video_path, updated_at from recordings where id = $1 and deleted_at is null and status = 'ready'",
     [id],
@@ -131,3 +131,15 @@ recordingVideosRouter.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'Video sunulamadı.' });
   }
 });
+
+// Atamanın güncel (silinmemiş, hazır) kaydı ve yerel dosyası; kırpma gibi işlemler için.
+export async function currentRecordingFile(assignmentId: string): Promise<{ id: string; durationSeconds: number; file: string } | null> {
+  const { rows } = await pool.query<{ id: string; duration_seconds: string | null; updated_at: Date }>(
+    "select id, duration_seconds, updated_at from recordings where assignment_id = $1 and deleted_at is null and status = 'ready'",
+    [assignmentId],
+  );
+  const row = rows[0];
+  if (!row) return null;
+  const file = await fileFor(row.id, row.updated_at.getTime());
+  return file ? { id: row.id, durationSeconds: Number(row.duration_seconds ?? 0), file } : null;
+}
