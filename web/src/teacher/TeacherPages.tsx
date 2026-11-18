@@ -124,15 +124,15 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
     <div>
       <p><a href="#/sorularim">← Sorularım</a></p>
       <h2>{q.branch} sorusu{q.questionNumber ? ` (Soru ${q.questionNumber})` : ''}</h2>
-      <div className="q-detail">
-        <div className="q-image">
+      <div className="q-detail" style={editing ? { display: 'block', maxWidth: 820 } : undefined}>
+        {!editing && <div className="q-image">
           <MarkedImage
             src={q.imageUrl}
             alt="Soru görseli"
             marker={marker}
             onPick={picking ? (m) => { setMarker(m); setPicking(false); } : undefined}
           />
-        </div>
+        </div>}
         <div>
           <div className="card">
             <div className="row" style={{ marginBottom: 0 }}>
