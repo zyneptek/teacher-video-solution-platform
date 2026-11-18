@@ -178,6 +178,7 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl: stri
             <button type="button" className="primary" onClick={() => void submitForReview()} disabled={sending} data-testid="submit-review">
               {sending ? 'Gönderiliyor…' : 'Onaya gönder'}
             </button>
+            <a href={`#/sorularim/${assignmentId}/duzenle`} data-testid="edit-after">Düzenle (kırp / bölüm sil)</a>
             <a href={`#/sorularim/${assignmentId}`} data-testid="save-draft">Taslak olarak kaydet</a>
             <button type="button" onClick={handleNewRecording}>Yeniden çek</button>
           </p>

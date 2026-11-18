@@ -208,14 +208,21 @@ teacherRouter.post('/assignments/:id/submit', async (req, res) => {
   }
 });
 
-// ---- Kırpma: kaydın başından ve/veya sonundan kesilir; kırpılmış MP4 kaydın yerine geçer (yönetici kırpılmış videoyu izler) ----
+// ---- Düzenleme: kayıttan bir aralık tutulur (kırpma) veya bir aralık silinir (ortadan kesme) ----
+// Düzenlenmiş MP4 kaydın yerine geçer (yönetici düzenlenmiş videoyu izler); arka arkaya birden fazla düzenleme yapılabilir.
 
-const MIN_TRIM_SECONDS = 1;
+const MIN_RESULT_SECONDS = 1;
 
-// ffmpeg ile [start, end] aralığını yeniden kodlayarak keser (kare hassasiyeti için yeniden kodlama; kayıtlar kısa olduğundan hızlıdır).
-function trimFile(input: string, output: string, start: number, end: number): Promise<void> {
+// ffmpeg ile videoyu verilen parçalara (saniye aralıkları) ayırıp art arda birleştirir. Görüntü ve ses aynı aralıklarla
+// kesilir ve yeniden kodlanır (kare hassasiyeti; kayıtlar kısa olduğundan hızlıdır).
+function editFile(input: string, output: string, keep: { start: number; end: number }[]): Promise<void> {
+  const trims = keep
+    .map((k, i) => `[0:v]trim=start=${k.start.toFixed(3)}:end=${k.end.toFixed(3)},setpts=PTS-STARTPTS[v${i}];[0:a]atrim=start=${k.start.toFixed(3)}:end=${k.end.toFixed(3)},asetpts=PTS-STARTPTS[a${i}]`)
+    .join(';');
+  const joined = keep.map((_, i) => `[v${i}][a${i}]`).join('');
+  const filter = `${trims};${joined}concat=n=${keep.length}:v=1:a=1[v][a]`;
   return new Promise((resolve, reject) => {
-    const args = ['-y', '-i', input, '-ss', start.toFixed(3), '-to', end.toFixed(3), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k', '-movflags', '+faststart', output];
+    const args = ['-y', '-i', input, '-filter_complex', filter, '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k', '-movflags', '+faststart', output];
     const child = spawn(getFfmpegPath(), args, { stdio: ['ignore', 'ignore', 'pipe'] });
     let stderr = '';
     child.stderr.on('data', (chunk: Buffer) => (stderr = (stderr + chunk.toString()).slice(-1500)));
@@ -224,34 +231,43 @@ function trimFile(input: string, output: string, start: number, end: number): Pr
   });
 }
 
-teacherRouter.post('/assignments/:id/recording/trim', async (req, res) => {
+// body: { op: 'keep' | 'cut', start, end } — keep: yalnızca [start, end] kalır; cut: [start, end] videodan silinir.
+teacherRouter.post('/assignments/:id/recording/edit', async (req, res) => {
   const own = await ownAssignment(req.user?.id, req.params.id);
   if (!own) {
     res.status(404).json({ error: 'Soru bulunamadı veya size atanmamış.' });
     return;
   }
-  const { start, end } = (req.body ?? {}) as { start?: unknown; end?: unknown };
+  const { op, start, end } = (req.body ?? {}) as { op?: unknown; start?: unknown; end?: unknown };
   const current = await currentRecordingFile(own.id);
   if (!current) {
-    res.status(404).json({ error: 'Kırpılacak kayıt yok.' });
+    res.status(404).json({ error: 'Düzenlenecek kayıt yok.' });
     return;
   }
+  const total = current.durationSeconds;
   const startS = Number(start);
-  const endS = Number(end);
-  if (!Number.isFinite(startS) || !Number.isFinite(endS) || startS < 0 || endS > current.durationSeconds + 0.5 || endS - startS < MIN_TRIM_SECONDS) {
-    res.status(400).json({ error: `Geçersiz aralık: başlangıç 0 veya daha büyük, bitiş kayıt süresinden küçük ve aradaki süre en az ${MIN_TRIM_SECONDS} sn olmalı.` });
+  const endS = Math.min(Number(end), total);
+  if ((op !== 'keep' && op !== 'cut') || !Number.isFinite(startS) || !Number.isFinite(endS) || startS < 0 || endS <= startS || endS - startS < 0.1) {
+    res.status(400).json({ error: 'Geçersiz aralık: başlangıç bitişten önce olmalı ve aralık kayıt süresi içinde kalmalı.' });
     return;
   }
-  const dir = await mkdtemp(path.join(tmpdir(), 'trim-'));
+  // Tutulacak parçalar: keep → [start,end]; cut → [0,start] ve [end,toplam] (boş/çok kısa parçalar atılır).
+  const keep = (op === 'keep' ? [{ start: startS, end: endS }] : [{ start: 0, end: startS }, { start: endS, end: total }]).filter((k) => k.end - k.start >= 0.05);
+  const resultSeconds = keep.reduce((sum, k) => sum + (k.end - k.start), 0);
+  if (resultSeconds < MIN_RESULT_SECONDS) {
+    res.status(400).json({ error: `Düzenlemeden sonra videoda en az ${MIN_RESULT_SECONDS} sn kalmalı.` });
+    return;
+  }
+  const dir = await mkdtemp(path.join(tmpdir(), 'edit-'));
   try {
-    const output = path.join(dir, 'trimmed.mp4');
-    await trimFile(current.file, output, startS, Math.min(endS, current.durationSeconds));
-    await saveRecording(own.id, output, Math.min(endS, current.durationSeconds) - startS);
+    const output = path.join(dir, 'edited.mp4');
+    await editFile(current.file, output, keep);
+    await saveRecording(own.id, output, resultSeconds);
     await resetReviewState(own.id);
     await respondWithAssignment(res, req.user?.id, own.id);
   } catch (err) {
-    console.error('Kırpılamadı:', err);
-    res.status(500).json({ error: 'Kayıt kırpılamadı.' });
+    console.error('Kayıt düzenlenemedi:', err);
+    res.status(500).json({ error: 'Kayıt düzenlenemedi.' });
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

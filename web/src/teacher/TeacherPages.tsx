@@ -9,7 +9,7 @@ import { ErrorReportForm } from '../reports/ErrorReportForm';
 import { MarkedImage, type Marker } from '../reports/MarkedImage';
 import { ReportCard } from '../reports/ReportViews';
 import { AssignmentCards } from './AssignmentCards';
-import { TrimPanel } from './TrimPanel';
+import { EditPanel } from './EditPanel';
 
 function useAssignments() {
   const [assignments, setAssignments] = useState<TeacherAssignment[] | null>(null);
@@ -57,7 +57,7 @@ export function TeacherDashboard() {
 }
 
 export function MyQuestionsPage({ id, sub }: { id?: string; sub?: string }) {
-  if (id) return sub === 'kayit' ? <RecordPage id={id} /> : <QuestionPage id={id} />;
+  if (id) return sub === 'kayit' ? <RecordPage id={id} /> : <QuestionPage id={id} startEditing={sub === 'duzenle'} />;
   return <QuestionList />;
 }
 
@@ -84,7 +84,7 @@ function useAssignment(id: string) {
   return { assignment, setAssignment, error };
 }
 
-function QuestionPage({ id }: { id: string }) {
+function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean }) {
   const { assignment, setAssignment, error } = useAssignment(id);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -94,7 +94,8 @@ function QuestionPage({ id }: { id: string }) {
   const [marker, setMarker] = useState<Marker | null>(null);
   const [reports, setReports] = useState<ErrorReportInfo[]>([]);
   const [reportSent, setReportSent] = useState(false);
-  const [trimming, setTrimming] = useState(false);
+  const [editing, setEditing] = useState(!!startEditing);
+  const [editNotice, setEditNotice] = useState<string | null>(null);
   useEffect(() => {
     api<{ reports: ErrorReportInfo[] }>(`/api/teacher/assignments/${id}/error-reports`).then((r) => setReports(r.reports)).catch(() => undefined);
   }, [id]);
@@ -149,12 +150,14 @@ function QuestionPage({ id }: { id: string }) {
             {actionError && <p role="alert" className="error" data-testid="action-error">{actionError}</p>}
             {assignment.recording ? (
               <>
-                {trimming ? (
-                  <TrimPanel
+                {editing ? (
+                  <EditPanel
+                    key={assignment.recording.videoUrl}
                     assignmentId={assignment.id}
                     recording={assignment.recording}
-                    onTrimmed={(a) => { setAssignment(a); setTrimming(false); }}
-                    onClose={() => setTrimming(false)}
+                    notice={editNotice}
+                    onEdited={(a, message) => { setAssignment(a); setEditNotice(message); }}
+                    onClose={() => { setEditing(false); setEditNotice(null); }}
                   />
                 ) : (
                   <VideoPreview key={assignment.recording.videoUrl} src={assignment.recording.videoUrl} />
@@ -167,7 +170,7 @@ function QuestionPage({ id }: { id: string }) {
                     </button>
                   )}
                   {locked && <span className="muted small" data-testid="locked">Onaya gönderildi; yönetici değerlendirmesini bekliyor.</span>}
-                  {!trimming && <button type="button" className="link" disabled={busy} onClick={() => setTrimming(true)} data-testid="trim-open">Kırp</button>}
+                  {!editing && <button type="button" className="ghost-btn" disabled={busy} onClick={() => setEditing(true)} data-testid="edit-open" title="Kırp veya videodan bölüm sil">Düzenle (kırp / bölüm sil)</button>}
                   <a href={`#/sorularim/${assignment.id}/kayit`} className="link" data-testid="re-record">Yeniden kaydet</a>
                   <button type="button" className="link danger" disabled={busy} onClick={() => void act('/recording', 'DELETE', 'Kayıt silinsin mi? Onaya gönderilmişse yönetici de artık izleyemez.')} data-testid="delete-recording">
                     Kaydı sil

@@ -102,7 +102,7 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
             {canSubmit && <Button label={assignment.status === 'returned' ? 'Yeniden onaya gönder' : 'Onaya gönder'} onPress={() => void act('/submit', 'POST')} busy={busy} />}
             <View style={styles.actions}>
               <Button label="Yeniden kaydet" variant="ghost" onPress={() => nav.push({ name: 'record', id })} style={{ flex: 1 }} />
-              <Button label="Kırp" variant="ghost" onPress={() => nav.push({ name: 'trim', id })} style={{ flex: 1 }} />
+              <Button label="Düzenle" variant="ghost" onPress={() => nav.push({ name: 'trim', id })} style={{ flex: 1 }} />
               <Button label="Sil" variant="danger" onPress={confirmDelete} disabled={busy} style={{ flex: 1 }} />
             </View>
             {assignment.status === 'approved' && <Text style={styles.small}>Yeniden kaydederseniz, kırparsanız veya silerseniz onay durumu sıfırlanır; yeniden onaya göndermeniz gerekir.</Text>}
