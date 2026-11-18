@@ -4,7 +4,7 @@ import * as Notifications from 'expo-notifications';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, BackHandler, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Nav, Route } from './src/nav';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -27,11 +27,10 @@ function Root() {
 
   const nav: Nav = {
     push: (r) => setStack((s) => [...s, r]),
-    pop: () =>
-      setStack((s) => {
-        setHomeKey((k) => k + 1);
-        return s.length > 1 ? s.slice(0, -1) : s;
-      }),
+    pop: () => {
+      setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
+      setHomeKey((k) => k + 1);
+    },
     reset: (r) => setStack([r]),
   };
   const navRef = useRef(nav);
@@ -46,6 +45,16 @@ function Root() {
     if (route.name === 'record') return; // stüdyo kendi kilidini uygular
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => undefined);
   }, [isTablet, route.name]);
+
+  // Android geri tuşu: ekran yığınında bir önceki ekrana döner (ana sayfadayken uygulamadan çıkar).
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (stack.length <= 1) return false;
+      navRef.current.pop();
+      return true;
+    });
+    return () => sub.remove();
+  }, [stack.length]);
 
   // Çıkış yapılınca yığın sıfırlanır.
   useEffect(() => {

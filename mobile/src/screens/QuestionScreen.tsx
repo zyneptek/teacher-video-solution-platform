@@ -73,7 +73,7 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.content, wide && styles.contentWide, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}>
-      <Pressable onPress={nav.pop} testID="back"><Text style={styles.back}>← Sorularım</Text></Pressable>
+      <Pressable onPress={nav.pop} hitSlop={16} style={styles.backBtn} testID="back"><Text style={styles.back}>← Sorularım</Text></Pressable>
       <Text style={styles.title}>{q.branch} sorusu{q.questionNumber ? ` (Soru ${q.questionNumber})` : ''}</Text>
       {error && <ErrorText>{error}</ErrorText>}
 
@@ -155,6 +155,7 @@ const styles = StyleSheet.create({
   cols: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
   colLeft: { flex: 1 },
   colRight: { flex: 1, gap: 12 },
+  backBtn: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
   back: { color: colors.brandDark, fontWeight: '700', fontSize: 15, paddingVertical: 6 },
   title: { fontSize: 20, fontWeight: '800', color: colors.ink },
   imageBox: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 8 },

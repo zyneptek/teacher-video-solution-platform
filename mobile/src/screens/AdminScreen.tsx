@@ -106,24 +106,25 @@ function useList<T>(load: () => Promise<T>) {
   return { data, error, reload, refreshControl };
 }
 
+// Panel: iki grup (sayılar, atama durumları), her grup 2x2 kart; kartlar ekranın boş yüksekliğini doldurur.
 function PanelTab({ goTo }: { goTo: (t: Tab) => void }) {
   const insets = useSafeAreaInsets();
   const { data: stats, error, refreshControl } = useList(useCallback(() => api<DashboardStats>('/api/admin/dashboard'), []));
   const statuses = Object.keys(ASSIGNMENT_STATUS_LABEL) as AssignmentStatus[];
   return (
-    <ScrollView refreshControl={refreshControl} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
+    <ScrollView refreshControl={refreshControl} contentContainerStyle={[styles.panel, { paddingBottom: insets.bottom + 16 }]}>
       {error && <ErrorText>{error}</ErrorText>}
       {!stats && !error && <Text style={{ color: colors.muted }}>Yükleniyor…</Text>}
       {stats && (
         <>
-          <View style={styles.stats}>
+          <View style={styles.statGrid}>
             <Stat label="Öğretmen" value={stats.teachers} />
             <Stat label="Soru" value={stats.questions} />
             <Stat label="Kazanım" value={stats.outcomes} />
             <Stat label="Hata bildirimi" value={stats.errorReports} onPress={() => goTo('reports')} />
           </View>
           <Text style={styles.section}>Atama durumları</Text>
-          <View style={styles.stats}>
+          <View style={styles.statGrid}>
             {statuses.map((s) => (
               <Stat key={s} label={ASSIGNMENT_STATUS_LABEL[s]} value={stats.assignments[s]} tone={s === 'submitted' ? 'brand' : s === 'returned' ? 'warn' : undefined} onPress={s === 'submitted' ? () => goTo('queue') : undefined} />
             ))}
@@ -135,11 +136,11 @@ function PanelTab({ goTo }: { goTo: (t: Tab) => void }) {
 }
 
 function Stat({ label, value, tone, onPress }: { label: string; value: number; tone?: 'brand' | 'warn'; onPress?: () => void }) {
-  const wide = useWide(); // tablette kartlar daha büyük
+  const wide = useWide();
   return (
-    <Pressable disabled={!onPress} onPress={onPress} style={[styles.stat, wide && styles.statWide]}>
-      <Text style={[styles.statValue, wide && styles.statValueWide, tone === 'brand' && { color: colors.brand }, tone === 'warn' && { color: colors.danger }]}>{value}</Text>
-      <Text style={[styles.statLabel, wide && { fontSize: 16 }]}>{label}</Text>
+    <Pressable disabled={!onPress} onPress={onPress} style={styles.panelStat}>
+      <Text style={[styles.statValue, { fontSize: wide ? 64 : 40 }, tone === 'brand' && { color: colors.brand }, tone === 'warn' && { color: colors.danger }]}>{value}</Text>
+      <Text style={[styles.statLabel, { fontSize: wide ? 20 : 15 }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -242,10 +243,9 @@ const styles = StyleSheet.create({
   tabText: { fontWeight: '700', color: colors.ink, fontSize: 13 },
   content: { padding: 16, gap: 12, width: '100%', maxWidth: 860, alignSelf: 'center' },
   section: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 6 },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  stat: { flexGrow: 1, flexBasis: '22%', minWidth: 76, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 12 },
-  statWide: { padding: 22, minHeight: 130, justifyContent: 'center' },
-  statValueWide: { fontSize: 44 },
+  panel: { flexGrow: 1, padding: 16, gap: 12, width: '100%', maxWidth: 1100, alignSelf: 'center' },
+  statGrid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'stretch', gap: 12, minHeight: 200 },
+  panelStat: { flexGrow: 1, flexBasis: '45%', backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 20, justifyContent: 'center' },
   statValue: { fontSize: 26, fontWeight: '800', color: colors.ink },
   statLabel: { fontSize: 12, color: colors.muted },
   empty: { color: colors.muted, textAlign: 'center', padding: 24 },
