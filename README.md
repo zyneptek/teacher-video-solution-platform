@@ -138,7 +138,7 @@ Görevin açık bıraktığı noktalarda alınan kararların tamamı aşağıdak
 - Öğretmene **cevap anahtarı gösterilmez**, kazanımlar gösterilir (Karar 21).
 - Hata bildirimi eki her türde eklenebilir: ekran görüntüsü (en fazla 5 MB) veya en fazla 1 dk video (en fazla 30 MB) (Karar 25).
 - Geri gönderme notu en fazla 500 karakterdir (Karar 23). Onay ve geri göndermede öğretmene bildirim gider.
-- Yönetici mobil uygulamaya girmez, yönetici web panelini kullanır (Karar 28).
+- Mobilde yönetici girişi isteğe bağlı olarak vardır, ancak yalnızca panel, onay kuyruğu ve hata bildirimleri içerir; tam yönetim web panelindedir (Karar 28).
 - Yeni soru ekleme ekranı ve kazanım ekleme/silme yapılmadı; zorunlu olan güncelleme vardır.
 
 ---
@@ -565,10 +565,11 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 - **Kırpma:** öğretmen kayıt sayfasında "Kırp"a basar, başlangıç ve bitiş kaydırıcılarıyla (veya "mevcut konumu başlangıç/bitiş yap" ile) aralığı seçer; sunucu ffmpeg ile aralığı keser (yeniden kodlama, kare hassasiyeti) ve **kırpılmış MP4 kaydın yerine geçer**; yönetici kırpılmış videoyu izler. Kırpma geri alınamaz; aradaki süre en az 1 sn olmalıdır. Kırpma da bir düzenlemedir: onaya gönderilmiş/onaylanmış atama taslağa (Atandı) döner ve yeniden gönderilmelidir (Karar 23).
 
 ### Karar 28 — Mobil uygulama (öğretmen)
-- **Ekranlar:** Giriş (öğretmen; yönetici web panelini kullanır) → Ana sayfa (atama durumu sayıları, sorular, sağ üstte bildirim zili ve çıkış) → Soru sayfası (görsel, durum, yönetici notu, kayıt izleme, yeniden kaydet, kırp, sil, onaya gönder, çapraz atamada onaylı örnek video, kazanımlar, hata bildirimi) → Kayıt stüdyosu, Kırpma, Hata bildirimi. Web ile **aynı hesap, aynı soru listesi, bildirimler ve kayıtlar**; aynı sunucu uç noktaları ve kurallar (web'den gönderilen video mobilde, mobilden gönderilen video webde ve yönetici panelinde görünür).
+- **Ekranlar:** Giriş (yönetici/öğretmen sekmeleri) → Ana sayfa (atama durumu sayıları, sorular, sağ üstte bildirim zili ve çıkış) → Soru sayfası (görsel, durum, yönetici notu, kayıt izleme, yeniden kaydet, kırp, sil, onaya gönder, çapraz atamada onaylı örnek video, kazanımlar, hata bildirimi) → Kayıt stüdyosu, Kırpma, Hata bildirimi. Web ile **aynı hesap, aynı soru listesi, bildirimler ve kayıtlar**; aynı sunucu uç noktaları ve kurallar (web'den gönderilen video mobilde, mobilden gönderilen video webde ve yönetici panelinde görünür).
 - **Oturum:** jetonlar `expo-secure-store` ile güvenli depoda tutulur; 401'de bir kez yenilenir; açıkken 30 sn'de bir hesap kontrol edilir, **silinen öğretmenin oturumu otomatik kapanır** ve giriş ekranında bilgilendirilir.
 - **Kaydet = sisteme kaydet:** stüdyoda Dur'dan sonra sunucu MP4'ü üretir ve sisteme kaydeder (galeriye indirme yoktur); izleme ekranında **Onaya gönder / Taslak olarak kaydet / Yeniden çek**. Yükleme hatasında "Tekrar dene".
 - **Tablet düzeni:** ekran genişliği 820 px ve üzerindeyse (iPad, özellikle yatayda) web'deki gibi iki sütun kullanılır: soru sayfasında görsel solda, durum/kayıt/kazanım/hata kartları sağda; düzenlemede video solda, kontroller sağda; hata bildiriminde form solda, işaretlenecek görsel sağda; ana sayfada sorular iki sütunlu ızgara. Telefonda tek sütun düzeni aynen kalır (`mobile/src/ui/layout.ts`).
+- **Yönetici girişi (isteğe bağlı, en küçük kapsam):** giriş ekranında web'deki gibi *Yönetici girişi / Öğretmen girişi* sekmeleri vardır (sunucu sekmeyi gerçek rolle karşılaştırır). Yönetici mobilde yalnızca **Panel** (sayılar), **Onay kuyruğu** (videoyu izle, onayla, notla geri gönder) ve **Hata bildirimleri** ile bildirim zilini görür; öğretmen/soru/kazanım/atama yönetimi web panelindedir (görev mobilde yönetici ekranı istemez). Yöneticiye push gönderilmez.
 - **Ekran yönü:** telefonda yalnızca kayıt stüdyosu yataydır, diğer ekranlar dikeydir; tablette serbesttir.
 - **Hata bildirimi:** web ile aynı türler ve kurallar; hatanın yeri sorunun görseline dokunarak işaretlenir; ek `expo-image-picker` ile seçilir (ekran görüntüsü veya en fazla 1 dk video; süre/boyut istemcide ve sunucuda denetlenir; sunucu dosya türünü baytlardan da anlar).
 - **Kırpma:** `@react-native-community/slider` ile başlangıç/bitiş; sunucu kırpılmış MP4'ü kaydın yerine koyar.

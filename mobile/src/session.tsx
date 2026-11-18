@@ -3,7 +3,7 @@
 // Giriş yapınca push jetonu sunucuya kaydedilir.
 import * as SecureStore from 'expo-secure-store';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { LoginResponse, UserInfo } from '@app/shared';
+import type { LoginResponse, Role, UserInfo } from '@app/shared';
 import { api, login as apiLogin, setSessionHandlers, setTokens } from './api';
 import { registerForPush } from './push';
 
@@ -13,7 +13,7 @@ const POLL_MS = 30_000;
 type Session = {
   ready: boolean;
   user: UserInfo | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, role: Role) => Promise<void>;
   logout: () => Promise<void>;
   sessionEnded: boolean;
 };
@@ -67,13 +67,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(id);
   }, [user]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const result = await apiLogin(email.trim(), password);
+  const login = useCallback(async (email: string, password: string, role: Role) => {
+    const result = await apiLogin(email.trim(), password, role);
     setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
     await store(result);
     setSessionEnded(false);
     setUser(result.user);
-    void registerForPush(); // push izni ve jeton kaydı; başarısız olursa uygulama etkilenmez
+    if (result.user.role === 'teacher') void registerForPush(); // push yalnızca öğretmenlere gider; başarısız olursa uygulama etkilenmez
   }, []);
 
   const logout = useCallback(async () => {

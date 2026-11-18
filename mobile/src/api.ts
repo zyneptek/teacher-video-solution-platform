@@ -74,10 +74,10 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   return parse<T>(response);
 }
 
-export async function login(email: string, password: string): Promise<LoginResponse> {
+export async function login(email: string, password: string, role: 'admin' | 'teacher'): Promise<LoginResponse> {
   let response;
   try {
-    response = await fetch(abs('/api/auth/login'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password, role: 'teacher' }) });
+    response = await fetch(abs('/api/auth/login'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password, role }) });
   } catch {
     throw new ApiError('Sunucuya ulaşılamadı. İnternet bağlantınızı ve sunucu adresini kontrol edin.', 0);
   }

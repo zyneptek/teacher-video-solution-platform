@@ -8,6 +8,7 @@ import { ActivityIndicator, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Nav, Route } from './src/nav';
 import { HomeScreen } from './src/screens/HomeScreen';
+import { AdminScreen } from './src/screens/AdminScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { QuestionScreen } from './src/screens/QuestionScreen';
 import { RecordRoute } from './src/screens/RecordRoute';
@@ -69,6 +70,7 @@ function Root() {
     );
   }
   if (!user) return <LoginScreen />;
+  if (user.role === 'admin') return <AdminScreen />;
 
   switch (route.name) {
     case 'question':

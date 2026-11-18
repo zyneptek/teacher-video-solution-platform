@@ -1,6 +1,7 @@
-// Öğretmen girişi (web ile aynı hesap). Mobil uygulamaya yalnızca öğretmenler girer; yönetici web panelini kullanır.
+// Giriş: "Yönetici girişi" ve "Öğretmen girişi" sekmeleri (web ile aynı hesaplar). Sunucu sekmeyi hesabın gerçek rolüyle karşılaştırır.
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import type { Role } from '@app/shared';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../session';
 import { colors } from '../theme';
@@ -11,6 +12,7 @@ export function LoginScreen() {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<Role>('teacher');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -18,11 +20,9 @@ export function LoginScreen() {
     setError(null);
     setBusy(true);
     try {
-      await login(email, password);
+      await login(email, password, role);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Giriş yapılamadı.';
-      // Sunucu "doğru sekmeyi seçin" der; mobilde sekme yok, yönetici web panelini kullanır.
-      setError(message.includes('öğretmen hesabı değil') ? 'Bu uygulama öğretmenler içindir. Yönetici paneli web uygulamasındadır.' : message);
+      setError(err instanceof Error ? err.message : 'Giriş yapılamadı.');
       setBusy(false);
     }
   }
@@ -33,7 +33,13 @@ export function LoginScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Video Çözüm Platformu</Text>
           <View style={styles.accent} />
-          <Text style={styles.sub}>Öğretmen girişi · Yönetici paneli web uygulamasındadır</Text>
+          <View style={styles.tabs}>
+            {(['admin', 'teacher'] as const).map((r) => (
+              <Pressable key={r} onPress={() => { setRole(r); setError(null); }} style={[styles.tab, role === r && styles.tabOn]} testID={`tab-${r}`}>
+                <Text style={[styles.tabText, role === r && { color: '#fff' }]}>{r === 'admin' ? 'Yönetici girişi' : 'Öğretmen girişi'}</Text>
+              </Pressable>
+            ))}
+          </View>
           {sessionEnded && <Notice>Oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.</Notice>}
           <Text style={styles.label}>E-posta</Text>
           <TextInput style={styles.input} value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="username" placeholder="ornek@okul.com" accessibilityLabel="E-posta" />
@@ -52,7 +58,10 @@ const styles = StyleSheet.create({
   card: { width: '100%', maxWidth: 420, backgroundColor: colors.white, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 20, gap: 10 },
   title: { fontSize: 22, fontWeight: '800', color: colors.ink, textAlign: 'center' },
   accent: { width: 48, height: 4, borderRadius: 2, backgroundColor: colors.brand, alignSelf: 'center' },
-  sub: { textAlign: 'center', color: colors.muted, marginBottom: 6 },
+  tabs: { flexDirection: 'row', borderRadius: 10, borderWidth: 1, borderColor: colors.sage, overflow: 'hidden', marginBottom: 6 },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', backgroundColor: colors.white },
+  tabOn: { backgroundColor: colors.ink },
+  tabText: { fontWeight: '700', color: colors.ink },
   label: { fontSize: 13, color: colors.muted, marginTop: 4 },
   input: { borderWidth: 1, borderColor: colors.sage, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 16, color: colors.ink, backgroundColor: colors.white },
 });

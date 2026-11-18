@@ -1,7 +1,7 @@
 // Öğretmen ana sayfası: atama durumu sayıları ve atanan sorular. Sağ üstte bildirim zili ve çıkış.
 // Soru atanmamışsa liste boş kalır ve kısa bir açıklama gösterilir.
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus, type NotificationInfo, type TeacherAssignment } from '@app/shared';
 import { abs, api } from '../api';
@@ -11,6 +11,7 @@ import { useSession } from '../session';
 import { colors } from '../theme';
 import { Badge, Card, ErrorText, StatusBadge } from '../ui';
 import { useWide } from '../ui/layout';
+import { NotificationSheet } from '../ui/NotificationSheet';
 
 function solutionHint(a: TeacherAssignment): string {
   if (a.status === 'assigned') return a.recording ? 'Kayıt hazır, onaya gönderilmedi' : 'Kayıt bekleniyor';
@@ -123,32 +124,7 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
         </View>
       </ScrollView>
 
-      <Modal visible={bellOpen} transparent animationType="fade" onRequestClose={() => setBellOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setBellOpen(false)}>
-          <Pressable style={[styles.sheet, { marginTop: insets.top + 56 }]} onPress={() => undefined}>
-            <View style={styles.sheetHead}>
-              <Text style={{ fontWeight: '800', fontSize: 16, color: colors.ink }}>Bildirimler</Text>
-              {unread > 0 && (
-                <Pressable onPress={() => void readAll()}>
-                  <Text style={{ color: colors.brandDark, fontWeight: '700' }}>Tümünü okundu yap</Text>
-                </Pressable>
-              )}
-            </View>
-            <ScrollView style={{ maxHeight: 420 }}>
-              {!notifications || notifications.length === 0 ? (
-                <Text style={{ color: colors.muted, padding: 8 }}>Henüz bildiriminiz yok.</Text>
-              ) : (
-                notifications.map((n) => (
-                  <Pressable key={n.id} onPress={() => void openNotification(n)} style={[styles.notif, !n.readAt && styles.notifUnread]} testID={n.readAt ? 'notif-read' : 'notif-unread'}>
-                    <Text style={[{ color: colors.ink, fontSize: 14 }, !n.readAt && { fontWeight: '700' }]}>{n.text}</Text>
-                    <Text style={styles.small}>{new Date(n.createdAt).toLocaleString('tr-TR')}</Text>
-                  </Pressable>
-                ))
-              )}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <NotificationSheet visible={bellOpen} onClose={() => setBellOpen(false)} notifications={notifications} unread={unread} onOpen={(n) => void openNotification(n)} onReadAll={() => void readAll()} />
     </View>
   );
 }
@@ -174,9 +150,4 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   thumb: { width: 72, height: 56, backgroundColor: '#fff' },
   small: { fontSize: 12, color: colors.muted },
-  backdrop: { flex: 1, backgroundColor: 'rgba(26,14,28,0.35)', alignItems: 'flex-end', paddingHorizontal: 12 },
-  sheet: { width: '100%', maxWidth: 420, backgroundColor: '#fff', borderRadius: 14, padding: 14, gap: 8 },
-  sheetHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  notif: { padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.line, marginBottom: 6, gap: 2 },
-  notifUnread: { borderLeftWidth: 4, borderLeftColor: colors.brand, backgroundColor: '#fff7f3' },
 });
