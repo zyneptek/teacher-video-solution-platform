@@ -1,21 +1,50 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { DrawingEvent, InkController, Tool } from '@app/shared';
 import { Board } from './src/studio/Board';
 
 // Geçici deneme ekranı: Skia tahtasını denemek için. Gerçek ekranlar (giriş, dashboard, stüdyo) sonra gelecek.
 
-function ToolButton({ label, selected, onPress }: { label: string; selected?: boolean; onPress: () => void }) {
+// compact: yatay modda yalnızca emoji gösteren küçük yuvarlak düğme.
+function ToolButton({
+  label,
+  emoji,
+  selected,
+  compact,
+  onPress,
+}: {
+  label: string;
+  emoji?: string;
+  selected?: boolean;
+  compact?: boolean;
+  onPress: () => void;
+}) {
+  if (compact) {
+    return (
+      <Pressable
+        accessibilityLabel={label}
+        onPress={onPress}
+        style={[styles.emojiButton, selected && styles.emojiButtonSelected]}
+      >
+        <Text style={styles.emojiText}>{emoji}</Text>
+      </Pressable>
+    );
+  }
   return (
     <Pressable onPress={onPress} style={[styles.button, selected && styles.buttonSelected]}>
-      <Text style={[styles.buttonText, selected && styles.buttonTextSelected]}>{label}</Text>
+      <Text style={[styles.buttonText, selected && styles.buttonTextSelected]}>
+        {emoji ? `${emoji}  ` : ''}
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
-export default function App() {
+function Studio() {
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const landscape = width > height;
   const [tool, setTool] = useState<Tool>('pen');
   const [counts, setCounts] = useState({ strokes: 0, erases: 0 });
@@ -67,8 +96,15 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Ekran dönse de aynı bileşen ağacı korunur (Board yeniden oluşmaz, çizimler kaybolmaz);
+  // yalnızca stiller değişir.
   return (
-    <View style={[styles.container, landscape ? styles.containerLandscape : styles.containerPortrait]}>
+    <View
+      style={[
+        styles.container,
+        landscape ? styles.containerLandscape : { paddingTop: insets.top + 8, paddingHorizontal: 8, gap: 8 },
+      ]}
+    >
       <View style={landscape ? styles.boardLandscape : styles.boardPortrait}>
         <Board
           imageSource={require('./assets/dev/sample-question.jpg')}
@@ -80,31 +116,55 @@ export default function App() {
           }}
         />
       </View>
-      <View style={landscape ? styles.toolbarLandscape : styles.toolbarPortrait}>
-        <ToolButton label="✏️  Kalem" selected={tool === 'pen'} onPress={() => setTool('pen')} />
-        <ToolButton label="🧽  Silgi" selected={tool === 'eraser'} onPress={() => setTool('eraser')} />
-        <Text style={styles.counts}>
-          Çizgi: {counts.strokes}
-          {'\n'}Silme: {counts.erases}
-        </Text>
-        <ToolButton label="Deneme çizimi" onPress={drawDemo} />
-        <ToolButton label="Çizgiyi sil (uç)" onPress={eraseFirstLineTip} />
+      <View style={landscape ? [styles.floatingTools, { right: Math.max(insets.right, 12) + 8 }] : styles.toolbarPortrait}>
+        <ToolButton label="Kalem" emoji="✏️" selected={tool === 'pen'} compact={landscape} onPress={() => setTool('pen')} />
+        <ToolButton label="Silgi" emoji="🧽" selected={tool === 'eraser'} compact={landscape} onPress={() => setTool('eraser')} />
+        {!landscape && (
+          <>
+            <Text style={styles.counts}>
+              Çizgi: {counts.strokes}
+              {'\n'}Silme: {counts.erases}
+            </Text>
+            <ToolButton label="Deneme çizimi" onPress={drawDemo} />
+            <ToolButton label="Çizgiyi sil (uç)" onPress={eraseFirstLineTip} />
+          </>
+        )}
       </View>
-      <StatusBar style="auto" />
+      {/* Yatayda soru tam ekran: durum çubuğu da gizlenir. */}
+      <StatusBar hidden={landscape} style="auto" />
     </View>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <Studio />
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f4f4f5' },
   // Dikey: tahta üstte (oranını korur), araçlar altta.
-  containerPortrait: { paddingTop: 56, paddingHorizontal: 8, gap: 8 },
   boardPortrait: { width: '100%', aspectRatio: 16 / 9 },
   toolbarPortrait: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  // Yatay: tahta solda kalan alana sığar, araçlar sağda dikey sütun (kaydırma gerekmez).
-  containerLandscape: { flexDirection: 'row', paddingHorizontal: 48, paddingVertical: 8, gap: 12 },
+  // Yatay: tahta tüm ekrana sığar; kalem/silgi tahtanın sağ kenarında küçük emoji düğmeleri olarak durur.
+  containerLandscape: { padding: 0 },
   boardLandscape: { flex: 1 },
-  toolbarLandscape: { width: 150, justifyContent: 'center', gap: 8 },
+  floatingTools: { position: 'absolute', top: 0, bottom: 0, justifyContent: 'center', gap: 10 },
+  emojiButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderWidth: 1,
+    borderColor: '#d4d4d8',
+  },
+  emojiButtonSelected: { borderColor: '#2563eb', borderWidth: 3 },
+  emojiText: { fontSize: 20 },
   button: { backgroundColor: '#ffffff', borderRadius: 8, borderWidth: 1, borderColor: '#d4d4d8', paddingVertical: 10, paddingHorizontal: 14 },
   buttonSelected: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
   buttonText: { fontSize: 15, color: '#18181b' },
