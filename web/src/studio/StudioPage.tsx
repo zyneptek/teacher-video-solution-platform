@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { VIDEO, type DrawingEvent, type Tool } from '@app/shared';
 import { Board } from './Board';
 import { api } from '../auth/session';
-import { renderOnServer, uploadRecording } from './api';
+import { uploadRecording } from './api';
 import { StudioControls } from './StudioControls';
 import { useCamera } from './useCamera';
 import { CameraPreview } from './CameraPreview';
@@ -17,8 +17,8 @@ function formatTime(ms: number): string {
 }
 
 // Geçici stüdyo sayfası: kayıt akışını denemek için. Gerçek ekranlar giriş ve yönlendirme eklenince gelecek.
-// assignmentId verilirse (öğretmenin soru sayfasından) kayıt sisteme kaydedilir; verilmezse geçici geliştirme akışı çalışır.
-function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl?: string; assignmentId?: string }) {
+// Öğretmenin soru sayfasından açılır: soru görseli otomatik yüklenir, kayıt sisteme kaydedilir.
+function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl: string; assignmentId: string }) {
   const recorder = useRecorder();
   const camera = useCamera();
   const [tool, setTool] = useState<Tool>('pen');
@@ -26,7 +26,7 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl?: str
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>('recording');
   const [boardKey, setBoardKey] = useState(0);
-  const [video, setVideo] = useState<{ url: string; sizeKb: number; renderMs: number } | null>(null);
+  const [video, setVideo] = useState<{ url: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const eventsRef = useRef<DrawingEvent[]>([]);
   // Yüklenmeyi bekleyen kayıt: yükleme başarısız olursa "Tekrar dene" ile yeniden gönderilir (kayıt kaybolmaz).
@@ -65,14 +65,9 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl?: str
     setMessage(null);
     setPhase('rendering');
     try {
-      if (assignmentId) {
-        const saved = await uploadRecording(assignmentId, { audio: pending.audio, camera: pending.camera, events: eventsRef.current, durationMs: pending.durationMs });
-        if (!saved.recording) throw new Error('Kayıt kaydedilemedi.');
-        setVideo({ url: saved.recording.videoUrl, sizeKb: 0, renderMs: 0 });
-      } else {
-        const { videoUrl, sizeKb, renderMs } = await renderOnServer({ image: imageFile, audio: pending.audio, camera: pending.camera, events: eventsRef.current, durationMs: pending.durationMs });
-        setVideo({ url: videoUrl, sizeKb, renderMs });
-      }
+      const saved = await uploadRecording(assignmentId, { audio: pending.audio, camera: pending.camera, events: eventsRef.current, durationMs: pending.durationMs });
+      if (!saved.recording) throw new Error('Kayıt kaydedilemedi.');
+      setVideo({ url: saved.recording.videoUrl });
       pendingRef.current = null;
       setPhase('done');
     } catch (err) {
@@ -82,7 +77,6 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl?: str
   }
 
   async function submitForReview() {
-    if (!assignmentId) return;
     setSending(true);
     setMessage(null);
     try {
@@ -107,7 +101,6 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl?: str
 
   // Soru sayfasından gelindiyse soru görseli otomatik yüklenir (görsel seçme alanı gösterilmez).
   useEffect(() => {
-    if (!questionImageUrl) return;
     let cancelled = false;
     fetch(questionImageUrl)
       .then((r) => r.blob())
@@ -129,15 +122,7 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl?: str
 
   return (
     <main style={{ padding: 16, maxWidth: 1312, margin: '0 auto' }}>
-      {!questionImageUrl && <h1 style={{ fontSize: 20 }}>Stüdyo denemesi</h1>}
-
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-        {!questionImageUrl && (<input
-          type="file"
-          accept="image/jpeg,image/png"
-          disabled={active || phase !== 'recording'}
-          onChange={(e) => handleFile(e.target.files?.[0])}
-        />)}
         <StudioControls
           tool={tool}
           onToolChange={setTool}
@@ -177,7 +162,7 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl?: str
           {message}
         </p>
       )}
-      {phase === 'rendering' && <p data-testid="rendering">{assignmentId ? 'Video hazırlanıyor ve sisteme kaydediliyor…' : 'Video hazırlanıyor…'}</p>}
+      {phase === 'rendering' && <p data-testid="rendering">Video hazırlanıyor ve sisteme kaydediliyor…</p>}
       {phase === 'failed' && (
         <p style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="primary" onClick={() => void upload()} data-testid="retry-upload">Tekrar dene</button>
@@ -187,32 +172,15 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl?: str
 
       {phase === 'done' && video ? (
         <section>
-          {assignmentId ? (
-            <>
-              <p data-testid="done" className="notice">Kaydınız sisteme kaydedildi. İsterseniz izleyip onaya gönderebilir, isterseniz taslak olarak bırakabilirsiniz.</p>
-              <VideoPreview src={video.url} />
-              <p style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                <button type="button" className="primary" onClick={() => void submitForReview()} disabled={sending} data-testid="submit-review">
-                  {sending ? 'Gönderiliyor…' : 'Onaya gönder'}
-                </button>
-                <a href={`#/sorularim/${assignmentId}`} data-testid="save-draft">Taslak olarak kaydet</a>
-                <button type="button" onClick={handleNewRecording}>Yeniden çek</button>
-              </p>
-            </>
-          ) : (
-            <>
-              <p data-testid="done">
-                Önizleme (MP4, {video.sizeKb} KB, sunucuda {(video.renderMs / 1000).toFixed(1)} sn’de üretildi)
-              </p>
-              <VideoPreview src={video.url} />
-              <p style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <a data-testid="save" href={video.url} download="cozum-videosu.mp4" style={{ padding: '4px 12px', border: '1px solid #767676', borderRadius: 4, color: 'inherit', textDecoration: 'none' }}>
-                  Kaydet (MP4 indir)
-                </a>
-                <button onClick={handleNewRecording}>Yeni kayıt</button>
-              </p>
-            </>
-          )}
+          <p data-testid="done" className="notice">Kaydınız sisteme kaydedildi. İsterseniz izleyip onaya gönderebilir, isterseniz taslak olarak bırakabilirsiniz.</p>
+          <VideoPreview src={video.url} />
+          <p style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button type="button" className="primary" onClick={() => void submitForReview()} disabled={sending} data-testid="submit-review">
+              {sending ? 'Gönderiliyor…' : 'Onaya gönder'}
+            </button>
+            <a href={`#/sorularim/${assignmentId}`} data-testid="save-draft">Taslak olarak kaydet</a>
+            <button type="button" onClick={handleNewRecording}>Yeniden çek</button>
+          </p>
         </section>
       ) : (
         <div style={{ position: 'relative', maxWidth: 1280 }}>

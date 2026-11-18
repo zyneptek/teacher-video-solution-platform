@@ -25,7 +25,21 @@
       "expo-audio",
       "expo-video",
       "expo-asset",
-      ["expo-camera", { "cameraPermission": "Çözüm videosuna küçük bir kamera görüntüsü eklemek için kameraya erişilir.", "recordAudioAndroid": false }]
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Çözüm videosuna küçük bir kamera görüntüsü eklemek için kameraya erişilir.",
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Hata bildirimine ekran görüntüsü veya video eklemek için galerinize erişilir."
+        }
+      ],
+      "expo-notifications"
     ]
   }
 }

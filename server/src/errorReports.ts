@@ -154,7 +154,8 @@ teacherErrorReportsRouter.post('/:assignmentId/error-reports', upload.single('at
 
   let attachmentType: 'image' | 'video' | null = null;
   if (file) {
-    const mime = file.mimetype;
+    // Bazı istemciler (mobil) dosya türünü bildirmeyebilir: tür genel ise ilk baytlardan belirlenir.
+    const mime = file.mimetype && file.mimetype !== 'application/octet-stream' ? file.mimetype : sniffBuffer(file.buffer);
     if ((ERROR_REPORT_LIMITS.imageTypes as readonly string[]).includes(mime)) {
       attachmentType = 'image';
       if (file.size > ERROR_REPORT_LIMITS.imageBytes) {
@@ -216,6 +217,15 @@ adminErrorReportsRouter.get('/', async (req, res) => {
     res.status(500).json({ error: 'Hata bildirimleri yüklenemedi.' });
   }
 });
+
+function sniffBuffer(head: Buffer): string {
+  if (head[0] === 0x89 && head.toString('latin1', 1, 4) === 'PNG') return 'image/png';
+  if (head[0] === 0xff && head[1] === 0xd8) return 'image/jpeg';
+  if (head.toString('latin1', 0, 4) === 'RIFF' && head.toString('latin1', 8, 12) === 'WEBP') return 'image/webp';
+  if (head[0] === 0x1a && head[1] === 0x45 && head[2] === 0xdf && head[3] === 0xa3) return 'video/webm';
+  if (head.toString('latin1', 4, 8) === 'ftyp') return head.toString('latin1', 8, 10) === 'qt' ? 'video/quicktime' : 'video/mp4';
+  return 'application/octet-stream';
+}
 
 // Dosyanın ilk baytlarından içerik türünü belirler (yüklenirken tür ayrıca saklanmadığı için).
 async function sniffContentType(file: string): Promise<string> {

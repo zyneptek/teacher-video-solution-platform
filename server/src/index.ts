@@ -13,7 +13,6 @@ import { recordingVideosRouter } from './recordings.js';
 import { adminErrorReportsRouter, errorAttachmentsRouter, teacherErrorReportsRouter } from './errorReports.js';
 import { notificationsRouter } from './notifications.js';
 import { pushTokensRouter } from './routes/pushTokens.js';
-import { devRenderRouter } from './routes/devRender.js';
 
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
@@ -38,11 +37,6 @@ app.use('/api/admin/dashboard', adminDashboardRouter);
 app.use('/api/admin/questions', adminQuestionsRouter);
 app.use('/api/admin/outcomes', adminOutcomesRouter);
 app.use('/api/admin/teachers', adminTeachersRouter);
-
-// Geçici: stüdyo denemesi için. Yalnızca geliştirme ortamında açılır.
-if (process.env.NODE_ENV !== 'production') {
-  app.use('/api/dev', devRenderRouter);
-}
 
 // Yükleme hataları (örneğin dosya çok büyük) 400 döner.
 app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {

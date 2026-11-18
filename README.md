@@ -319,29 +319,17 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 - Sunucuda MP4 üretimi, kırpma (baştan/sondan)
 - **MVP sonrası:** kamera bindirmesi, ek renk/kalınlık
 
-## Bekleyen kararlar
+## Açık noktalar ve kalan işler
 
-Aşağıdaki konularda karar verildikçe bu bölüm "Mimari kararlar"a taşınacaktır:
+Görevin açık bıraktığı noktaların çoğu karara bağlandı (Karar 15–27). **Hâlâ açık olanlar** (varsayılan davranış yazılıdır, değiştirilebilir):
 
-- Push servisi (Expo Push öneriliyor; gerçek cihaz gerektirir)
-- Düzenleme veya silme sonrası atama durumu
-- Çapraz atanan öğretmenin hangi videoları göreceği
-- Öğretmenin cevap anahtarını ve kazanımları görüp görmeyeceği
-- Hata bildirimi ekleri (hangi türlerde, dosya türü ve boyut sınırı)
-- Branşı değişen öğretmenin mevcut atamaları
-- Geri gönderme notu uzunluğu, onay/geri gönderme sonrası öğretmen bildirimi
-- Yeni soru ekleme ekranı, kazanım ekleme/silme
-- Kamera bindirmesi: konum, boyut ve şekil (video çıktısının çözünürlüğü ve en-boy oranı Karar 11'de belirlendi)
+- **Branşı değişen öğretmenin mevcut atamaları:** şimdilik korunur (branş serbestçe değiştirilebilir).
+- **Yeni soru ekleme ekranı** ve **kazanım ekleme/silme:** yapılmadı; demo "paketten soru açma" ile yapılır, kazanım için zorunlu olan güncelleme vardır.
+- **Arka plana geçiş:** kayıt sırasında uygulama/sekme arka plana alınırsa, tarayıcıda ses kaydı sürebilir; mobilde işletim sistemi kaydı durdurabilir (gerçek cihazda ayrıca denenmelidir).
+- **Doğrulanamayanlar (simülatör/başsız tarayıcı sınırı):** gerçek mikrofonla ses senkronu, gerçek kamera ve kamera+mikrofonun iOS'ta birlikte çalışması, Apple Pencil, gerçek cihazda push.
 
-## Yapılacaklar
-
-Sırayla ele alınacak işler ve notlar:
-
-1. **Kaydet = sisteme kaydet.** Şu an mobilde **Kaydet** videoyu telefonun galerisine, webde bilgisayara indirir; bu geçicidir. Asıl davranış: video **uygulamaya (sisteme) kaydedilecek**, yani atamaya bağlı olarak Supabase Storage'a ve `recordings` tablosuna yazılacak, ardından öğretmen onaya gönderecek. Bunun için önce ekranların (giriş, dashboard, soru/atama ekranları) hazır olması gerekir. Sistemle kayıt gelince geçici `/api/dev/*` uç noktaları kaldırılacaktır.
-2. **Tablet kalemi (Apple Pencil, S Pen) ile çizim.** Kalem dokunuşları React Native'de normal dokunma olarak gelir ve büyük olasılıkla şimdiden çalışır; ancak simülatörde denenemez. Gerçek tabletle doğrulanmalı; gerekirse avuç içi reddi (kalem varken parmak dokunuşlarını yok sayma) ve isteğe bağlı olarak basınca göre çizgi kalınlığı eklenecek.
-3. **Kamera (tablet ve bilgisayar).** Öğretmen kamerayı isteğe bağlı açabilecek: görüntü kayıt ekranında gösterilecek ve **yalnızca kamera açıksa** videoya küçük bir bindirme olarak eklenecek (sunucuda ffmpeg ile). Kamera izni verilmezse veya kamera kapalıysa kayıt ekran ve sesle tamamlanır. Webde `getUserMedia`, mobilde `expo-camera`. Duraklat/devam sırasında kamera klibinin nasıl bölüneceği ve mikrofonla birlikte kullanımı (özellikle iOS'ta) önce denenmelidir. Simülatörde kamera yoktur; gerçek cihaz veya webde test edilir.
-4. Webde kayıttan önce çizim (mobille tutarlılık), kayıt kırpma ve düzenleme.
-5. Planın devamı: giriş ve öğretmen yönetimi (Supabase Auth), soru/kazanım/cevap anahtarı yönetimi, atama, e-posta ve push bildirimleri, dashboard'lar, hata bildirimi, onay akışı ve çapraz atama, uçtan uca test, demo videosu ve teslim.
+### Geçici uç noktalar kaldırıldı
+Kimlik doğrulamasız `/api/dev/*` uç noktaları, atamaya bağlı gerçek yükleme (`POST /api/teacher/assignments/:id/recording`) yazıldığı için **kaldırıldı**. `npm run render:demo` yalnızca renderer'ı elle denemek içindir.
 
 ### Kamera bindirmesi ve tablet kalemi (uygulandı)
 - Kamera yalnızca **web ve tablette** vardır (telefonda düğme çıkmaz); isteğe bağlıdır. Açıksa tahtanın sağ altında 240x180 px dikdörtgen olarak hem kayıt ekranında görünür hem de sunucuda ffmpeg ile videoya bindirilir. İzin yoksa/kamera kapalıysa ekran ve sesle devam eder.
@@ -430,3 +418,13 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 ### Karar 27 — Çapraz atama ve kırpma
 - **Çapraz atama:** yönetici, videosu olan bir soruyu **aynı branştan başka bir öğretmene** de atayabilir (atama formu yalnızca sorunun branşındaki öğretmenleri listeler; her öğretmen kendi kaydını üretir). Yeni öğretmen soru sayfasında, aynı sorunun başka öğretmenlerce üretilmiş ve **yönetici tarafından onaylanmış** videolarını "Bu soru için onaylanmış çözüm videosu" kartında izleyebilir ve kendi kaydını üretip onaya gönderebilir. **Açık nokta kararı:** yalnızca **onaylanmış** videolar gösterilir (onaysız/geri gönderilmiş bir video referans olarak gösterilmez). Öğretmen kendi videosunu referans olarak görmez. Her atamanın durumu (Atandı, Onaya gönderildi, Onaylandı, Geri gönderildi) hem öğretmene hem yöneticiye görünür.
 - **Kırpma:** öğretmen kayıt sayfasında "Kırp"a basar, başlangıç ve bitiş kaydırıcılarıyla (veya "mevcut konumu başlangıç/bitiş yap" ile) aralığı seçer; sunucu ffmpeg ile aralığı keser (yeniden kodlama, kare hassasiyeti) ve **kırpılmış MP4 kaydın yerine geçer**; yönetici kırpılmış videoyu izler. Kırpma geri alınamaz; aradaki süre en az 1 sn olmalıdır. Kırpma da bir düzenlemedir: onaya gönderilmiş/onaylanmış atama taslağa (Atandı) döner ve yeniden gönderilmelidir (Karar 23).
+
+### Karar 28 — Mobil uygulama (öğretmen)
+- **Ekranlar:** Giriş (öğretmen; yönetici web panelini kullanır) → Ana sayfa (atama durumu sayıları, sorular, sağ üstte bildirim zili ve çıkış) → Soru sayfası (görsel, durum, yönetici notu, kayıt izleme, yeniden kaydet, kırp, sil, onaya gönder, çapraz atamada onaylı örnek video, kazanımlar, hata bildirimi) → Kayıt stüdyosu, Kırpma, Hata bildirimi. Web ile **aynı hesap, aynı soru listesi, bildirimler ve kayıtlar**; aynı sunucu uç noktaları ve kurallar (web'den gönderilen video mobilde, mobilden gönderilen video webde ve yönetici panelinde görünür).
+- **Oturum:** jetonlar `expo-secure-store` ile güvenli depoda tutulur; 401'de bir kez yenilenir; açıkken 30 sn'de bir hesap kontrol edilir, **silinen öğretmenin oturumu otomatik kapanır** ve giriş ekranında bilgilendirilir.
+- **Kaydet = sisteme kaydet:** stüdyoda Dur'dan sonra sunucu MP4'ü üretir ve sisteme kaydeder (galeriye indirme yoktur); izleme ekranında **Onaya gönder / Taslak olarak kaydet / Yeniden çek**. Yükleme hatasında "Tekrar dene".
+- **Ekran yönü:** telefonda yalnızca kayıt stüdyosu yataydır, diğer ekranlar dikeydir; tablette serbesttir.
+- **Hata bildirimi:** web ile aynı türler ve kurallar; hatanın yeri sorunun görseline dokunarak işaretlenir; ek `expo-image-picker` ile seçilir (ekran görüntüsü veya en fazla 1 dk video; süre/boyut istemcide ve sunucuda denetlenir; sunucu dosya türünü baytlardan da anlar).
+- **Kırpma:** `@react-native-community/slider` ile başlangıç/bitiş; sunucu kırpılmış MP4'ü kaydın yerine koyar.
+- **Push:** giriş yapınca izin istenir ve Expo push jetonu `POST /api/push-token` ile kaydedilir; bildirime tıklanınca ilgili soru açılır. **Kurulum notu:** Expo Go'da push yalnızca gerçek cihazda ve (iOS'ta) Expo hesabına bağlı proje kimliğiyle çalışır; simülatörde izin penceresi çıkar ama jeton alınamaz ve sessizce atlanır. Tam doğrulama için gerçek cihaz gerekir.
+- **Geliştirici doğrulama yardımcıları** (üretimde etkisizdir): `EXPO_PUBLIC_DEV_EMAIL/PASSWORD/AUTOLOGIN=1` otomatik giriş, `EXPO_PUBLIC_DEV_OPEN=question|record|trim|report` ilk atamayı doğrudan açar (dokunma enjekte edilemeyen simülatör doğrulaması için).

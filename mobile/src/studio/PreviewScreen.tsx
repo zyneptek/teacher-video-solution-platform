@@ -1,4 +1,4 @@
-// Kayıt önizlemesi: izle (oynat/duraklat, baştan oynat, konum çubuğu) ve kaydet.
+// Kayıt önizlemesi: izle (oynat/duraklat, baştan oynat, konum çubuğu); onaya gönder, taslak olarak bırak veya yeniden çek.
 // Video, sunucunun ürettiği MP4'tür ve bir adresten oynatılır.
 import { useEvent } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -8,15 +8,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PauseIcon, PlayIcon } from './icons';
 import { RoundButton, formatTime } from './StudioControls';
 
-export type SaveState = { status: 'idle' | 'saving' | 'saved' | 'error'; message?: string };
-
 type Props = {
   videoUrl: string;
   landscape: boolean;
-  autoPlay?: boolean;
-  saveState: SaveState;
-  onSave: () => void;
-  onNew: () => void;
+  sending: boolean;
+  message: string | null;
+  onSubmit: () => void;
+  onDraft: () => void;
+  onRetake: () => void;
 };
 
 function Pill({ label, disabled, onPress }: { label: string; disabled?: boolean; onPress: () => void }) {
@@ -27,11 +26,10 @@ function Pill({ label, disabled, onPress }: { label: string; disabled?: boolean;
   );
 }
 
-export function PreviewScreen({ videoUrl, landscape, autoPlay, saveState, onSave, onNew }: Props) {
+export function PreviewScreen({ videoUrl, landscape, sending, message, onSubmit, onDraft, onRetake }: Props) {
   const insets = useSafeAreaInsets();
   const player = useVideoPlayer(videoUrl, (p) => {
     p.loop = false;
-    if (autoPlay) p.play();
   });
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
   const [time, setTime] = useState({ current: 0, duration: 0 });
@@ -65,7 +63,6 @@ export function PreviewScreen({ videoUrl, landscape, autoPlay, saveState, onSave
   }
 
   const progress = time.duration > 0 ? Math.min(1, time.current / time.duration) : 0;
-  const saving = saveState.status === 'saving';
 
   const controls = (
     <View style={[landscape ? styles.controlsLandscape : styles.controlsPortrait, landscape && { paddingBottom: insets.bottom + 8, paddingHorizontal: Math.max(insets.left, insets.right) + 16 }]}>
@@ -88,11 +85,11 @@ export function PreviewScreen({ videoUrl, landscape, autoPlay, saveState, onSave
         </Text>
       </View>
       <View style={styles.row}>
-        <Pill label={saving ? 'Kaydediliyor…' : 'Kaydet'} disabled={saving} onPress={onSave} />
-        <Pill label="Yeni kayıt" onPress={onNew} />
-        {saveState.message && (
-          <Text style={[styles.message, saveState.status === 'error' && styles.messageError, landscape && styles.timeLandscape]}>{saveState.message}</Text>
-        )}
+        <Pill label={sending ? 'Gönderiliyor…' : 'Onaya gönder'} disabled={sending} onPress={onSubmit} />
+        <Pill label="Taslak olarak kaydet" disabled={sending} onPress={onDraft} />
+        <Pill label="Yeniden çek" disabled={sending} onPress={onRetake} />
+        <Text style={[styles.message, landscape && styles.timeLandscape]}>Kaydınız sisteme kaydedildi.</Text>
+        {message && <Text style={[styles.messageError, landscape && styles.timeLandscape]}>{message}</Text>}
       </View>
     </View>
   );
