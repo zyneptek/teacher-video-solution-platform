@@ -3,7 +3,9 @@
 // profili olmayan kullanıcı 401 alır; istemciler 401'de oturumu kapatır. Böylece silinen öğretmenin
 // açık oturumu bir sonraki istekte (veya istemcinin kısa aralıklı kontrolünde) sonlanır.
 import type { NextFunction, Request, Response } from 'express';
+import { createRemoteJWKSet, errors as joseErrors, jwtVerify } from 'jose';
 import type { Branch, Role, UserInfo } from '@app/shared';
+import { config } from './config.js';
 import { pool } from './db.js';
 import { supabase } from './supabase.js';
 
@@ -29,6 +31,37 @@ export async function findActiveProfile(authUserId: string): Promise<ProfileRow 
   return rows[0] ?? null;
 }
 
+// Jeton, Supabase'in açık anahtarlarıyla (JWKS, önbellekli) sunucuda yerel olarak doğrulanır; her istekte
+// Supabase'e ağ çağrısı yapılmaz. Yerel doğrulama başarısız olursa (örneğin farklı imza türü) Supabase'e sorulur.
+const jwks = createRemoteJWKSet(new URL(`${config.supabaseUrl}/auth/v1/.well-known/jwks.json`));
+
+async function authUserIdFromToken(token: string): Promise<string | null> {
+  try {
+    const { payload } = await jwtVerify(token, jwks, { issuer: `${config.supabaseUrl}/auth/v1`, audience: 'authenticated' });
+    return typeof payload.sub === 'string' ? payload.sub : null;
+  } catch (err) {
+    if (err instanceof joseErrors.JWTExpired) return null; // süresi dolmuş: istemci yeniler
+    const { data, error } = await supabase.auth.getUser(token);
+    return error || !data.user ? null : data.user.id;
+  }
+}
+
+// Profil kısa süre önbelleğe alınır (silinen hesap en geç bu süre sonra reddedilir).
+const PROFILE_TTL_MS = 10_000;
+const profileCache = new Map<string, { profile: ProfileRow | null; at: number }>();
+
+export function forgetProfile(authUserId: string | null): void {
+  if (authUserId) profileCache.delete(authUserId);
+}
+
+async function cachedActiveProfile(authUserId: string): Promise<ProfileRow | null> {
+  const hit = profileCache.get(authUserId);
+  if (hit && Date.now() - hit.at < PROFILE_TTL_MS) return hit.profile;
+  const profile = await findActiveProfile(authUserId);
+  profileCache.set(authUserId, { profile, at: Date.now() });
+  return profile;
+}
+
 declare module 'express-serve-static-core' {
   interface Request {
     user?: UserInfo;
@@ -45,12 +78,12 @@ export function requireAuth(...roles: Role[]) {
       return;
     }
     try {
-      const { data, error } = await supabase.auth.getUser(token);
-      if (error || !data.user) {
+      const authUserId = await authUserIdFromToken(token);
+      if (!authUserId) {
         res.status(401).json({ error: 'Oturum geçersiz veya süresi dolmuş.' });
         return;
       }
-      const profile = await findActiveProfile(data.user.id);
+      const profile = await cachedActiveProfile(authUserId);
       if (!profile) {
         res.status(401).json({ error: 'Hesap kapatılmış veya bulunamadı.' });
         return;

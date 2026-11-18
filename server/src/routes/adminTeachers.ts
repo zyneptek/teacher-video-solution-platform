@@ -2,7 +2,7 @@
 // Hesabı yönetici oluşturur; e-posta ve şifreyi o girer. Auth kullanıcısı Supabase'de, profil satırı veritabanında tutulur.
 import { Router } from 'express';
 import { BRANCHES, type Branch, type TeacherInfo } from '@app/shared';
-import { requireAuth } from '../auth.js';
+import { forgetProfile, requireAuth } from '../auth.js';
 import { pool } from '../db.js';
 import { supabase } from '../supabase.js';
 
@@ -170,6 +170,7 @@ adminTeachersRouter.delete('/:id', async (req, res) => {
       res.status(404).json({ error: 'Öğretmen bulunamadı.' });
       return;
     }
+    forgetProfile(row.auth_user_id);
     if (row.auth_user_id) await supabase.auth.admin.deleteUser(row.auth_user_id);
     res.json({ ok: true });
   } catch (err) {

@@ -381,3 +381,11 @@ Sırayla ele alınacak işler ve notlar:
 **E-posta yaklaşımı ve kurulumu (Nodemailer + Gmail SMTP):** e-posta içeriği branş, soru ve kazanım kodlarını ve uygulama bağlantısını içerir. Kurulum: Google Hesabı'nda 2 Adımlı Doğrulama açık olmalı; Güvenlik > Uygulama şifreleri'nden 16 haneli bir şifre üretilir ve `server/.env` dosyasına `SMTP_USER` (Gmail adresi) ile `SMTP_PASS` (uygulama şifresi, normal şifre değil) yazılır; isteğe bağlı `MAIL_FROM` ve `APP_URL` tanımlanır (`server/.env.example`). Bu değerler tanımlı değilse atama yine yapılır ve ekranda "E-posta ayarı yapılmamış" uyarısı görünür. Test için alıcı olarak kendi e-posta adreslerinizle öğretmen oluşturulabilir.
 
 **Push yaklaşımı ve kurulumu (Expo Push):** mobil uygulama öğretmen girişi yapınca Expo push jetonunu `POST /api/push-token` ile sunucuya kaydeder (`push_tokens` tablosu, bir öğretmenin birden fazla cihazı olabilir). Atamada sunucu o öğretmenin jetonlarına Expo Push API'siyle (`exp.host`) bildirim gönderir; jeton yoksa (uygulama yüklü değil) sessizce geçilir. Expo Go'da ek anahtar gerekmez. Sunucu tarafı hazırdır; jetonu alıp gönderen mobil kısım mobil adımında yapılacak. Not: push, simülatörde değil gerçek cihazda denenebilir.
+
+### Karar 20 — Hız iyileştirmeleri
+Veritabanı ve Storage uzak (Supabase) olduğundan her ağ gidiş-dönüşü ~0,3 sn tutuyordu; liste 3,5 sn + görseller 2 sn sürüyordu. Yapılanlar:
+- **Jeton yerel doğrulanır:** erişim jetonu Supabase'in açık anahtarlarıyla (JWKS, önbellekli) sunucuda doğrulanır; her istekte Supabase Auth'a gidilmez. Profil 10 sn önbelleğe alınır (silinen hesap en geç 10 sn sonra reddedilir; silme anında önbellek temizlenir).
+- **Tek sorgu:** soru listesi, kazanımları ve atama sayılarıyla tek SQL sorgusunda okunur.
+- **Görseller sunucudan:** soru görselleri Storage'dan bir kez alınıp sunucu belleğinde tutulur (açılışta ısıtılır) ve HMAC imzalı, süreli, tarayıcı önbellekli bir adresle (`/api/question-images/...`) verilir. Görsel hâlâ özel bucket'tadır; adres yalnızca yetkili kullanıcıya üretilir.
+- **Ekran:** soru listesi bellekte tutulur; listeden detaya geçişte ekran hemen dolar, arkada yenilenir.
+Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.

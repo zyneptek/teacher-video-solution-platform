@@ -7,12 +7,15 @@ import { AssignForm } from './AssignForm';
 import { AssignmentsTable } from './AssignmentsTable';
 import { OutcomePicker } from './OutcomePicker';
 
+// Son okunan soru listesi: liste ve detay sayfaları arasında geçişte ekran hemen dolar, arkada yenilenir.
+let listCache: QuestionInfo[] | null = null;
+
 export function QuestionsPage({ id }: { id?: string }) {
   return id ? <QuestionDetail id={id} /> : <QuestionList />;
 }
 
 function QuestionList() {
-  const [questions, setQuestions] = useState<QuestionInfo[] | null>(null);
+  const [questions, setQuestions] = useState<QuestionInfo[] | null>(listCache);
   const [error, setError] = useState<string | null>(null);
   const [branch, setBranch] = useState<Branch | ''>('');
   const [answerKey, setAnswerKey] = useState('');
@@ -21,7 +24,10 @@ function QuestionList() {
 
   useEffect(() => {
     api<{ questions: QuestionInfo[] }>('/api/admin/questions')
-      .then((r) => setQuestions(r.questions))
+      .then((r) => {
+        listCache = r.questions;
+        setQuestions(r.questions);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : 'Sorular yüklenemedi.'));
   }, []);
 
@@ -84,7 +90,7 @@ function QuestionList() {
 }
 
 function QuestionDetail({ id }: { id: string }) {
-  const [question, setQuestion] = useState<QuestionInfo | null>(null);
+  const [question, setQuestion] = useState<QuestionInfo | null>(() => listCache?.find((q) => q.id === id) ?? null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<AssignmentInfo[]>([]);

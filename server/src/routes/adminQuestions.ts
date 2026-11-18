@@ -3,46 +3,36 @@
 import { Router } from 'express';
 import { ANSWER_KEYS, BRANCHES, type Branch, type OutcomeInfo, type QuestionInfo } from '@app/shared';
 import { requireAuth } from '../auth.js';
-import { BUCKETS } from '../buckets.js';
 import { pool } from '../db.js';
-import { supabase } from '../supabase.js';
+import { questionImageUrl } from '../questionImages.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const IMAGE_URL_SECONDS = 60 * 60;
 
 type OutcomeRow = { id: string; code: string; description: string; branch: Branch | null };
 type QuestionRow = { id: string; branch: Branch; answer_key: QuestionInfo['answerKey']; question_number: number | null; image_path: string };
 
 const toOutcome = (row: OutcomeRow): OutcomeInfo => ({ id: Number(row.id), code: row.code, description: row.description, branch: row.branch });
 
-// Sorulara kazanımlarını ve görsel adreslerini ekleyerek istemci biçimine çevirir.
+// Sorular, kazanımları ve atama sayılarıyla TEK sorguda okunur (veritabanı uzak olduğundan her ek sorgu
+// bir ağ gidiş-dönüşü demektir); görsel adresi sunucunun kendi imzalı adresidir (bkz. questionImages.ts).
 async function loadQuestions(where: string, params: unknown[]): Promise<QuestionInfo[]> {
-  const { rows } = await pool.query<QuestionRow>(
-    `select id, branch, answer_key, question_number, image_path from questions ${where} order by branch, question_number nulls last, created_at`,
+  const { rows } = await pool.query<QuestionRow & { outcomes: OutcomeRow[]; assignment_count: string }>(
+    `select q.id, q.branch, q.answer_key, q.question_number, q.image_path,
+            coalesce((select json_agg(json_build_object('id', o.id, 'code', o.code, 'description', o.description, 'branch', o.branch) order by o.code)
+                      from question_outcomes qo join learning_outcomes o on o.id = qo.outcome_id where qo.question_id = q.id), '[]'::json) as outcomes,
+            (select count(*) from assignments a where a.question_id = q.id) as assignment_count
+     from questions q ${where} order by q.branch, q.question_number nulls last, q.created_at`,
     params,
   );
   if (rows.length === 0) return [];
-  const ids = rows.map((r) => r.id);
-  const [links, signed, counts] = await Promise.all([
-    pool.query<OutcomeRow & { question_id: string }>(
-      `select qo.question_id, o.id, o.code, o.description, o.branch
-       from question_outcomes qo join learning_outcomes o on o.id = qo.outcome_id
-       where qo.question_id = any($1::uuid[]) order by o.code`,
-      [ids],
-    ),
-    supabase.storage.from(BUCKETS.questionImages).createSignedUrls(rows.map((r) => r.image_path), IMAGE_URL_SECONDS),
-    pool.query<{ question_id: string; n: string }>('select question_id, count(*) as n from assignments where question_id = any($1::uuid[]) group by question_id', [ids]),
-  ]);
-  const countByQuestion = new Map(counts.rows.map((c) => [c.question_id, Number(c.n)]));
-  const urlByPath = new Map((signed.data ?? []).map((s) => [s.path, s.signedUrl]));
   return rows.map((r) => ({
     id: r.id,
     branch: r.branch,
     answerKey: r.answer_key,
     questionNumber: r.question_number,
-    imageUrl: urlByPath.get(r.image_path) ?? null,
-    outcomes: links.rows.filter((l) => l.question_id === r.id).map(toOutcome),
-    assignmentCount: countByQuestion.get(r.id) ?? 0,
+    imageUrl: questionImageUrl(r.id),
+    outcomes: r.outcomes.map((o) => toOutcome({ ...o, id: String(o.id) })),
+    assignmentCount: Number(r.assignment_count),
   }));
 }
 
@@ -64,7 +54,7 @@ adminQuestionsRouter.get('/:id', async (req, res) => {
     return;
   }
   try {
-    const [question] = await loadQuestions('where id = $1', [req.params.id]);
+    const [question] = await loadQuestions('where q.id = $1', [req.params.id]);
     if (!question) {
       res.status(404).json({ error: 'Soru bulunamadı.' });
       return;
