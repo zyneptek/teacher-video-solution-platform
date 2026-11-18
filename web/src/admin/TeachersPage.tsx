@@ -51,12 +51,13 @@ export function TeachersPage() {
     setBusy(true);
     const isNew = editing === 'new';
     try {
-      const { teacher } = await api<{ teacher: TeacherInfo }>(isNew ? '/api/admin/teachers' : `/api/admin/teachers/${editing}`, {
+      const { teacher, email } = await api<{ teacher: TeacherInfo; email: 'sent' | 'not_configured' | 'failed' | null }>(isNew ? '/api/admin/teachers' : `/api/admin/teachers/${editing}`, {
         method: isNew ? 'POST' : 'PATCH',
         body: form,
       });
       await load(); // liste yenilendikten sonra mesaj gösterilir
-      setMessage(`${teacher.firstName} ${teacher.lastName} ${isNew ? 'eklendi' : 'güncellendi'}.`);
+      const mailText = email === 'sent' ? ' Giriş bilgileri öğretmene e-postayla gönderildi.' : email === 'not_configured' ? ' E-posta gönderilmedi (e-posta ayarı yapılmamış); giriş bilgilerini öğretmene siz iletin.' : email === 'failed' ? ' E-posta gönderilemedi; giriş bilgilerini öğretmene siz iletin.' : '';
+      setMessage(`${teacher.firstName} ${teacher.lastName} ${isNew ? 'eklendi' : 'güncellendi'}.${mailText}`);
       setEditing(null);
       setForm(EMPTY);
       setBusy(false);
@@ -112,7 +113,7 @@ export function TeachersPage() {
             <input type="email" value={form.email} onChange={(e) => set('email')(e.target.value)} required data-testid="f-email" />
           </label>
           <label>
-            {isNew ? 'Şifre (en az 8 karakter)' : 'Yeni şifre (değişmeyecekse boş bırakın)'}
+            {isNew ? 'Şifre (en az 8 karakter; öğretmene e-postayla gönderilir)' : 'Yeni şifre (değişmeyecekse boş bırakın; değişirse öğretmene e-postayla gönderilir)'}
             <input type="text" value={form.password} onChange={(e) => set('password')(e.target.value)} minLength={8} required={isNew} autoComplete="off" data-testid="f-password" />
           </label>
           <label>

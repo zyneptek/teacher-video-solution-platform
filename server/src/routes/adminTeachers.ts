@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { BRANCHES, type Branch, type TeacherInfo } from '@app/shared';
 import { forgetProfile, requireAuth } from '../auth.js';
 import { pool } from '../db.js';
+import { sendAccountEmail } from '../mail.js';
 import { supabase } from '../supabase.js';
 
 export const adminTeachersRouter = Router();
@@ -76,7 +77,10 @@ adminTeachersRouter.post('/', async (req, res) => {
          values ($1, 'teacher', $2, $3, $4, $5) returning id, first_name, last_name, email, branch, created_at`,
         [data.user.id, firstName, lastName, email, branch],
       );
-      res.status(201).json({ teacher: toTeacher(rows[0] as TeacherRow) });
+      const teacher = toTeacher(rows[0] as TeacherRow);
+      // Giriş bilgileri öğretmene e-postayla gider; gönderim hatası hesabı geri almaz, sonuç yöneticiye gösterilir.
+      const emailStatus = await sendAccountEmail({ to: email, teacherName: `${firstName} ${lastName}`, branch, email, password, kind: 'created' });
+      res.status(201).json({ teacher, email: emailStatus });
     } catch (err) {
       await supabase.auth.admin.deleteUser(data.user.id); // profil yazılamazsa Auth kaydı yetim kalmasın
       throw err;
@@ -145,7 +149,10 @@ adminTeachersRouter.patch('/:id', async (req, res) => {
        returning id, first_name, last_name, email, branch, created_at`,
       [firstName, lastName, email, branch, id],
     );
-    res.json({ teacher: toTeacher(rows[0] as TeacherRow) });
+    const updated = toTeacher(rows[0] as TeacherRow);
+    // Yönetici şifreyi değiştirdiyse yeni şifre öğretmene e-postayla bildirilir.
+    const emailStatus = password ? await sendAccountEmail({ to: email, teacherName: `${firstName} ${lastName}`, branch, email, password, kind: 'password-changed' }) : null;
+    res.json({ teacher: updated, email: emailStatus });
   } catch (err) {
     console.error('Öğretmen güncellenemedi:', err);
     res.status(500).json({ error: 'Öğretmen güncellenemedi.' });

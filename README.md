@@ -397,3 +397,8 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 - **Görünürlük:** öğretmen yalnızca kendi atamalarını görür; başkasının atamasına erişim 404 döner (varlığı belli edilmez), yönetici rotalarına erişim 403 döner.
 - **Varsayım (açık nokta):** öğretmene **cevap anahtarı gösterilmez**, sorunun **kazanımları gösterilir**.
 - Soru sayfasındaki "Kayıt oluştur" stüdyoyu açar ve soru görselini otomatik yükler. Kaydı sisteme kaydetme, izleme, silme, kırpma ve onaya gönderme sıradaki adımdır.
+
+### Karar 22 — Hesap e-postası (giriş bilgileri öğretmene gider)
+- Yönetici öğretmen **oluşturunca** öğretmenin e-postasına hesap bilgileri gönderilir: e-posta (kullanıcı adı), yöneticinin girdiği şifre, branş ve giriş bağlantısı. Yönetici bir öğretmenin **şifresini değiştirirse** yeni şifre de e-postayla bildirilir (şifre boş bırakılırsa e-posta gitmez).
+- E-posta hatası hesabı geri almaz; sonuç yöneticiye gösterilir ("gönderildi / gönderilmedi (ayar yok) / gönderilemedi"), gerekirse bilgileri öğretmene yönetici iletir.
+- **Güvenlik notu:** şifrenin düz metin e-postayla gitmesi bilinçli bir kolaylıktır (yönetici şifreyi belirliyor ve öğretmene iletmesi gerekiyor). Canlıda daha güvenli yol, öğretmene tek kullanımlık "şifre belirle" bağlantısı göndermek olurdu; şifre değiştirme ekranı yapılırsa öğretmenden ilk girişte şifresini değiştirmesi istenebilir.

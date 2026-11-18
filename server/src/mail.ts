@@ -66,3 +66,43 @@ export async function sendAssignmentEmail(mail: AssignmentMail): Promise<Assignm
     return 'failed';
   }
 }
+
+// ---- Hesap e-postaları: yönetici öğretmen oluşturunca veya şifresini değiştirince giriş bilgileri öğretmene gider ----
+
+export type AccountMail = { to: string; teacherName: string; branch: string; email: string; password: string; kind: 'created' | 'password-changed' };
+
+export function buildAccountMail(mail: AccountMail): { subject: string; text: string; html: string } {
+  const created = mail.kind === 'created';
+  const subject = created ? 'Hesabınız oluşturuldu: Video Çözüm Platformu' : 'Şifreniz güncellendi: Video Çözüm Platformu';
+  const intro = created ? 'Video Çözüm Platformu için öğretmen hesabınız oluşturuldu.' : 'Hesabınızın şifresi yönetici tarafından güncellendi.';
+  const text = [
+    `Merhaba ${mail.teacherName},`,
+    '',
+    intro,
+    `Branş: ${mail.branch}`,
+    `E-posta (kullanıcı adı): ${mail.email}`,
+    `Şifre: ${mail.password}`,
+    '',
+    `Web: ${config.appUrl} (Öğretmen girişi sekmesinden giriş yapın). Mobil uygulamada da aynı bilgilerle giriş yapabilirsiniz.`,
+  ].join('\n');
+  const html = `<p>Merhaba ${escapeHtml(mail.teacherName)},</p>
+<p>${intro}</p>
+<ul><li><strong>Branş:</strong> ${escapeHtml(mail.branch)}</li><li><strong>E-posta (kullanıcı adı):</strong> ${escapeHtml(mail.email)}</li><li><strong>Şifre:</strong> <code>${escapeHtml(mail.password)}</code></li></ul>
+<p><a href="${escapeHtml(config.appUrl)}">Uygulamaya giriş yapın</a> (Öğretmen girişi sekmesi). Mobil uygulamada da aynı bilgilerle giriş yapabilirsiniz.</p>`;
+  return { subject, text, html };
+}
+
+export async function sendAccountEmail(mail: AccountMail): Promise<AssignmentDelivery['email']> {
+  const transport = getTransporter();
+  if (!transport) {
+    console.warn('Hesap e-postası gönderilmedi: SMTP_USER/SMTP_PASS tanımlı değil (server/.env).');
+    return 'not_configured';
+  }
+  try {
+    await transport.sendMail({ from: config.mailFrom ?? config.smtpUser ?? undefined, to: mail.to, ...buildAccountMail(mail) });
+    return 'sent';
+  } catch (err) {
+    console.error('Hesap e-postası gönderilemedi:', err instanceof Error ? err.message : err);
+    return 'failed';
+  }
+}
