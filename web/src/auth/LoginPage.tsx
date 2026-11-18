@@ -30,6 +30,7 @@ export function LoginPage() {
   }
 
   return (
+    <div className="login-wrap">
     <main className="login">
       <h1>Video Çözüm Platformu</h1>
       <div className="tabs" role="tablist">
@@ -70,5 +71,6 @@ export function LoginPage() {
         </button>
       </form>
     </main>
+    </div>
   );
 }

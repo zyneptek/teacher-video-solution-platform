@@ -41,3 +41,14 @@ export type LoginResponse = { accessToken: string; refreshToken: string; user: U
 
 // Öğretmen listesi satırı (yönetici ekranı).
 export type TeacherInfo = Omit<UserInfo, 'role'> & { createdAt: string };
+
+// Yönetici paneli özeti.
+export type AssignmentStatus = 'assigned' | 'submitted' | 'approved' | 'returned';
+
+export type DashboardStats = {
+  teachers: number;
+  questions: number;
+  outcomes: number;
+  assignments: Record<AssignmentStatus, number>;
+  errorReports: number;
+};

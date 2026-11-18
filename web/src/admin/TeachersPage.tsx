@@ -50,7 +50,7 @@ export function TeachersPage() {
   return (
     <section>
       <div className="row">
-        <h2>Öğretmenler</h2>
+        <h2 style={{ margin: 0 }}>Öğretmenler</h2>
         <button
           type="button"
           className="primary"

@@ -2,6 +2,7 @@ import express from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 import { BRANCHES } from '@app/shared';
+import { adminDashboardRouter } from './routes/adminDashboard.js';
 import { adminTeachersRouter } from './routes/adminTeachers.js';
 import { authRouter } from './routes/auth.js';
 import { devRenderRouter } from './routes/devRender.js';
@@ -16,6 +17,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/admin/dashboard', adminDashboardRouter);
 app.use('/api/admin/teachers', adminTeachersRouter);
 
 // Geçici: stüdyo denemesi için. Yalnızca geliştirme ortamında açılır.
