@@ -21,3 +21,4 @@ export function branchFromOutcomeCode(code: string): Branch | null {
 }
 
 export * from './drawing';
+export * from './inkController';
