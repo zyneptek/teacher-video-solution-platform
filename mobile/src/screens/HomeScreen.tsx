@@ -9,7 +9,7 @@ import { routeFromHref, type Nav } from '../nav';
 import { useNotifications } from '../notifications';
 import { useSession } from '../session';
 import { colors } from '../theme';
-import { Badge, Card, ErrorText, StatusBadge } from '../ui';
+import { Badge, Card, ErrorText, StatCard, StatusBadge } from '../ui';
 import { useWide } from '../ui/layout';
 import { NotificationSheet } from '../ui/NotificationSheet';
 
@@ -88,10 +88,7 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
       >
         <View style={styles.stats}>
           {(Object.keys(ASSIGNMENT_STATUS_LABEL) as AssignmentStatus[]).map((s) => (
-            <View key={s} style={[styles.stat, wide && styles.statWide]}>
-              <Text style={[styles.statValue, wide && styles.statValueWide, s === 'submitted' && { color: colors.brand }, s === 'returned' && { color: colors.danger }]}>{counts[s]}</Text>
-              <Text style={[styles.statLabel, wide && { fontSize: 16 }]}>{ASSIGNMENT_STATUS_LABEL[s]}</Text>
-            </View>
+            <StatCard key={s} wide={wide} label={ASSIGNMENT_STATUS_LABEL[s]} value={counts[s]} tone={s === 'submitted' ? 'brand' : s === 'returned' ? 'warn' : undefined} />
           ))}
         </View>
 
@@ -130,7 +127,7 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 10, backgroundColor: colors.ink },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: colors.ink, borderBottomWidth: 3, borderBottomColor: colors.brand },
   hello: { color: '#fff', fontSize: 17, fontWeight: '800' },
   role: { color: colors.sage, fontSize: 12 },
   iconBtn: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#ffffff1a', alignItems: 'center', justifyContent: 'center' },
@@ -142,11 +139,6 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   gridItem: { width: '48.9%' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  stat: { flexGrow: 1, flexBasis: '22%', minWidth: 76, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 12 },
-  statWide: { padding: 22, minHeight: 130, justifyContent: 'center' },
-  statValueWide: { fontSize: 44 },
-  statValue: { fontSize: 26, fontWeight: '800', color: colors.ink },
-  statLabel: { fontSize: 12, color: colors.muted },
   section: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 6 },
   empty: { backgroundColor: '#fff', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sage, borderRadius: 12, padding: 20, alignItems: 'center', gap: 6 },
   row: { flexDirection: 'row', alignItems: 'center' },

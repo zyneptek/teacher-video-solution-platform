@@ -8,7 +8,7 @@ import { abs, api } from '../api';
 import { useNotifications } from '../notifications';
 import { useSession } from '../session';
 import { colors } from '../theme';
-import { Button, Card, ErrorText, Notice } from '../ui';
+import { Button, Card, ErrorText, Notice, StatCard } from '../ui';
 import { useWide } from '../ui/layout';
 import { NotificationSheet } from '../ui/NotificationSheet';
 import { VideoBox } from '../ui/VideoBox';
@@ -106,10 +106,11 @@ function useList<T>(load: () => Promise<T>) {
   return { data, error, reload, refreshControl };
 }
 
-// Panel: iki grup (sayılar, atama durumları), her grup 2x2 kart; kartlar ekranın boş yüksekliğini doldurur.
+// Panel: iki grup (sayılar, atama durumları); telefonda 2x2, tablette tek sırada dört kart.
 function PanelTab({ goTo }: { goTo: (t: Tab) => void }) {
   const insets = useSafeAreaInsets();
   const { data: stats, error, refreshControl } = useList(useCallback(() => api<DashboardStats>('/api/admin/dashboard'), []));
+  const wide = useWide();
   const statuses = Object.keys(ASSIGNMENT_STATUS_LABEL) as AssignmentStatus[];
   return (
     <ScrollView refreshControl={refreshControl} contentContainerStyle={[styles.panel, { paddingBottom: insets.bottom + 16 }]}>
@@ -118,30 +119,20 @@ function PanelTab({ goTo }: { goTo: (t: Tab) => void }) {
       {stats && (
         <>
           <View style={styles.statGrid}>
-            <Stat label="Öğretmen" value={stats.teachers} />
-            <Stat label="Soru" value={stats.questions} />
-            <Stat label="Kazanım" value={stats.outcomes} />
-            <Stat label="Hata bildirimi" value={stats.errorReports} onPress={() => goTo('reports')} />
+            <StatCard wide={wide} label="Öğretmen" value={stats.teachers} />
+            <StatCard wide={wide} label="Soru" value={stats.questions} />
+            <StatCard wide={wide} label="Kazanım" value={stats.outcomes} />
+            <StatCard wide={wide} label="Hata bildirimi" value={stats.errorReports} onPress={() => goTo('reports')} />
           </View>
           <Text style={styles.section}>Atama durumları</Text>
           <View style={styles.statGrid}>
             {statuses.map((s) => (
-              <Stat key={s} label={ASSIGNMENT_STATUS_LABEL[s]} value={stats.assignments[s]} tone={s === 'submitted' ? 'brand' : s === 'returned' ? 'warn' : undefined} onPress={s === 'submitted' ? () => goTo('queue') : undefined} />
+              <StatCard wide={wide} key={s} label={ASSIGNMENT_STATUS_LABEL[s]} value={stats.assignments[s]} tone={s === 'submitted' ? 'brand' : s === 'returned' ? 'warn' : undefined} onPress={s === 'submitted' ? () => goTo('queue') : undefined} />
             ))}
           </View>
         </>
       )}
     </ScrollView>
-  );
-}
-
-function Stat({ label, value, tone, onPress }: { label: string; value: number; tone?: 'brand' | 'warn'; onPress?: () => void }) {
-  const wide = useWide();
-  return (
-    <Pressable disabled={!onPress} onPress={onPress} style={styles.panelStat}>
-      <Text style={[styles.statValue, { fontSize: wide ? 64 : 40 }, tone === 'brand' && { color: colors.brand }, tone === 'warn' && { color: colors.danger }]}>{value}</Text>
-      <Text style={[styles.statLabel, { fontSize: wide ? 20 : 15 }]}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -229,7 +220,7 @@ function ReportsTab() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 10, backgroundColor: colors.ink },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: colors.ink, borderBottomWidth: 3, borderBottomColor: colors.brand },
   hello: { color: '#fff', fontSize: 17, fontWeight: '800' },
   role: { color: colors.sage, fontSize: 12 },
   iconBtn: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#ffffff1a', alignItems: 'center', justifyContent: 'center' },
@@ -243,11 +234,8 @@ const styles = StyleSheet.create({
   tabText: { fontWeight: '700', color: colors.ink, fontSize: 13 },
   content: { padding: 16, gap: 12, width: '100%', maxWidth: 860, alignSelf: 'center' },
   section: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 6 },
-  panel: { flexGrow: 1, padding: 16, gap: 12, width: '100%', maxWidth: 1100, alignSelf: 'center' },
-  statGrid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'stretch', gap: 12, minHeight: 200 },
-  panelStat: { flexGrow: 1, flexBasis: '45%', backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 20, justifyContent: 'center' },
-  statValue: { fontSize: 26, fontWeight: '800', color: colors.ink },
-  statLabel: { fontSize: 12, color: colors.muted },
+  panel: { padding: 16, gap: 12, width: '100%', maxWidth: 1100, alignSelf: 'center' },
+  statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   empty: { color: colors.muted, textAlign: 'center', padding: 24 },
   small: { fontSize: 12, color: colors.muted },
   textarea: { minHeight: 80, borderWidth: 1, borderColor: colors.sage, borderRadius: 10, padding: 10, fontSize: 15, backgroundColor: '#fff', textAlignVertical: 'top', color: colors.ink },
