@@ -331,4 +331,14 @@ Aşağıdaki konularda karar verildikçe bu bölüm "Mimari kararlar"a taşınac
 - Branşı değişen öğretmenin mevcut atamaları
 - Geri gönderme notu uzunluğu, onay/geri gönderme sonrası öğretmen bildirimi
 - Yeni soru ekleme ekranı, kazanım ekleme/silme
-- Video çıktısı: çözünürlük, en-boy oranı, kamera bindirme konumu
+- Kamera bindirmesi: konum, boyut ve şekil (video çıktısının çözünürlüğü ve en-boy oranı Karar 11'de belirlendi)
+
+## Yapılacaklar
+
+Sırayla ele alınacak işler ve notlar:
+
+1. **Kaydet = sisteme kaydet.** Şu an mobilde **Kaydet** videoyu telefonun galerisine, webde bilgisayara indirir; bu geçicidir. Asıl davranış: video **uygulamaya (sisteme) kaydedilecek**, yani atamaya bağlı olarak Supabase Storage'a ve `recordings` tablosuna yazılacak, ardından öğretmen onaya gönderecek. Bunun için önce ekranların (giriş, dashboard, soru/atama ekranları) hazır olması gerekir. Sistemle kayıt gelince geçici `/api/dev/*` uç noktaları kaldırılacaktır.
+2. **Tablet kalemi (Apple Pencil, S Pen) ile çizim.** Kalem dokunuşları React Native'de normal dokunma olarak gelir ve büyük olasılıkla şimdiden çalışır; ancak simülatörde denenemez. Gerçek tabletle doğrulanmalı; gerekirse avuç içi reddi (kalem varken parmak dokunuşlarını yok sayma) ve isteğe bağlı olarak basınca göre çizgi kalınlığı eklenecek.
+3. **Kamera (tablet ve bilgisayar).** Öğretmen kamerayı isteğe bağlı açabilecek: görüntü kayıt ekranında gösterilecek ve **yalnızca kamera açıksa** videoya küçük bir bindirme olarak eklenecek (sunucuda ffmpeg ile). Kamera izni verilmezse veya kamera kapalıysa kayıt ekran ve sesle tamamlanır. Webde `getUserMedia`, mobilde `expo-camera`. Duraklat/devam sırasında kamera klibinin nasıl bölüneceği ve mikrofonla birlikte kullanımı (özellikle iOS'ta) önce denenmelidir. Simülatörde kamera yoktur; gerçek cihaz veya webde test edilir.
+4. Webde kayıttan önce çizim (mobille tutarlılık), kayıt kırpma ve düzenleme.
+5. Planın devamı: giriş ve öğretmen yönetimi (Supabase Auth), soru/kazanım/cevap anahtarı yönetimi, atama, e-posta ve push bildirimleri, dashboard'lar, hata bildirimi, onay akışı ve çapraz atama, uçtan uca test, demo videosu ve teslim.
