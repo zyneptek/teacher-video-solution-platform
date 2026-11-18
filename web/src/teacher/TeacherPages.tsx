@@ -1,14 +1,11 @@
 // Öğretmen sayfaları: Panel, Sorularım (liste + soru sayfası) ve Bildirimler.
 import { useCallback, useEffect, useState } from 'react';
-import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus, type NotificationInfo, type TeacherAssignment } from '@app/shared';
+import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus, type TeacherAssignment } from '@app/shared';
 import { StatusBadge } from '../admin/AssignmentsTable';
 import { api } from '../auth/session';
 import StudioPage from '../studio/StudioPage';
 import { VideoPreview } from '../studio/VideoPreview';
 import { AssignmentCards } from './AssignmentCards';
-import { NotificationList } from './NotificationList';
-
-type Notifs = { notifications: NotificationInfo[] | null; refresh: () => void };
 
 function useAssignments() {
   const [assignments, setAssignments] = useState<TeacherAssignment[] | null>(null);
@@ -28,9 +25,8 @@ function useAssignments() {
   return { assignments, error, load };
 }
 
-export function TeacherDashboard({ notifs }: { notifs: Notifs }) {
+export function TeacherDashboard() {
   const { assignments, error } = useAssignments();
-  const unread = (notifs.notifications ?? []).filter((n) => !n.readAt);
   const counts: Record<AssignmentStatus, number> = { assigned: 0, submitted: 0, approved: 0, returned: 0 };
   for (const a of assignments ?? []) counts[a.status]++;
 
@@ -48,9 +44,6 @@ export function TeacherDashboard({ notifs }: { notifs: Notifs }) {
           </div>
         ))}
       </div>
-
-      <h3>Okunmamış bildirimler</h3>
-      {unread.length === 0 ? <p className="muted">Okunmamış bildiriminiz yok.</p> : <NotificationList notifications={unread} onChanged={notifs.refresh} />}
 
       <h3>Sorularım</h3>
       {!assignments && !error && <p>Yükleniyor…</p>}
@@ -184,23 +177,6 @@ function RecordPage({ id }: { id: string }) {
     <div>
       <p><a href={`#/sorularim/${id}`}>← Soruya dön</a></p>
       <StudioPage questionImageUrl={assignment.question.imageUrl} assignmentId={assignment.id} />
-    </div>
-  );
-}
-
-export function NotificationsPage({ notifs }: { notifs: Notifs }) {
-  async function readAll() {
-    await api('/api/teacher/notifications/read-all', { method: 'POST' }).catch(() => undefined);
-    notifs.refresh();
-  }
-  const hasUnread = (notifs.notifications ?? []).some((n) => !n.readAt);
-  return (
-    <div>
-      <div className="row">
-        <h2 style={{ margin: 0 }}>Bildirimler</h2>
-        {hasUnread && <button type="button" className="link" onClick={() => void readAll()} data-testid="read-all">Tümünü okundu yap</button>}
-      </div>
-      {!notifs.notifications ? <p>Yükleniyor…</p> : <NotificationList notifications={notifs.notifications} onChanged={notifs.refresh} />}
     </div>
   );
 }

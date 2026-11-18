@@ -2,12 +2,13 @@
 import type { NotificationInfo } from '@app/shared';
 import { api } from '../auth/session';
 
-export function NotificationList({ notifications, onChanged }: { notifications: NotificationInfo[]; onChanged: () => void }) {
+export function NotificationList({ notifications, onChanged, onOpened }: { notifications: NotificationInfo[]; onChanged: () => void; onOpened?: () => void }) {
   if (notifications.length === 0) return <div className="empty">Henüz bildiriminiz yok.</div>;
 
   async function open(n: NotificationInfo) {
     if (!n.readAt) await api(`/api/teacher/notifications/${n.id}/read`, { method: 'POST' }).catch(() => undefined);
     onChanged();
+    onOpened?.();
     window.location.hash = `#/sorularim/${n.assignmentId}`;
   }
 

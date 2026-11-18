@@ -410,3 +410,7 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 - **Onaya gönderme:** yalnızca hazır kaydı olan ve "Atandı" ya da "Geri gönderildi" durumundaki atama gönderilebilir. Gönderilmeyen kayıt yönetici kuyruğunda görünmez.
 - **Yönetici — Onay kuyruğu:** onaya gönderilen videolar tarayıcı içinde izlenir (harici oynatıcı yok). **Onayla** veya **Geri gönder** (not zorunlu, en fazla 500 karakter, öğretmene görünür). Her iki işlemde öğretmene bildirim (ve push) gider ("Videonuz onaylandı / geri gönderildi"). Atamalar sayfasında ve soru detayında da kaydı olan atamalar için "İzle" vardır.
 - **Düzenleme sonrası durum (açık nokta kararı):** kayıt yeniden çekilir veya silinirse, *Onaya gönderildi / Onaylandı* durumundaki atama **Atandı**'ya (taslak) döner ve yeniden onaya gönderilmelidir; *Geri gönderildi* durumundaki atama **Geri gönderildi** kalır (yönetici notu görünmeye devam eder), öğretmen düzeltip yeniden gönderir; gönderince not temizlenir.
+
+### Karar 24 — Açılır kapanır menü ve bildirim düğmesi
+- **Menü:** sol koyu menü, üst çubuktaki düğmeyle açılıp kapanır (yönetici ve öğretmen); tercih tarayıcıda hatırlanır, dar ekranda varsayılan kapalıdır.
+- **Bildirimler:** ayrı sayfa kaldırıldı; sağ üstte zil düğmesi ve okunmamış sayısı rozeti vardır. Tıklayınca bildirimler açılır liste olarak gelir (Esc veya dışarı tıklayınca kapanır); bildirime tıklamak onu okundu yapar ve ilgili soruya götürür; "Tümünü okundu yap" vardır. Okunmamış bildirimler vurgulanır, okunanlar listede soluk kalır.
