@@ -20,7 +20,9 @@ export function LoginScreen() {
     try {
       await login(email, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Giriş yapılamadı.');
+      const message = err instanceof Error ? err.message : 'Giriş yapılamadı.';
+      // Sunucu "doğru sekmeyi seçin" der; mobilde sekme yok, yönetici web panelini kullanır.
+      setError(message.includes('öğretmen hesabı değil') ? 'Bu uygulama öğretmenler içindir. Yönetici paneli web uygulamasındadır.' : message);
       setBusy(false);
     }
   }
@@ -31,7 +33,7 @@ export function LoginScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Video Çözüm Platformu</Text>
           <View style={styles.accent} />
-          <Text style={styles.sub}>Öğretmen girişi</Text>
+          <Text style={styles.sub}>Öğretmen girişi · Yönetici paneli web uygulamasındadır</Text>
           {sessionEnded && <Notice>Oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.</Notice>}
           <Text style={styles.label}>E-posta</Text>
           <TextInput style={styles.input} value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="username" placeholder="ornek@okul.com" accessibilityLabel="E-posta" />
