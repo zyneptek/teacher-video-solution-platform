@@ -63,6 +63,34 @@ export type QuestionInfo = {
   questionNumber: number | null;
   imageUrl: string | null; // Storage'daki özel görsel için süreli imzalı adres
   outcomes: OutcomeInfo[];
+  assignmentCount: number;
 };
 
 export const ANSWER_KEYS = ['A', 'B', 'C', 'D', 'E'] as const;
+
+// Atama (yönetici listesi). Durumlar: assigned = Atandı, submitted = Onaya gönderildi,
+// approved = Onaylandı, returned = Geri gönderildi.
+export const ASSIGNMENT_STATUS_LABEL: Record<AssignmentStatus, string> = {
+  assigned: 'Atandı',
+  submitted: 'Onaya gönderildi',
+  approved: 'Onaylandı',
+  returned: 'Geri gönderildi',
+};
+
+export type AssignmentInfo = {
+  id: string;
+  questionId: string;
+  questionNumber: number | null;
+  branch: Branch;
+  teacherId: string;
+  teacherName: string;
+  status: AssignmentStatus;
+  returnNote: string | null;
+  assignedAt: string;
+};
+
+// Atama sonrası bildirim sonuçları: e-posta durumu ve push gönderilen cihaz sayısı.
+export type AssignmentDelivery = {
+  email: 'sent' | 'not_configured' | 'failed';
+  pushDevices: number;
+};

@@ -30,4 +30,10 @@ export const config = {
   supabaseUrl: supabaseOrigin(required('SUPABASE_URL')),
   supabaseSecretKey: required('SUPABASE_SECRET_KEY'),
   databaseUrl: required('DATABASE_URL'),
+  // E-posta (isteğe bağlı): tanımlı değilse atama yine yapılır, e-posta gönderilmez ve yöneticiye bildirilir.
+  smtpUser: process.env.SMTP_USER?.trim() || null,
+  smtpPass: process.env.SMTP_PASS?.replace(/\s+/g, '') || null, // Gmail uygulama şifresi aralıklı yazılır
+  mailFrom: process.env.MAIL_FROM?.trim() || null,
+  // E-postadaki "uygulamayı aç" bağlantısı
+  appUrl: process.env.APP_URL?.trim() || 'http://localhost:5173',
 };

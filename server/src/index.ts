@@ -2,10 +2,12 @@ import express from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 import { BRANCHES } from '@app/shared';
+import { adminAssignmentsRouter } from './routes/adminAssignments.js';
 import { adminDashboardRouter } from './routes/adminDashboard.js';
 import { adminOutcomesRouter, adminQuestionsRouter } from './routes/adminQuestions.js';
 import { adminTeachersRouter } from './routes/adminTeachers.js';
 import { authRouter } from './routes/auth.js';
+import { pushTokensRouter } from './routes/pushTokens.js';
 import { devRenderRouter } from './routes/devRender.js';
 
 const app = express();
@@ -18,6 +20,8 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/admin/assignments', adminAssignmentsRouter);
+app.use('/api/push-token', pushTokensRouter);
 app.use('/api/admin/dashboard', adminDashboardRouter);
 app.use('/api/admin/questions', adminQuestionsRouter);
 app.use('/api/admin/outcomes', adminOutcomesRouter);

@@ -2,6 +2,7 @@
 // (yenilemede ve geri düğmesinde aynı sayfada kalınır; ek yönlendirme kütüphanesi gerekmez).
 import { useEffect, useState, type ReactNode } from 'react';
 import type { UserInfo } from '@app/shared';
+import { AssignmentsPage } from './AssignmentsPage';
 import { DashboardPage } from './DashboardPage';
 import { OutcomesPage } from './OutcomesPage';
 import { PlaceholderPage } from './PlaceholderPage';
@@ -17,13 +18,7 @@ const PAGES: Page[] = [
   { path: '/ogretmenler', label: 'Öğretmenler', render: () => <TeachersPage /> },
   { path: '/sorular', label: 'Sorular', render: (id) => <QuestionsPage id={id} /> },
   { path: '/kazanimlar', label: 'Kazanımlar', render: () => <OutcomesPage /> },
-  {
-    path: '/atamalar',
-    label: 'Atamalar',
-    render: () => (
-      <PlaceholderPage title="Atamalar" description="Soru-öğretmen atamaları ve durumları (Atandı, Onaya gönderildi, Onaylandı, Geri gönderildi). Aynı branştan başka bir öğretmene ek atama burada yapılacak." />
-    ),
-  },
+  { path: '/atamalar', label: 'Atamalar', render: () => <AssignmentsPage /> },
   {
     path: '/onay-kuyrugu',
     label: 'Onay kuyruğu',

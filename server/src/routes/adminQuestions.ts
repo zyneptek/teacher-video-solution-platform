@@ -23,7 +23,7 @@ async function loadQuestions(where: string, params: unknown[]): Promise<Question
   );
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
-  const [links, signed] = await Promise.all([
+  const [links, signed, counts] = await Promise.all([
     pool.query<OutcomeRow & { question_id: string }>(
       `select qo.question_id, o.id, o.code, o.description, o.branch
        from question_outcomes qo join learning_outcomes o on o.id = qo.outcome_id
@@ -31,7 +31,9 @@ async function loadQuestions(where: string, params: unknown[]): Promise<Question
       [ids],
     ),
     supabase.storage.from(BUCKETS.questionImages).createSignedUrls(rows.map((r) => r.image_path), IMAGE_URL_SECONDS),
+    pool.query<{ question_id: string; n: string }>('select question_id, count(*) as n from assignments where question_id = any($1::uuid[]) group by question_id', [ids]),
   ]);
+  const countByQuestion = new Map(counts.rows.map((c) => [c.question_id, Number(c.n)]));
   const urlByPath = new Map((signed.data ?? []).map((s) => [s.path, s.signedUrl]));
   return rows.map((r) => ({
     id: r.id,
@@ -40,6 +42,7 @@ async function loadQuestions(where: string, params: unknown[]): Promise<Question
     questionNumber: r.question_number,
     imageUrl: urlByPath.get(r.image_path) ?? null,
     outcomes: links.rows.filter((l) => l.question_id === r.id).map(toOutcome),
+    assignmentCount: countByQuestion.get(r.id) ?? 0,
   }));
 }
 

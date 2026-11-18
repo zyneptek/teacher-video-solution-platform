@@ -1,0 +1,53 @@
+// Yönetici: tüm atamalar, durum süzgeci ve yeni atama.
+import { useCallback, useEffect, useState } from 'react';
+import { ASSIGNMENT_STATUS_LABEL, type AssignmentInfo, type AssignmentStatus, type QuestionInfo } from '@app/shared';
+import { api } from '../auth/session';
+import { AssignForm } from './AssignForm';
+import { AssignmentsTable } from './AssignmentsTable';
+
+export function AssignmentsPage() {
+  const [assignments, setAssignments] = useState<AssignmentInfo[] | null>(null);
+  const [questions, setQuestions] = useState<QuestionInfo[]>([]);
+  const [status, setStatus] = useState<AssignmentStatus | ''>('');
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const r = await api<{ assignments: AssignmentInfo[] }>(`/api/admin/assignments${status ? `?status=${status}` : ''}`);
+      setAssignments(r.assignments);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Atamalar yüklenemedi.');
+    }
+  }, [status]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+  useEffect(() => {
+    api<{ questions: QuestionInfo[] }>('/api/admin/questions').then((r) => setQuestions(r.questions)).catch(() => undefined);
+  }, []);
+
+  return (
+    <div>
+      <h2>Atamalar</h2>
+      <div className="card">
+        <strong>Yeni atama</strong>
+        <AssignForm questions={questions} onAssigned={() => void load()} />
+      </div>
+      <div className="filters">
+        <select value={status} onChange={(e) => setStatus(e.target.value as AssignmentStatus | '')} data-testid="status-filter">
+          <option value="">Tüm durumlar</option>
+          {(Object.keys(ASSIGNMENT_STATUS_LABEL) as AssignmentStatus[]).map((s) => (
+            <option key={s} value={s}>
+              {ASSIGNMENT_STATUS_LABEL[s]}
+            </option>
+          ))}
+        </select>
+      </div>
+      {error && <p role="alert" className="error">{error}</p>}
+      {!assignments && !error && <p>Yükleniyor…</p>}
+      {assignments && <AssignmentsTable assignments={assignments} showQuestion />}
+    </div>
+  );
+}
