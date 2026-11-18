@@ -360,3 +360,8 @@ Sırayla ele alınacak işler ve notlar:
 - **Renkler:** İşler Teknoloji sitesinden (islerteknoloji.com, CSS'inde en çok kullanılan renkler) alındı: turuncu `#f14e13` (ana vurgu, düğmeler), koyu patlıcan `#1a0e1c` (sol menü, başlıklar), adaçayı `#b5cbc8` (kenarlık, tablo başlığı), koyu bordo `#4f0006` (uyarı/geri gönderildi). İşler Yayınevi'nin ayrı bir kurumsal kılavuzuna ulaşılamadığı için aynı grubun sitesindeki palet esas alındı. Tüm renkler `web/src/index.css` başındaki CSS değişkenlerindedir; değiştirmek için orayı düzenlemek yeterli.
 - **Yönetici düzeni:** sol menülü tek sayfa uygulaması. Menü, görevdeki yönetici akışını izler: Panel, Öğretmenler, Sorular, Kazanımlar, Atamalar, Onay kuyruğu, Hata bildirimleri. Sayfa adreste `#/...` ile seçilir (yenilemede aynı sayfada kalır). Panel gerçek verilerle çalışır (öğretmen/soru/kazanım sayısı, atama durumu dağılımı, hata bildirimi sayısı); Öğretmenler listesi ve ekleme çalışır; diğer sayfalar yerleşim olarak hazır, içerikleri sıradaki adımlarda yapılacak.
 - Sıra: yönetici ekranları → öğretmen ekranları → mobil ve tablet.
+
+### Karar 17 — Öğretmen güncelleme ve silme
+- **Güncelleme:** ad, soyad, e-posta, branş ve şifre değiştirilebilir (şifre boş bırakılırsa değişmez). E-posta/şifre Supabase Auth'ta da güncellenir.
+- **Silme (yumuşak):** profil `deleted_at` ile işaretlenir ve Auth hesabı silinir; atama, kayıt ve hata bildirimleri yerinde kalır. Silinen öğretmen giriş yapamaz; açık oturumu bir sonraki istekte (en geç ~30 sn içinde) otomatik kapanır ve giriş ekranında "Oturumunuz sonlandırıldı" mesajı görünür. Silinen öğretmenin e-postası yeniden kullanılabilir.
+- **Branş değişikliği:** şimdilik serbest; mevcut atamalar korunur (bekleyen karar: branş değişince atamalara ne olacağı).

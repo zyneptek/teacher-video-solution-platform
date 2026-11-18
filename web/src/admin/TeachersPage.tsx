@@ -1,18 +1,21 @@
-// Yönetici: öğretmen listesi ve yeni öğretmen ekleme (e-posta ve şifreyi yönetici girer).
+// Yönetici: öğretmen listesi, ekleme, güncelleme ve silme.
+// Hesabı yönetici oluşturur; e-posta ve şifreyi o girer. Güncellemede şifre boş bırakılırsa değişmez.
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { BRANCHES, type Branch, type TeacherInfo } from '@app/shared';
 import { api } from '../auth/session';
 
-const EMPTY = { firstName: '', lastName: '', email: '', password: '', branch: '' as Branch | '' };
+type FormState = { firstName: string; lastName: string; email: string; password: string; branch: Branch | '' };
+const EMPTY: FormState = { firstName: '', lastName: '', email: '', password: '', branch: '' };
 
 export function TeachersPage() {
   const [teachers, setTeachers] = useState<TeacherInfo[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY);
+  // null: form kapalı, 'new': ekleme, aksi halde düzenlenen öğretmenin kimliği
+  const [editing, setEditing] = useState<string | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [added, setAdded] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -28,50 +31,73 @@ export function TeachersPage() {
     void load();
   }, [load]);
 
+  function openNew() {
+    setEditing('new');
+    setForm(EMPTY);
+    setFormError(null);
+    setMessage(null);
+  }
+
+  function openEdit(t: TeacherInfo) {
+    setEditing(t.id);
+    setForm({ firstName: t.firstName, lastName: t.lastName, email: t.email, password: '', branch: t.branch ?? '' });
+    setFormError(null);
+    setMessage(null);
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     setFormError(null);
     setBusy(true);
+    const isNew = editing === 'new';
     try {
-      const { teacher } = await api<{ teacher: TeacherInfo }>('/api/admin/teachers', { method: 'POST', body: form });
-      setAdded(`${teacher.firstName} ${teacher.lastName} eklendi.`);
+      const { teacher } = await api<{ teacher: TeacherInfo }>(isNew ? '/api/admin/teachers' : `/api/admin/teachers/${editing}`, {
+        method: isNew ? 'POST' : 'PATCH',
+        body: form,
+      });
+      await load(); // liste yenilendikten sonra mesaj gösterilir
+      setMessage(`${teacher.firstName} ${teacher.lastName} ${isNew ? 'eklendi' : 'güncellendi'}.`);
+      setEditing(null);
       setForm(EMPTY);
-      setShowForm(false);
-      await load();
+      setBusy(false);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Öğretmen eklenemedi.');
-    } finally {
+      setFormError(err instanceof Error ? err.message : 'İşlem yapılamadı.');
       setBusy(false);
     }
   }
 
-  const set = (key: keyof typeof EMPTY) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
+  async function remove(t: TeacherInfo) {
+    if (!window.confirm(`${t.firstName} ${t.lastName} silinsin mi? Hesap kapatılır ve öğretmen bir daha giriş yapamaz; kayıtları sistemde kalır.`)) return;
+    setMessage(null);
+    try {
+      await api(`/api/admin/teachers/${t.id}`, { method: 'DELETE' });
+      setMessage(`${t.firstName} ${t.lastName} silindi.`);
+      if (editing === t.id) setEditing(null);
+      await load();
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Öğretmen silinemedi.');
+    }
+  }
+
+  const set = (key: keyof FormState) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const isNew = editing === 'new';
 
   return (
     <section>
       <div className="row">
         <h2 style={{ margin: 0 }}>Öğretmenler</h2>
-        <button
-          type="button"
-          className="primary"
-          onClick={() => {
-            setShowForm((v) => !v);
-            setFormError(null);
-            setAdded(null);
-          }}
-          data-testid="add-teacher"
-        >
-          {showForm ? 'Vazgeç' : 'Öğretmen ekle'}
+        <button type="button" className="primary" onClick={() => (editing ? setEditing(null) : openNew())} data-testid="add-teacher">
+          {editing ? 'Vazgeç' : 'Öğretmen ekle'}
         </button>
       </div>
 
-      {added && (
+      {message && (
         <p className="notice" data-testid="added">
-          {added}
+          {message}
         </p>
       )}
 
-      {showForm && (
+      {editing && (
         <form onSubmit={(event) => void submit(event)} className="card grid" data-testid="teacher-form">
           <label>
             Ad
@@ -86,8 +112,8 @@ export function TeachersPage() {
             <input type="email" value={form.email} onChange={(e) => set('email')(e.target.value)} required data-testid="f-email" />
           </label>
           <label>
-            Şifre (en az 8 karakter)
-            <input type="text" value={form.password} onChange={(e) => set('password')(e.target.value)} minLength={8} required autoComplete="off" data-testid="f-password" />
+            {isNew ? 'Şifre (en az 8 karakter)' : 'Yeni şifre (değişmeyecekse boş bırakın)'}
+            <input type="text" value={form.password} onChange={(e) => set('password')(e.target.value)} minLength={8} required={isNew} autoComplete="off" data-testid="f-password" />
           </label>
           <label>
             Branş
@@ -107,7 +133,7 @@ export function TeachersPage() {
           )}
           <div style={{ gridColumn: '1 / -1' }}>
             <button type="submit" className="primary" disabled={busy} data-testid="f-submit">
-              {busy ? 'Ekleniyor…' : 'Kaydet'}
+              {busy ? 'Kaydediliyor…' : 'Kaydet'}
             </button>
           </div>
         </form>
@@ -127,16 +153,25 @@ export function TeachersPage() {
               <th>Ad Soyad</th>
               <th>E-posta</th>
               <th>Branş</th>
+              <th style={{ width: 150 }} />
             </tr>
           </thead>
           <tbody>
             {teachers.map((t) => (
-              <tr key={t.id}>
+              <tr key={t.id} data-testid={`row-${t.email}`}>
                 <td>
                   {t.firstName} {t.lastName}
                 </td>
                 <td>{t.email}</td>
                 <td>{t.branch}</td>
+                <td>
+                  <button type="button" className="link" onClick={() => openEdit(t)} data-testid={`edit-${t.email}`}>
+                    Düzenle
+                  </button>
+                  <button type="button" className="link danger" onClick={() => void remove(t)} data-testid={`delete-${t.email}`}>
+                    Sil
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

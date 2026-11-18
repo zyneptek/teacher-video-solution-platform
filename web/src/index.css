@@ -42,7 +42,7 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color:
 .placeholder p { margin: 0; }
 
 /* Giriş ekranı: kart sayfanın tam ortasında */
-.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px 16px 22vh; }
 .login { width: 100%; max-width: 400px; }
 .login h1 { font-size: 22px; text-align: center; margin: 0 0 20px; color: var(--ink); }
 .login h1::after { content: ''; display: block; width: 48px; height: 4px; background: var(--brand); border-radius: 2px; margin: 10px auto 0; }
@@ -92,3 +92,6 @@ th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--li
   .sidebar nav { flex-direction: row; flex-wrap: wrap; }
   .page { padding: 16px; }
 }
+.link { background: none; border: 0; padding: 4px 8px; color: var(--brand-dark); cursor: pointer; font-weight: 600; }
+.link:hover { text-decoration: underline; }
+.link.danger { color: var(--danger); }
