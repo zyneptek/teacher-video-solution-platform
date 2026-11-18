@@ -123,6 +123,7 @@ function PanelTab({ goTo, open }: { goTo: (t: Tab) => void; open: (p: AdminPage)
 
 function QueueTab() {
   const insets = useSafeAreaInsets();
+  const wide = useWide();
   const [message, setMessage] = useState<string | null>(null);
   const { data, error, reload, refreshControl } = useList(useCallback(async () => (await api<{ assignments: AssignmentInfo[] }>('/api/admin/assignments?status=submitted')).assignments, []));
   return (
@@ -131,9 +132,13 @@ function QueueTab() {
       {error && <ErrorText>{error}</ErrorText>}
       {!data && !error && <Text style={{ color: colors.muted }}>Yükleniyor…</Text>}
       {data && data.length === 0 && <Text style={styles.empty} testID="queue-empty">Onay bekleyen video yok.</Text>}
-      {data?.map((a) => (
-        <ReviewCard key={a.id} assignment={a} onDone={(text) => { setMessage(text); void reload(); }} />
-      ))}
+      <View style={wide ? { flexDirection: 'row', flexWrap: 'wrap', gap: 12 } : { gap: 12 }}>
+        {data?.map((a) => (
+          <View key={a.id} style={wide ? { width: '48.9%' } : undefined}>
+            <ReviewCard assignment={a} onDone={(text) => { setMessage(text); void reload(); }} />
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -184,22 +189,25 @@ function ReviewCard({ assignment: a, onDone }: { assignment: AssignmentInfo; onD
 
 function ReportsTab() {
   const insets = useSafeAreaInsets();
+  const wide = useWide();
   const { data, error, refreshControl } = useList(useCallback(async () => (await api<{ reports: ErrorReportInfo[] }>('/api/admin/error-reports')).reports, []));
   return (
     <ScrollView refreshControl={refreshControl} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
       {error && <ErrorText>{error}</ErrorText>}
       {!data && !error && <Text style={{ color: colors.muted }}>Yükleniyor…</Text>}
       {data && data.length === 0 && <Text style={styles.empty} testID="reports-empty">Hata bildirimi yok.</Text>}
+      <View style={wide ? { flexDirection: 'row', flexWrap: 'wrap', gap: 12 } : { gap: 12 }}>
       {data?.map((r) => (
-        <Card key={r.id}>
+        <View key={r.id} style={wide ? { width: '48.9%' } : undefined}><Card>
           <Text style={{ fontWeight: '800', color: colors.ink }}>{ERROR_REPORT_TYPES.find((t) => t.value === r.type)?.label}</Text>
           <Text style={{ color: colors.ink }}>{r.questionLabel} · Gönderen: {r.reporterName}</Text>
           {!!r.description && <Text style={{ color: colors.ink }}>{r.description}</Text>}
           {r.attachment?.type === 'image' && <Image source={{ uri: abs(r.attachment.url) }} style={styles.attachment} resizeMode="contain" />}
           {r.attachment?.type === 'video' && <VideoBox url={abs(r.attachment.url)} />}
           <Text style={styles.small}>{new Date(r.createdAt).toLocaleString('tr-TR')}{r.marker ? ' · görselde işaretli' : ''}</Text>
-        </Card>
+        </Card></View>
       ))}
+      </View>
     </ScrollView>
   );
 }
@@ -213,11 +221,11 @@ const styles = StyleSheet.create({
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '800' },
   logout: { paddingHorizontal: 12, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#ffffff44', alignItems: 'center', justifyContent: 'center' },
   logoutText: { color: colors.sage, fontWeight: '700' },
-  tabs: { flexDirection: 'row', gap: 8, padding: 12, paddingBottom: 0, width: '100%', maxWidth: 860, alignSelf: 'center' },
+  tabs: { flexDirection: 'row', gap: 8, padding: 12, paddingBottom: 0, width: '100%', maxWidth: 1100, alignSelf: 'center' },
   tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: colors.white, borderWidth: 1, borderColor: colors.sage },
   tabOn: { backgroundColor: colors.ink, borderColor: colors.ink },
   tabText: { fontWeight: '700', color: colors.ink, fontSize: 13 },
-  content: { padding: 16, gap: 12, width: '100%', maxWidth: 860, alignSelf: 'center' },
+  content: { padding: 16, gap: 12, width: '100%', maxWidth: 1100, alignSelf: 'center' },
   section: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 6 },
   panel: { padding: 16, gap: 12, width: '100%', maxWidth: 1100, alignSelf: 'center' },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },

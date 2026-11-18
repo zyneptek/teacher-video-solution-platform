@@ -7,6 +7,7 @@ import { ASSIGNMENT_STATUS_LABEL, type AssignmentInfo, type AssignmentStatus, ty
 import { abs, api } from '../api';
 import { colors } from '../theme';
 import { Badge, Button, Card, ErrorText, StatusBadge } from '../ui';
+import { useWide } from '../ui/layout';
 import { useList } from '../ui/useList';
 import { VideoBox } from '../ui/VideoBox';
 
@@ -41,6 +42,16 @@ function Shell({ title, onBack, children }: { title: string; onBack: () => void;
   );
 }
 
+// Geniş ekranda (tablet) kartlar iki sütuna dizilir, telefonda alt alta kalır.
+function Grid({ children }: { children: ReactNode }) {
+  const wide = useWide();
+  return <View style={wide ? { flexDirection: 'row', flexWrap: 'wrap', gap: 12 } : { gap: 12 }}>{children}</View>;
+}
+function Cell({ children }: { children: ReactNode }) {
+  const wide = useWide();
+  return <View style={wide ? { width: '48.9%' } : undefined}>{children}</View>;
+}
+
 function Status({ error, loading, empty }: { error: string | null; loading: boolean; empty?: string | false }) {
   if (error) return <ErrorText>{error}</ErrorText>;
   if (loading) return <Text style={{ color: colors.muted }}>Yükleniyor…</Text>;
@@ -53,27 +64,31 @@ function TeachersList() {
   return (
     <>
       <Status error={error} loading={!data} empty={data?.length === 0 && 'Öğretmen yok.'} />
+      <Grid>
       {data?.map((t) => (
-        <Card key={t.id}>
+        <Cell key={t.id}><Card>
           <View style={styles.between}>
             <Text style={styles.bold}>{t.firstName} {t.lastName}</Text>
             {t.branch && <Badge label={t.branch} />}
           </View>
           <Text style={styles.small}>{t.email}</Text>
-        </Card>
+        </Card></Cell>
       ))}
+      </Grid>
     </>
   );
 }
 
 function QuestionsList() {
+  const wide = useWide();
   const { data, error } = useList(useCallback(async () => (await api<{ questions: QuestionInfo[] }>('/api/admin/questions')).questions, []));
   return (
     <>
       <Status error={error} loading={!data} empty={data?.length === 0 && 'Soru yok.'} />
+      <Grid>
       {data?.map((q) => (
-        <Card key={q.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {q.imageUrl && <Image source={{ uri: abs(q.imageUrl) }} style={styles.thumb} resizeMode="contain" />}
+        <Cell key={q.id}><Card style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {q.imageUrl && <Image source={{ uri: abs(q.imageUrl) }} style={[styles.thumb, wide && { width: 110, height: 90 }]} resizeMode="contain" />}
           <View style={{ flex: 1, gap: 4 }}>
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
               <Badge label={q.branch} />
@@ -82,8 +97,9 @@ function QuestionsList() {
             <Text style={styles.small} numberOfLines={1}>{q.outcomes.map((o) => o.code).join(', ')}</Text>
             <Text style={styles.small}>Cevap: {q.answerKey} · {q.assignmentCount} atama</Text>
           </View>
-        </Card>
+        </Card></Cell>
       ))}
+      </Grid>
     </>
   );
 }
@@ -101,15 +117,17 @@ function OutcomesList() {
     <>
       <TextInput style={styles.search} value={query} onChangeText={setQuery} placeholder="Kazanım ara (kod veya açıklama)" autoCorrect={false} accessibilityLabel="Kazanım ara" />
       <Status error={error} loading={!data} empty={data?.length === 0 && 'Sonuç yok.'} />
+      <Grid>
       {data?.map((o) => (
-        <Card key={o.id}>
+        <Cell key={o.id}><Card>
           <View style={styles.between}>
             <Text style={styles.bold}>{o.code}</Text>
             {o.branch && <Badge label={o.branch} />}
           </View>
           <Text style={{ color: colors.ink }}>{o.description}</Text>
-        </Card>
+        </Card></Cell>
       ))}
+      </Grid>
     </>
   );
 }
@@ -120,8 +138,9 @@ function AssignmentsList({ status }: { status: AssignmentStatus }) {
   return (
     <>
       <Status error={error} loading={!data} empty={data?.length === 0 && 'Bu durumda atama yok.'} />
+      <Grid>
       {data?.map((a) => (
-        <Card key={a.id}>
+        <Cell key={a.id}><Card>
           <View style={styles.between}>
             <Text style={styles.bold}>{a.branch} — {a.questionNumber ? `Soru ${a.questionNumber}` : 'Soru'}</Text>
             <StatusBadge status={a.status} />
@@ -129,8 +148,9 @@ function AssignmentsList({ status }: { status: AssignmentStatus }) {
           <Text style={styles.small}>{a.teacherName} · Atanma: {new Date(a.assignedAt).toLocaleString('tr-TR')}</Text>
           {a.returnNote && <Text style={{ color: colors.danger }}>Not: {a.returnNote}</Text>}
           {a.recording && (open === a.id ? <VideoBox url={abs(a.recording.videoUrl)} /> : <Button label="Videoyu izle" variant="ghost" onPress={() => setOpen(a.id)} />)}
-        </Card>
+        </Card></Cell>
       ))}
+      </Grid>
     </>
   );
 }
