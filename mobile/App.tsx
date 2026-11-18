@@ -1,5 +1,6 @@
 import { File, Paths } from 'expo-file-system';
 import { requestPermissionsAsync, saveToLibraryAsync } from 'expo-media-library/legacy';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -27,6 +28,9 @@ function Studio() {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const landscape = width > height;
+  // Telefonda yalnızca yatay desteklenir; dikey ve yatay yalnızca tablette (ekranın kısa kenarı >= 600).
+  const isTablet = Math.min(width, height) >= 600;
+  const [orientationWaitOver, setOrientationWaitOver] = useState(false);
   const recorder = useRecorder();
   const [tool, setTool] = useState<Tool>('pen');
   const [counts, setCounts] = useState({ strokes: 0, erases: 0 });
@@ -40,6 +44,18 @@ function Studio() {
   const pendingRef = useRef<RecordingResult | null>(null); // yüklenmeyi bekleyen kayıt
 
   const active = recorder.status !== 'idle';
+
+  // Telefonda ekranı yataya kilitler, tablette kilidi kaldırır. Sistem kilidi reddederse (iOS 27+'da yeniden
+  // boyutlanabilir uygulamalarda olabilir) kısa bir bekleyişten sonra mevcut yönde çalışmaya devam edilir.
+  useEffect(() => {
+    if (isTablet) {
+      void ScreenOrientation.unlockAsync();
+      return;
+    }
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => setOrientationWaitOver(true));
+    const timer = setTimeout(() => setOrientationWaitOver(true), 1500);
+    return () => clearTimeout(timer);
+  }, [isTablet]);
 
   function handleEvent(event: DrawingEvent) {
     eventsRef.current.push(event);
@@ -161,6 +177,9 @@ function Studio() {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, video]);
+
+  // Telefon yataya dönene kadar dikey arayüz hiç gösterilmez (kilit uygulanmazsa bekleyiş bitince gösterilir).
+  if (!isTablet && !landscape && !orientationWaitOver) return <View style={styles.container} />;
 
   if (phase === 'preview' && video) {
     return (
