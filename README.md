@@ -281,6 +281,14 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 **Doğrulanmadı:** gerçek mikrofonla ses–çizim eşzamanlılığı ve uzun kayıtlarda tarayıcı davranışı (elle denenmeli).
 
+### 14. Mobil stüdyo: Skia ile çizim, expo-audio ile ses
+
+**Karar:** Mobil stüdyoda çizim **`@shopify/react-native-skia`** ile yapılır; dokunma olayları `react-native-gesture-handler` ve `react-native-reanimated` ile alınır. Ses kaydı **`expo-audio`** ile yapılır. Çizim modeli (çizgi/silme olayları, yumuşatma, kayıt saati) web ile aynıdır; video yine sunucuda üretilir.
+
+**Gerekçe:** Çizim akıcılığı görevin en kritik ölçütüdür. Skia GPU ile çizer ve dokunmayı arayüz iş parçacığında işleyebilir. `react-native-svg` her noktada bileşen güncellemesi gerektirdiği için canlı çizimde gecikme riski taşır; WebView'a gömülen web tahtası ise hem dokunma gecikmesi getirir hem de "React Native uygulaması" olarak sayılmayabilir.
+
+**Doğrulama yöntemi:** Çizim akıcılığı mobilde otomatik ölçülemediği için iOS simülatöründe elle denenir; önce küçük bir çizim denemesi (spike) yapılıp akıcılığı onaylandıktan sonra kayıt akışına geçilir.
+
 ### MVP kapsamı (video stüdyosu)
 
 - Kalem ve silgi, tek renk ve tek kalınlık
