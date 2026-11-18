@@ -33,7 +33,6 @@ function Studio() {
   const [orientationWaitOver, setOrientationWaitOver] = useState(false);
   const recorder = useRecorder();
   const [tool, setTool] = useState<Tool>('pen');
-  const [counts, setCounts] = useState({ strokes: 0, erases: 0 });
   const [boardKey, setBoardKey] = useState(0);
   const [phase, setPhase] = useState<Phase>('studio');
   const [video, setVideo] = useState<Video | null>(null);
@@ -59,7 +58,6 @@ function Studio() {
 
   function handleEvent(event: DrawingEvent) {
     eventsRef.current.push(event);
-    setCounts((c) => (event.type === 'stroke' ? { ...c, strokes: c.strokes + 1 } : { ...c, erases: c.erases + 1 }));
   }
 
   // Kaydı bitirir: ses dosyasını alır, sunucuya yükler, hazır olunca izleme ekranına geçer.
@@ -99,7 +97,6 @@ function Studio() {
     eventsRef.current = [];
     setVideo(null);
     setUploadError(null);
-    setCounts({ strokes: 0, erases: 0 });
     setBoardKey((k) => k + 1);
     recorder.setError(null);
     setPhase('studio');
@@ -197,30 +194,12 @@ function Studio() {
     );
   }
 
-  const controls = (
-    <StudioControls
-      tool={tool}
-      onToolChange={setTool}
-      status={recorder.status}
-      startDisabled={recorder.starting}
-      onStart={() => void recorder.start()}
-      onPause={recorder.pause}
-      onResume={recorder.resume}
-      onFinish={() => void handleFinish()}
-      direction={landscape ? 'column' : 'row'}
-    />
-  );
-
-  // Ekran dönse de aynı bileşen ağacı korunur (Board yeniden oluşmaz, çizimler kaybolmaz);
-  // yalnızca stiller değişir.
+  // Her iki yönde ve her cihazda aynı yerleşim: soru tahtası ekrana sığar, kontroller tahtanın sağ
+  // kenarında yüzer, süre sağ üstte durur. Ekran dönse de aynı bileşen ağacı korunur (Board yeniden
+  // oluşmaz, çizimler kaybolmaz).
   return (
-    <View
-      style={[
-        styles.container,
-        landscape ? styles.containerLandscape : { paddingTop: insets.top + 8, paddingHorizontal: 8, gap: 10 },
-      ]}
-    >
-      <View style={landscape ? styles.boardLandscape : styles.boardPortrait}>
+    <View style={styles.container}>
+      <View style={styles.board}>
         <Board
           key={boardKey}
           imageSource={QUESTION_IMAGE}
@@ -235,42 +214,26 @@ function Studio() {
         />
       </View>
 
-      {landscape ? (
-        <>
-          {/* Yatay: soru tam ekran; kontroller tahtanın sağ kenarında, süre sağ üstte yüzer. */}
-          <View style={[styles.floating, { right: Math.max(insets.right, 12) + 8, top: 0, bottom: 0, justifyContent: 'center' }]}>
-            {controls}
-          </View>
-          <View style={[styles.floating, { right: Math.max(insets.right, 12) + 8, top: 8 }]}>
-            <RecordingTimer status={recorder.status} elapsedMs={recorder.elapsedMs} />
-          </View>
-          {recorder.error && (
-            <View style={[styles.floating, styles.toast, { left: Math.max(insets.left, 12) + 8, top: 8 }]}>
-              <Text style={styles.error}>{recorder.error}</Text>
-            </View>
-          )}
-        </>
-      ) : (
-        <>
-          {/* Dikey: tahtanın altında aynı düğmeler yan yana, süre sağda. */}
-          <View style={styles.portraitBar}>
-            {controls}
-            <RecordingTimer status={recorder.status} elapsedMs={recorder.elapsedMs} />
-          </View>
-          {recorder.error && <Text style={styles.error}>{recorder.error}</Text>}
-          {/* Geliştirici yardımcıları (yalnızca dikey modda) */}
-          <View style={styles.devRow}>
-            <Pressable style={styles.devButton} onPress={drawDemo}>
-              <Text style={styles.devText}>Deneme çizimi</Text>
-            </Pressable>
-            <Pressable style={styles.devButton} onPress={eraseFirstLineTip}>
-              <Text style={styles.devText}>Çizgiyi sil (uç)</Text>
-            </Pressable>
-            <Text style={styles.devText}>
-              Çizgi: {counts.strokes}, silme: {counts.erases}
-            </Text>
-          </View>
-        </>
+      <View style={[styles.floating, { right: Math.max(insets.right, 12) + 8, top: 0, bottom: 0, justifyContent: 'center' }]}>
+        <StudioControls
+          tool={tool}
+          onToolChange={setTool}
+          status={recorder.status}
+          startDisabled={recorder.starting}
+          onStart={() => void recorder.start()}
+          onPause={recorder.pause}
+          onResume={recorder.resume}
+          onFinish={() => void handleFinish()}
+          direction="column"
+        />
+      </View>
+      <View style={[styles.floating, { right: Math.max(insets.right, 12) + 8, top: insets.top + 8 }]}>
+        <RecordingTimer status={recorder.status} elapsedMs={recorder.elapsedMs} />
+      </View>
+      {recorder.error && (
+        <View style={[styles.floating, styles.toast, { left: Math.max(insets.left, 12) + 8, top: insets.top + 8 }]}>
+          <Text style={styles.error}>{recorder.error}</Text>
+        </View>
       )}
 
       {/* Video hazırlanırken (veya hata olursa) tahtanın üstünü kaplayan bilgi katmanı */}
@@ -296,8 +259,8 @@ function Studio() {
           )}
         </View>
       )}
-      {/* Yatayda soru tam ekran: durum çubuğu da gizlenir. */}
-      <StatusBar hidden={landscape} style="auto" />
+      {/* Soru tam ekran: durum çubuğu gizlenir. */}
+      <StatusBar hidden style="auto" />
     </View>
   );
 }
@@ -312,16 +275,10 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f4f4f5' },
-  boardPortrait: { width: '100%', aspectRatio: 16 / 9 },
-  containerLandscape: { padding: 0 },
-  boardLandscape: { flex: 1 },
+  board: { flex: 1 },
   floating: { position: 'absolute' },
   toast: { maxWidth: 320, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 8, padding: 8 },
-  portraitBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   error: { fontSize: 13, color: '#dc2626' },
-  devRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 },
-  devButton: { borderRadius: 6, borderWidth: 1, borderColor: '#d4d4d8', backgroundColor: '#ffffff', paddingVertical: 4, paddingHorizontal: 8 },
-  devText: { fontSize: 12, color: '#52525b' },
   overlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
   overlayText: { color: '#ffffff', fontSize: 16 },
   overlayError: { color: '#ffffff', fontSize: 15, textAlign: 'center' },
