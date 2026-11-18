@@ -1,7 +1,7 @@
 // Yönetici (mobil, en küçük kapsam): Panel (sayılar), Onay kuyruğu (izle, onayla, notla geri gönder) ve Hata bildirimleri.
 // Öğretmen, soru ve atama yönetimi web panelindedir. Sağ üstte bildirim zili ve çıkış vardır.
-import { useCallback, useEffect, useState } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ASSIGNMENT_STATUS_LABEL, ERROR_REPORT_TYPES, type AssignmentInfo, type AssignmentStatus, type DashboardStats, type ErrorReportInfo, type NotificationInfo } from '@app/shared';
 import { abs, api } from '../api';
@@ -11,6 +11,8 @@ import { colors } from '../theme';
 import { Button, Card, ErrorText, Notice, StatCard } from '../ui';
 import { useWide } from '../ui/layout';
 import { NotificationSheet } from '../ui/NotificationSheet';
+import { useList } from '../ui/useList';
+import { AdminPageView, type AdminPage } from './AdminLists';
 import { VideoBox } from '../ui/VideoBox';
 
 type Tab = 'panel' | 'queue' | 'reports';
@@ -34,13 +36,17 @@ export function AdminScreen() {
   const { notifications, unread, refresh: refreshNotifs } = useNotifications();
   const [tab, setTab] = useState<Tab>('panel');
   const [bellOpen, setBellOpen] = useState(false);
+  const [page, setPage] = useState<AdminPage | null>(null); // panel kartından açılan liste sayfası
 
   async function openNotification(n: NotificationInfo) {
     if (!n.readAt) await api(`/api/notifications/${n.id}/read`, { method: 'POST' }).catch(() => undefined);
     void refreshNotifs();
     setBellOpen(false);
     const target = tabFromHref(n.href);
-    if (target) setTab(target);
+    if (target) {
+      setPage(null);
+      setTab(target);
+    }
   }
   async function readAll() {
     await api('/api/notifications/read-all', { method: 'POST' }).catch(() => undefined);
@@ -69,45 +75,24 @@ export function AdminScreen() {
 
       <View style={styles.tabs}>
         {TABS.map((t) => (
-          <Pressable key={t.id} onPress={() => setTab(t.id)} style={[styles.tab, tab === t.id && styles.tabOn]} testID={`admin-tab-${t.id}`}>
+          <Pressable key={t.id} onPress={() => { setPage(null); setTab(t.id); }} style={[styles.tab, tab === t.id && styles.tabOn]} testID={`admin-tab-${t.id}`}>
             <Text style={[styles.tabText, tab === t.id && { color: '#fff' }]}>{t.label}</Text>
           </Pressable>
         ))}
       </View>
 
-      {tab === 'panel' && <PanelTab goTo={setTab} />}
-      {tab === 'queue' && <QueueTab />}
-      {tab === 'reports' && <ReportsTab />}
+      {page && <AdminPageView page={page} onBack={() => setPage(null)} />}
+      {!page && tab === 'panel' && <PanelTab goTo={setTab} open={setPage} />}
+      {!page && tab === 'queue' && <QueueTab />}
+      {!page && tab === 'reports' && <ReportsTab />}
 
       <NotificationSheet visible={bellOpen} onClose={() => setBellOpen(false)} notifications={notifications} unread={unread} onOpen={(n) => void openNotification(n)} onReadAll={() => void readAll()} />
     </View>
   );
 }
 
-// Her sekme kendi verisini okur; aşağı çekince yenilenir ve 30 sn'de bir kendiliğinden güncellenir.
-function useList<T>(load: () => Promise<T>) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const reload = useCallback(async () => {
-    try {
-      setData(await load());
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Yüklenemedi.');
-    }
-  }, [load]);
-  useEffect(() => {
-    void reload();
-    const id = setInterval(() => void reload(), 30_000);
-    return () => clearInterval(id);
-  }, [reload]);
-  const refreshControl = <RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await reload(); setRefreshing(false); }} />;
-  return { data, error, reload, refreshControl };
-}
-
 // Panel: iki grup (sayılar, atama durumları); telefonda 2x2, tablette tek sırada dört kart.
-function PanelTab({ goTo }: { goTo: (t: Tab) => void }) {
+function PanelTab({ goTo, open }: { goTo: (t: Tab) => void; open: (p: AdminPage) => void }) {
   const insets = useSafeAreaInsets();
   const { data: stats, error, refreshControl } = useList(useCallback(() => api<DashboardStats>('/api/admin/dashboard'), []));
   const wide = useWide();
@@ -119,15 +104,15 @@ function PanelTab({ goTo }: { goTo: (t: Tab) => void }) {
       {stats && (
         <>
           <View style={styles.statGrid}>
-            <StatCard wide={wide} label="Öğretmen" value={stats.teachers} />
-            <StatCard wide={wide} label="Soru" value={stats.questions} />
-            <StatCard wide={wide} label="Kazanım" value={stats.outcomes} />
+            <StatCard wide={wide} label="Öğretmen" value={stats.teachers} onPress={() => open({ name: 'teachers' })} />
+            <StatCard wide={wide} label="Soru" value={stats.questions} onPress={() => open({ name: 'questions' })} />
+            <StatCard wide={wide} label="Kazanım" value={stats.outcomes} onPress={() => open({ name: 'outcomes' })} />
             <StatCard wide={wide} label="Hata bildirimi" value={stats.errorReports} onPress={() => goTo('reports')} />
           </View>
           <Text style={styles.section}>Atama durumları</Text>
           <View style={styles.statGrid}>
             {statuses.map((s) => (
-              <StatCard wide={wide} key={s} label={ASSIGNMENT_STATUS_LABEL[s]} value={stats.assignments[s]} tone={s === 'submitted' ? 'brand' : s === 'returned' ? 'warn' : undefined} onPress={s === 'submitted' ? () => goTo('queue') : undefined} />
+              <StatCard wide={wide} key={s} label={ASSIGNMENT_STATUS_LABEL[s]} value={stats.assignments[s]} tone={s === 'submitted' ? 'brand' : s === 'returned' ? 'warn' : undefined} onPress={s === 'submitted' ? () => goTo('queue') : () => open({ name: 'assignments', status: s })} />
             ))}
           </View>
         </>

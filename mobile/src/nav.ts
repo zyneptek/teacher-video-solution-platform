@@ -1,6 +1,8 @@
+import type { AssignmentStatus } from '@app/shared';
 // Basit ekran yığını (ek yönlendirme kütüphanesi olmadan): uygulama küçük olduğundan durum içinde tutulur.
 export type Route =
   | { name: 'home' }
+  | { name: 'list'; status: AssignmentStatus }
   | { name: 'question'; id: string }
   | { name: 'record'; id: string }
   | { name: 'trim'; id: string }
