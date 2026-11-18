@@ -12,6 +12,9 @@ function pickMimeType(): string | undefined {
   return ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((type) => MediaRecorder.isTypeSupported(type));
 }
 
+// Kamera bindirmesi küçük (240x180) olduğundan düşük bit hızı yeter; 3 dakikalık klip ~15 MB kalır.
+const CAMERA_BITS_PER_SECOND = 800_000;
+
 // Kamera klibi yalnızca görüntü içerir (ses ayrı kaydedilir).
 function pickVideoMimeType(): string | undefined {
   return ['video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((type) => MediaRecorder.isTypeSupported(type));
@@ -98,7 +101,7 @@ export function useRecorder() {
     const videoTracks = cameraStream?.getVideoTracks().filter((track) => track.readyState === 'live') ?? [];
     if (cameraStream && videoTracks.length > 0) {
       try {
-        const cameraRecorder = new MediaRecorder(new MediaStream(videoTracks), { mimeType: pickVideoMimeType() });
+        const cameraRecorder = new MediaRecorder(new MediaStream(videoTracks), { mimeType: pickVideoMimeType(), videoBitsPerSecond: CAMERA_BITS_PER_SECOND });
         cameraRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) cameraChunksRef.current.push(event.data);
         };

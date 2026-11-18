@@ -323,6 +323,7 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 Görevin açık bıraktığı noktaların çoğu karara bağlandı (Karar 15–27). **Hâlâ açık olanlar** (varsayılan davranış yazılıdır, değiştirilebilir):
 
+- **Mevcut video görünürlüğü:** karara bağlandı (Karar 27): çapraz atanan öğretmen başkalarının videolarını görmez.
 - **Branşı değişen öğretmenin mevcut atamaları:** şimdilik korunur (branş serbestçe değiştirilebilir).
 - **Yeni soru ekleme ekranı** ve **kazanım ekleme/silme:** yapılmadı; demo "paketten soru açma" ile yapılır, kazanım için zorunlu olan güncelleme vardır.
 - **Arka plana geçiş:** kayıt sırasında uygulama/sekme arka plana alınırsa, tarayıcıda ses kaydı sürebilir; mobilde işletim sistemi kaydı durdurabilir (gerçek cihazda ayrıca denenmelidir).
@@ -416,7 +417,8 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 - Hata türü "Diğer (serbest metin)" etiketi "Diğer" olarak sadeleştirildi.
 
 ### Karar 27 — Çapraz atama ve kırpma
-- **Çapraz atama:** yönetici, videosu olan bir soruyu **aynı branştan başka bir öğretmene** de atayabilir (atama formu yalnızca sorunun branşındaki öğretmenleri listeler; her öğretmen kendi kaydını üretir). Yeni öğretmen soru sayfasında, aynı sorunun başka öğretmenlerce üretilmiş ve **yönetici tarafından onaylanmış** videolarını "Bu soru için onaylanmış çözüm videosu" kartında izleyebilir ve kendi kaydını üretip onaya gönderebilir. **Açık nokta kararı:** yalnızca **onaylanmış** videolar gösterilir (onaysız/geri gönderilmiş bir video referans olarak gösterilmez). Öğretmen kendi videosunu referans olarak görmez. Her atamanın durumu (Atandı, Onaya gönderildi, Onaylandı, Geri gönderildi) hem öğretmene hem yöneticiye görünür.
+- **Çapraz atama:** yönetici, videosu olan bir soruyu **aynı branştan başka bir öğretmene** de atayabilir (atama formu yalnızca sorunun branşındaki öğretmenleri listeler; aynı öğretmene ikinci kez atanamaz). Her öğretmen soruyu açar, **kendi kaydını** üretir ve onaya gönderir; her atamanın durumu (Atandı, Onaya gönderildi, Onaylandı, Geri gönderildi) hem o öğretmene hem yöneticiye görünür.
+- **Açık nokta kararı — mevcut video görünürlüğü:** çapraz atanan öğretmen, aynı soru için **başka öğretmenlerin videolarını görmez** (onaylanmış olsa bile). Öğretmen yalnızca kendi kayıtlarını görür (görevdeki "öğretmen yalnızca kendi kayıtlarını görür" kuralıyla tutarlı); tüm videoları yalnızca yönetici izler. *(İlk sürümde yalnızca onaylı videolar referans olarak gösteriliyordu; kullanıcı kararıyla kaldırıldı.)*
 - **Kırpma:** öğretmen kayıt sayfasında "Kırp"a basar, başlangıç ve bitiş kaydırıcılarıyla (veya "mevcut konumu başlangıç/bitiş yap" ile) aralığı seçer; sunucu ffmpeg ile aralığı keser (yeniden kodlama, kare hassasiyeti) ve **kırpılmış MP4 kaydın yerine geçer**; yönetici kırpılmış videoyu izler. Kırpma geri alınamaz; aradaki süre en az 1 sn olmalıdır. Kırpma da bir düzenlemedir: onaya gönderilmiş/onaylanmış atama taslağa (Atandı) döner ve yeniden gönderilmelidir (Karar 23).
 
 ### Karar 28 — Mobil uygulama (öğretmen)
@@ -428,3 +430,8 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 - **Kırpma:** `@react-native-community/slider` ile başlangıç/bitiş; sunucu kırpılmış MP4'ü kaydın yerine koyar.
 - **Push:** giriş yapınca izin istenir ve Expo push jetonu `POST /api/push-token` ile kaydedilir; bildirime tıklanınca ilgili soru açılır. **Kurulum notu:** Expo Go'da push yalnızca gerçek cihazda ve (iOS'ta) Expo hesabına bağlı proje kimliğiyle çalışır; simülatörde izin penceresi çıkar ama jeton alınamaz ve sessizce atlanır. Tam doğrulama için gerçek cihaz gerekir.
 - **Geliştirici doğrulama yardımcıları** (üretimde etkisizdir): `EXPO_PUBLIC_DEV_EMAIL/PASSWORD/AUTOLOGIN=1` otomatik giriş, `EXPO_PUBLIC_DEV_OPEN=question|record|trim|report` ilk atamayı doğrudan açar (dokunma enjekte edilemeyen simülatör doğrulaması için).
+
+### Karar 29 — Yükleme sınırları ve çizim günlüğü boyutu
+- **Sorun:** 26 saniyelik bir kayıt "Yükleme geçersiz veya çok büyük" hatası verdi. Sebep: çok parçalı yüklemede çizim günlüğü bir metin alanı olarak gidiyor ve sunucunun varsayılan metin alanı sınırı 1 MB'tı; yoğun çizimde (kalem/fare, yüksek örnekleme, uzun ondalıklı koordinatlar) günlük bunu aşabiliyordu.
+- **Çözüm:** (1) alan sınırı **16 MB**'a çıkarıldı (günlük en fazla 200.000 nokta taşıyabilir); dosya başına sınır 60 MB. (2) İstemciler günlüğü **sıkıştırarak** gönderir: koordinatlar 0,1 piksele, zaman damgaları 1 ms'ye yuvarlanır (tahta 1280x720 olduğundan görsel fark yoktur; sıra ve zaman monotonluğu korunur). (3) Web kamera klibinin bit hızı 0,8 Mb/sn ile sınırlandı (3 dk ≈ 15 MB). (4) Hata mesajları nedenini söyler ("Yüklenen dosya çok büyük", "Çizim verisi çok büyük") ve sunucu günlüğüne neden yazılır.
+- **Ek düzeltme (video üretici kilitlenmesi):** test sırasında, ses dosyası çizim süresinden kısa kaldığında ffmpeg'in erken kapanması yüzünden yazma döngüsünün sonsuza kadar beklediği bir hata bulundu (gerçek kayıtlarda ses süresi çizim süresinden milisaniyelerle kısa olabildiği için aralıklı bir risk). Yazma artık akışın kapanmasını/hatasını da bekleme bitişi sayar; gerçek hata ffmpeg çıkış kodundan bildirilir.

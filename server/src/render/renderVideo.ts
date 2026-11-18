@@ -25,11 +25,28 @@ export function getFfmpegPath(): string {
   return ffmpegPath;
 }
 
-// Akışa yazar; ffmpeg yetişemiyorsa (arabellek dolunca) boşalmasını bekler.
+// Akışa yazar; ffmpeg yetişemiyorsa (arabellek dolunca) boşalmasını bekler. ffmpeg erken kapanırsa (ses, görüntüden kısa
+// kaldığında `-shortest` ile böyle olur) akış kapandığı için 'drain' hiç gelmez; kapanma/hata da beklemeyi bitirir,
+// böylece yazma döngüsü sonsuza kadar takılı kalmaz. Gerçek hata, ffmpeg'in çıkış kodundan bildirilir.
 function write(stream: Writable, data: Buffer): Promise<void> {
   return new Promise((resolve) => {
-    if (stream.write(data)) resolve();
-    else stream.once('drain', () => resolve());
+    if (stream.destroyed || stream.writableEnded) {
+      resolve();
+      return;
+    }
+    const done = () => {
+      stream.off('drain', done);
+      stream.off('close', done);
+      stream.off('error', done);
+      resolve();
+    };
+    if (stream.write(data)) {
+      resolve();
+      return;
+    }
+    stream.once('drain', done);
+    stream.once('close', done);
+    stream.once('error', done);
   });
 }
 

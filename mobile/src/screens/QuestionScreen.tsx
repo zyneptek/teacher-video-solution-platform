@@ -115,19 +115,6 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
         )}
       </Card>
 
-      {assignment.referenceVideos && assignment.referenceVideos.length > 0 && (
-        <Card>
-          <Text style={styles.bold}>Bu soru için onaylanmış çözüm videosu</Text>
-          <Text style={styles.small}>Başka bir öğretmenin yöneticice onaylanmış çözümüdür; izleyip kendi kaydınızı oluşturabilirsiniz.</Text>
-          {assignment.referenceVideos.map((v) => (
-            <View key={v.recording.id} style={{ gap: 4 }}>
-              <Text style={styles.small}>{v.teacherName}</Text>
-              <VideoBox url={abs(v.recording.videoUrl)} />
-            </View>
-          ))}
-        </Card>
-      )}
-
       <Card>
         <Text style={styles.bold}>Kazanımlar</Text>
         {q.outcomes.map((o) => (

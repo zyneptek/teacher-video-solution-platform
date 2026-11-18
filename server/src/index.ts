@@ -41,7 +41,14 @@ app.use('/api/admin/teachers', adminTeachersRouter);
 // Yükleme hataları (örneğin dosya çok büyük) 400 döner.
 app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
   if (err instanceof multer.MulterError) {
-    res.status(400).json({ error: 'Yükleme geçersiz veya çok büyük.' });
+    console.warn('Yükleme reddedildi:', err.code, err.field ?? '');
+    const messages: Record<string, string> = {
+      LIMIT_FILE_SIZE: 'Yüklenen dosya çok büyük.',
+      LIMIT_FIELD_VALUE: 'Çizim verisi çok büyük.',
+      LIMIT_FILE_COUNT: 'Çok fazla dosya yüklendi.',
+      LIMIT_UNEXPECTED_FILE: 'Beklenmeyen dosya alanı.',
+    };
+    res.status(400).json({ error: messages[err.code] ?? 'Yükleme geçersiz.' });
     return;
   }
   next(err);

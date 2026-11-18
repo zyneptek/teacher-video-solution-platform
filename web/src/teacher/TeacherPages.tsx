@@ -185,19 +185,6 @@ function QuestionPage({ id }: { id: string }) {
             )}
           </div>
 
-          {assignment.referenceVideos && assignment.referenceVideos.length > 0 && (
-            <div className="card" data-testid="reference-videos">
-              <strong>Bu soru için onaylanmış çözüm videosu</strong>
-              <span className="muted small">Başka bir öğretmenin yöneticice onaylanmış çözümüdür; izleyip kendi kaydınızı oluşturabilirsiniz.</span>
-              {assignment.referenceVideos.map((v) => (
-                <div key={v.recording.id}>
-                  <div className="muted small" style={{ marginBottom: 4 }}>{v.teacherName}</div>
-                  <VideoPreview src={v.recording.videoUrl} />
-                </div>
-              ))}
-            </div>
-          )}
-
           <div className="card">
             <strong>Kazanımlar</strong>
             <ul className="outcomes">

@@ -224,3 +224,14 @@ export function eraserHitsStroke(stroke: StrokeEvent, from: XY, to: XY, radius: 
   }
   return false;
 }
+
+// Çizim günlüğünü yüklemek için serileştirir: koordinatlar 0,1 piksele, zaman damgaları 1 ms'ye yuvarlanır.
+// Görsel fark yoktur (tahta 1280x720), ama JSON birkaç kat küçülür; yuvarlama sırayı ve geriye gitmemeyi bozmaz.
+export function serializeEvents(events: DrawingEvent[]): string {
+  return JSON.stringify(events, function (this: unknown, key: string, value: unknown) {
+    if (typeof value !== 'number') return value;
+    if (key === 'x' || key === 'y') return Math.round(value * 10) / 10;
+    if (key === 't') return Math.round(value);
+    return value;
+  });
+}
