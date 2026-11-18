@@ -5,6 +5,8 @@
 import { useCameraPermissions, type CameraView } from 'expo-camera';
 import { useCallback, useRef, useState } from 'react';
 
+const CLIP_STOP_TIMEOUT_MS = 3000;
+
 export function useCameraClips() {
   const [permission, requestPermission] = useCameraPermissions();
   const [enabled, setEnabled] = useState(false);
@@ -52,8 +54,17 @@ export function useCameraClips() {
   const stopClip = useCallback(async () => {
     const pending = pendingRef.current;
     if (!pending) return;
-    cameraRef.current?.stopRecording();
-    await pending;
+    try {
+      cameraRef.current?.stopRecording();
+    } catch {
+      // kamera zaten durmuş olabilir
+    }
+    // Klip dosyası kısa sürede gelmezse (kamera yok/takıldı) beklemeden kayıt kamerasız sürer; ses ve ekran asla bu yüzden kilitlenmez.
+    const finished = await Promise.race([pending.then(() => true), new Promise<boolean>((resolve) => setTimeout(() => resolve(false), CLIP_STOP_TIMEOUT_MS))]);
+    if (!finished) {
+      pendingRef.current = null;
+      setNotice('Kamera kaydı tamamlanamadı; kayıt kamerasız sürüyor.');
+    }
   }, []);
 
   // Bitirdikten sonra klip listesini verir ve temizler.
