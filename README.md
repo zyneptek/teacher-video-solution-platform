@@ -283,11 +283,24 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 ### 14. Mobil stüdyo: Skia ile çizim, expo-audio ile ses
 
-**Karar:** Mobil stüdyoda çizim **`@shopify/react-native-skia`** ile yapılır; dokunma olayları `react-native-gesture-handler` ve `react-native-reanimated` ile alınır. Ses kaydı **`expo-audio`** ile yapılır. Çizim modeli (çizgi/silme olayları, yumuşatma, kayıt saati) web ile aynıdır; video yine sunucuda üretilir.
+**Karar:** Mobil stüdyoda çizim **`@shopify/react-native-skia`** ile yapılır; ses kaydı **`expo-audio`** ile yapılır. Çizim modeli (çizgi/silme olayları, yumuşatma, kayıt saati) web ile aynıdır; video yine sunucuda üretilir.
 
-**Gerekçe:** Çizim akıcılığı görevin en kritik ölçütüdür. Skia GPU ile çizer ve dokunmayı arayüz iş parçacığında işleyebilir. `react-native-svg` her noktada bileşen güncellemesi gerektirdiği için canlı çizimde gecikme riski taşır; WebView'a gömülen web tahtası ise hem dokunma gecikmesi getirir hem de "React Native uygulaması" olarak sayılmayabilir.
+**Gerekçe:** Çizim akıcılığı görevin en kritik ölçütüdür. Skia GPU destekli çizim yapar. `react-native-svg` her noktada bileşen güncellemesi gerektirdiği için canlı çizimde gecikme riski taşır; WebView'a gömülen web tahtası ise hem dokunma gecikmesi getirir hem de "React Native uygulaması" olarak sayılmayabilir.
 
-**Doğrulama yöntemi:** Çizim akıcılığı mobilde otomatik ölçülemediği için iOS simülatöründe elle denenir; önce küçük bir çizim denemesi (spike) yapılıp akıcılığı onaylandıktan sonra kayıt akışına geçilir.
+**Nasıl çalışır** (`mobile/src/studio/`)
+
+- **Ortak çizim kodu:** `shared/` içindeki `InkPainter` (çizim) ve `InkController` (kalem/silgi etkileşimi) mobilde de aynen kullanılır; web, mobil ve sunucudaki video aynı koddan çıktığı için çizgiler aynıdır. `SkiaDrawingContext`, ortak kodun tarayıcı canvas'ına benzeyen çağrılarını (`moveTo`, `quadraticCurveTo`, `stroke`) Skia yoluna (`PathBuilder`) çeviren küçük bir adaptördür.
+- **Çizim yüzeyi:** 1280×720 mantıksal boyutlu ekran dışı bir Skia yüzeyine çizilir; her ekran karesinde en fazla bir kez görüntüsü alınır ve paylaşılan değer (Reanimated) ile ekrandaki canvas'a verilir, böylece React her çizgi noktasında yeniden çizilmez.
+- **Dokunma:** React Native'in kendi dokunma olayları (`onTouchStart/Move/End`) kullanılır: tanıma gecikmesi yoktur ve tek parmak izlenir. `react-native-gesture-handler` 3.x sürümünün API'si köklü biçimde değiştiği için ve çizim zaten JS tarafında yapıldığı için bu kütüphane çizimde kullanılmadı (kurulu; gerekirse navigasyon için kullanılabilir).
+- **Ses kaydı:** `expo-audio` (`AudioRecorder`: `record`, `pause`, `stop`, `uri`); Expo Go'da çalıştığı Expo SDK 58 dokümanından doğrulandı.
+
+**Doğrulama:** iOS simülatöründe (Expo Go) soru görseli, kalemle yumuşatılmış çizgiler (küçük bir "3" dahil) ve silgi, dokunmasız programatik denemeyle ekran görüntüleriyle doğrulandı: ucuna değen silgi çizginin tamamını sildi, diğer çizgiler kaldı. Gerçek dokunmayla akıcılık elle denenecektir.
+
+**Bilinen kısıtlar**
+
+- Çizim yüzeyi **CPU** destekli oluşturulur. GPU destekli yüzey (`MakeOffscreen`) denendi; çizim yüzeyde vardı (piksel okuma ile doğrulandı) ama iOS simülatöründe ekrandaki canvas'a yansımadı. Gerçek cihazda GPU yüzeyi ayrıca denenebilir.
+- Etkileşim JS iş parçacığında işlenir; JS iş parçacığı meşgulse çizim gecikebilir. Akıcılık elle denenip gerekirse iyileştirilecektir.
+- Geliştirmede Metro'yu `CI=1` ile başlatmayın: bu modda dosya değişiklikleri izlenmez ve uygulama eski kodu çalıştırır. `npm run dev:mobile` yeterlidir.
 
 ### MVP kapsamı (video stüdyosu)
 
