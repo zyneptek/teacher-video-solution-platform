@@ -291,6 +291,7 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 - **Ortak çizim kodu:** `shared/` içindeki `InkPainter` (çizim) ve `InkController` (kalem/silgi etkileşimi) mobilde de aynen kullanılır; web, mobil ve sunucudaki video aynı koddan çıktığı için çizgiler aynıdır. `SkiaDrawingContext`, ortak kodun tarayıcı canvas'ına benzeyen çağrılarını (`moveTo`, `quadraticCurveTo`, `stroke`) Skia yoluna (`PathBuilder`) çeviren küçük bir adaptördür.
 - **Çizim yüzeyi:** 1280×720 mantıksal boyutlu ekran dışı bir Skia yüzeyine çizilir; her ekran karesinde en fazla bir kez görüntüsü alınır ve paylaşılan değer (Reanimated) ile ekrandaki canvas'a verilir, böylece React her çizgi noktasında yeniden çizilmez.
+- **Yerleşim:** Tahta, bulunduğu alana oranını koruyarak sığar. Dikeyde tahta üstte, araçlar altta; yatayda tahta solda, araçlar sağda dikey sütundadır; kaydırma gerekmez ve araçlar ekranın dışına taşmaz. Seçili araç belirgindir.
 - **Dokunma:** React Native'in kendi dokunma olayları (`onTouchStart/Move/End`) kullanılır: tanıma gecikmesi yoktur ve tek parmak izlenir. `react-native-gesture-handler` 3.x sürümünün API'si köklü biçimde değiştiği için ve çizim zaten JS tarafında yapıldığı için bu kütüphane çizimde kullanılmadı (kurulu; gerekirse navigasyon için kullanılabilir).
 - **Ses kaydı:** `expo-audio` (`AudioRecorder`: `record`, `pause`, `stop`, `uri`); Expo Go'da çalıştığı Expo SDK 58 dokümanından doğrulandı.
 

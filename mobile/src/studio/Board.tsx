@@ -24,7 +24,9 @@ type Props = {
 };
 
 export function Board({ imageSource, tool, getTimeMs, onEvent, onReady, disabled = false }: Props) {
-  const [width, setWidth] = useState(0);
+  // Tahta, bulunduğu alana oranını koruyarak sığar (ekran dönse de taşmaz, kaydırma gerekmez).
+  const [area, setArea] = useState({ width: 0, height: 0 });
+  const width = Math.min(area.width, (area.height * BOARD.width) / BOARD.height);
   const height = (width * BOARD.height) / BOARD.width;
   const scale = width > 0 ? BOARD.width / width : 1; // ekran pikselinden tahta koordinatına
 
@@ -110,30 +112,33 @@ export function Board({ imageSource, tool, getTimeMs, onEvent, onReady, disabled
 
   return (
     <View
-      style={styles.board}
-      onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
+      style={styles.area}
+      onLayout={(event: LayoutChangeEvent) => setArea(event.nativeEvent.layout)}
     >
       {width > 0 && (
-        <Canvas style={{ width, height }}>
-          <Fill color="white" />
-          {questionImage && rect && (
-            <SkiaImage image={questionImage} x={rect.x * k} y={rect.y * k} width={rect.width * k} height={rect.height * k} fit="fill" />
-          )}
-          <SkiaImage image={inkImage} x={0} y={0} width={width} height={height} fit="fill" />
-        </Canvas>
+        <View style={{ width, height }}>
+          <Canvas style={{ width, height }}>
+            <Fill color="white" />
+            {questionImage && rect && (
+              <SkiaImage image={questionImage} x={rect.x * k} y={rect.y * k} width={rect.width * k} height={rect.height * k} fit="fill" />
+            )}
+            <SkiaImage image={inkImage} x={0} y={0} width={width} height={height} fit="fill" />
+          </Canvas>
+          {/* Dokunmaları alan saydam katman: dokunma konumu bu katmana göre gelir. */}
+          <View
+            style={StyleSheet.absoluteFill}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
+          />
+        </View>
       )}
-      {/* Dokunmaları alan saydam katman: dokunma konumu bu katmana göre gelir. */}
-      <View
-        style={StyleSheet.absoluteFill}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  board: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#ffffff' },
+  // Üst alanı doldurur; tahta bu alanın ortasında durur.
+  area: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

@@ -1,12 +1,22 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import type { DrawingEvent, InkController, Tool } from '@app/shared';
 import { Board } from './src/studio/Board';
 
-// Geçici deneme ekranı: Skia tahtasının çizim akıcılığını denemek için.
-// Gerçek ekranlar (giriş, dashboard, stüdyo) sonra gelecek.
+// Geçici deneme ekranı: Skia tahtasını denemek için. Gerçek ekranlar (giriş, dashboard, stüdyo) sonra gelecek.
+
+function ToolButton({ label, selected, onPress }: { label: string; selected?: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.button, selected && styles.buttonSelected]}>
+      <Text style={[styles.buttonText, selected && styles.buttonTextSelected]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export default function App() {
+  const { width, height } = useWindowDimensions();
+  const landscape = width > height;
   const [tool, setTool] = useState<Tool>('pen');
   const [counts, setCounts] = useState({ strokes: 0, erases: 0 });
   const controllerRef = useRef<InkController | null>(null);
@@ -58,27 +68,27 @@ export default function App() {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mobil tahta denemesi (Skia)</Text>
-      <Board
-        imageSource={require('./assets/dev/sample-question.jpg')}
-        tool={tool}
-        getTimeMs={getTimeMs}
-        onEvent={handleEvent}
-        onReady={(controller) => {
-          controllerRef.current = controller;
-        }}
-      />
-      <View style={styles.row}>
-        <Button title={tool === 'pen' ? 'Kalem ✓' : 'Kalem'} onPress={() => setTool('pen')} />
-        <Button title={tool === 'eraser' ? 'Silgi ✓' : 'Silgi'} onPress={() => setTool('eraser')} />
-        <Text testID="counts">
-          Çizgi: {counts.strokes}, silme: {counts.erases}
-        </Text>
+    <View style={[styles.container, landscape ? styles.containerLandscape : styles.containerPortrait]}>
+      <View style={landscape ? styles.boardLandscape : styles.boardPortrait}>
+        <Board
+          imageSource={require('./assets/dev/sample-question.jpg')}
+          tool={tool}
+          getTimeMs={getTimeMs}
+          onEvent={handleEvent}
+          onReady={(controller) => {
+            controllerRef.current = controller;
+          }}
+        />
       </View>
-      <View style={styles.row}>
-        <Button title="Deneme çizimi" onPress={drawDemo} />
-        <Button title="Çizgiyi sil (uç)" onPress={eraseFirstLineTip} />
+      <View style={landscape ? styles.toolbarLandscape : styles.toolbarPortrait}>
+        <ToolButton label="✏️  Kalem" selected={tool === 'pen'} onPress={() => setTool('pen')} />
+        <ToolButton label="🧽  Silgi" selected={tool === 'eraser'} onPress={() => setTool('eraser')} />
+        <Text style={styles.counts}>
+          Çizgi: {counts.strokes}
+          {'\n'}Silme: {counts.erases}
+        </Text>
+        <ToolButton label="Deneme çizimi" onPress={drawDemo} />
+        <ToolButton label="Çizgiyi sil (uç)" onPress={eraseFirstLineTip} />
       </View>
       <StatusBar style="auto" />
     </View>
@@ -86,7 +96,18 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f4f5', paddingTop: 56, paddingHorizontal: 8 },
-  title: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
-  row: { flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 8, flexWrap: 'wrap' },
+  container: { flex: 1, backgroundColor: '#f4f4f5' },
+  // Dikey: tahta üstte (oranını korur), araçlar altta.
+  containerPortrait: { paddingTop: 56, paddingHorizontal: 8, gap: 8 },
+  boardPortrait: { width: '100%', aspectRatio: 16 / 9 },
+  toolbarPortrait: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+  // Yatay: tahta solda kalan alana sığar, araçlar sağda dikey sütun (kaydırma gerekmez).
+  containerLandscape: { flexDirection: 'row', paddingHorizontal: 48, paddingVertical: 8, gap: 12 },
+  boardLandscape: { flex: 1 },
+  toolbarLandscape: { width: 150, justifyContent: 'center', gap: 8 },
+  button: { backgroundColor: '#ffffff', borderRadius: 8, borderWidth: 1, borderColor: '#d4d4d8', paddingVertical: 10, paddingHorizontal: 14 },
+  buttonSelected: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  buttonText: { fontSize: 15, color: '#18181b' },
+  buttonTextSelected: { color: '#ffffff', fontWeight: '600' },
+  counts: { fontSize: 13, color: '#52525b' },
 });
