@@ -1,5 +1,6 @@
 // Kayıt düzenleme: videoda bir aralık seçilir; "Yalnızca bu aralığı tut" (baştan/sondan kırpma) veya "Bu aralığı sil"
-// (ortadan kesme). Sunucu düzenlenmiş MP4'ü kaydın yerine koyar; arka arkaya birden fazla düzenleme yapılabilir.
+// (ortadan kesme). Sunucu düzenlenmiş MP4'ü kaydın yerine koyar; arka arkaya birden fazla düzenleme yapılabilir
+// ve "Geri al" son düzenlemeyi geri getirir (her düzenlemenin öncesi sunucuda saklanır).
 import { useRef, useState } from 'react';
 import type { RecordingInfo, TeacherAssignment } from '@app/shared';
 import { api } from '../auth/session';
@@ -41,6 +42,18 @@ export function EditPanel({ assignmentId, recording, notice, onEdited, onClose }
     }
   }
 
+  async function undo() {
+    setBusy(true);
+    setError(null);
+    try {
+      const { assignment } = await api<{ assignment: TeacherAssignment }>(`/api/teacher/assignments/${assignmentId}/recording/undo`, { method: 'POST' });
+      onEdited(assignment, 'Son düzenleme geri alındı.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Düzenleme geri alınamadı.');
+      setBusy(false);
+    }
+  }
+
   const keepSeconds = end - start;
   const cutSeconds = total - (end - start);
 
@@ -48,7 +61,6 @@ export function EditPanel({ assignmentId, recording, notice, onEdited, onClose }
     <div className="trim" data-testid="edit-panel">
       <video ref={videoRef} src={recording.videoUrl} controls className="trim-video" />
       <div className="trim-controls">
-      <div className="muted small">Önce videoda bir aralık seçin; sonra o aralığı tutabilir veya videodan silebilirsiniz.</div>
       <label>
         Aralık başlangıcı: <strong>{fmt(start)}</strong>
         <input type="range" min={0} max={total} step={0.1} value={start} onChange={(e) => changeStart(Number(e.target.value))} data-testid="edit-start" />
@@ -60,7 +72,7 @@ export function EditPanel({ assignmentId, recording, notice, onEdited, onClose }
         <button type="button" className="link" onClick={() => changeEnd(current())}>Mevcut konumu bitiş yap</button>
       </label>
       <div className="muted small">
-        Seçili aralık: {keepSeconds.toFixed(1)} sn · Video toplam: {total.toFixed(1)} sn. Düzenleme kaydın yerine geçer ve geri alınamaz.
+        Seçili aralık: {keepSeconds.toFixed(1)} sn · Toplam: {total.toFixed(1)} sn
       </div>
       {notice && <p className="notice" data-testid="edit-done" style={{ margin: 0 }}>{notice}</p>}
       {error && <p role="alert" className="error" data-testid="edit-error">{error}</p>}
@@ -70,6 +82,9 @@ export function EditPanel({ assignmentId, recording, notice, onEdited, onClose }
         </button>
         <button type="button" className="ghost-btn" disabled={busy || cutSeconds < 1} onClick={() => void apply('cut')} data-testid="edit-cut" title="Seçili aralık videodan çıkarılır, kalan parçalar birleştirilir">
           Bu aralığı sil (video {cutSeconds.toFixed(1)} sn kalır)
+        </button>
+        <button type="button" className="ghost-btn" disabled={busy || !recording.canUndo} onClick={() => void undo()} data-testid="edit-undo">
+          ↶ Geri al
         </button>
         <button type="button" className="link" onClick={onClose} data-testid="edit-close">Kapat</button>
       </div>

@@ -49,9 +49,10 @@ async function ensureBucket(): Promise<void> {
 const cachePath = (id: string, version: number) => path.join(CACHE_DIR, `${id}-${version}.mp4`);
 
 // Üretilen MP4'ü Storage'a yükler ve atamanın kaydını oluşturur/günceller. Eski dosya silinir.
-export async function saveRecording(assignmentId: string, mp4Path: string, durationSeconds: number): Promise<RecordingRow> {
+// keepPrevious: düzenleme (kırpma/silme) için eski sürüm "Geri al" geçmişine konur; yeniden çekimde geçmiş temizlenir.
+export async function saveRecording(assignmentId: string, mp4Path: string, durationSeconds: number, keepPrevious = false): Promise<RecordingRow> {
   await ensureBucket();
-  const old = await pool.query<{ video_path: string | null }>('select video_path from recordings where assignment_id = $1', [assignmentId]);
+  const old = await pool.query<{ id: string; video_path: string | null; duration_seconds: string | null }>('select id, video_path, duration_seconds from recordings where assignment_id = $1', [assignmentId]);
   const videoPath = `${assignmentId}/${Date.now()}.mp4`;
   const { error } = await supabase.storage.from(BUCKETS.recordings).upload(videoPath, await readFile(mp4Path), { contentType: 'video/mp4', upsert: true });
   if (error) throw error;
@@ -68,9 +69,40 @@ export async function saveRecording(assignmentId: string, mp4Path: string, durat
   // Yeni dosya yerel önbelleğe de konur (ilk izleme Storage'a gitmeden açılır).
   await mkdir(CACHE_DIR, { recursive: true });
   await copyFile(mp4Path, cachePath(row.id, row.updated_at.getTime())).catch(() => undefined);
-  const oldPath = old.rows[0]?.video_path;
-  if (oldPath) await supabase.storage.from(BUCKETS.recordings).remove([oldPath]).catch(() => undefined);
+  const prev = old.rows[0];
+  if (keepPrevious && prev?.video_path) {
+    await pool.query('insert into recording_history (recording_id, video_path, duration_seconds) values ($1, $2, $3)', [prev.id, prev.video_path, prev.duration_seconds ?? 0]);
+  } else {
+    if (prev) await clearHistory(prev.id);
+    if (prev?.video_path) await supabase.storage.from(BUCKETS.recordings).remove([prev.video_path]).catch(() => undefined);
+  }
   return row;
+}
+
+// Kaydın düzenleme geçmişini (dosyalar ve satırlar) siler.
+async function clearHistory(recordingId: string): Promise<void> {
+  const { rows } = await pool.query<{ video_path: string }>('delete from recording_history where recording_id = $1 returning video_path', [recordingId]);
+  if (rows.length > 0) await supabase.storage.from(BUCKETS.recordings).remove(rows.map((r) => r.video_path)).catch(() => undefined);
+}
+
+// Son düzenlemeyi geri alır: güncel video atılır, geçmişteki son sürüm güncel olur. Geri alınacak bir şey yoksa false döner.
+export async function undoLastEdit(assignmentId: string): Promise<boolean> {
+  const cur = await pool.query<{ id: string; video_path: string | null; updated_at: Date }>(
+    "select id, video_path, updated_at from recordings where assignment_id = $1 and deleted_at is null and status = 'ready'",
+    [assignmentId],
+  );
+  const current = cur.rows[0];
+  if (!current) return false;
+  const last = await pool.query<{ id: string; video_path: string; duration_seconds: string }>(
+    'delete from recording_history where id = (select id from recording_history where recording_id = $1 order by created_at desc limit 1) returning id, video_path, duration_seconds',
+    [current.id],
+  );
+  const prev = last.rows[0];
+  if (!prev) return false;
+  await pool.query('update recordings set video_path = $2, duration_seconds = $3, updated_at = now() where id = $1', [current.id, prev.video_path, prev.duration_seconds]);
+  await rm(cachePath(current.id, current.updated_at.getTime()), { force: true });
+  if (current.video_path) await supabase.storage.from(BUCKETS.recordings).remove([current.video_path]).catch(() => undefined);
+  return true;
 }
 
 // Kaydı siler (yumuşak): satır işaretlenir, dosya Storage'dan kaldırılır; silinen kayıt artık izlenemez.
@@ -79,6 +111,7 @@ export async function deleteRecording(assignmentId: string): Promise<boolean> {
   if (current.rows.length === 0) return false;
   await pool.query("update recordings set deleted_at = now(), status = 'failed', video_path = null, updated_at = now() where assignment_id = $1", [assignmentId]);
   const old = current.rows[0];
+  if (old) await clearHistory(old.id);
   if (old) await rm(cachePath(old.id, old.updated_at.getTime()), { force: true });
   const videoPath = old?.video_path;
   if (videoPath) await supabase.storage.from(BUCKETS.recordings).remove([videoPath]).catch(() => undefined);

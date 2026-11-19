@@ -15,7 +15,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { getFfmpegPath } from '../render/renderVideo.js';
-import { currentRecordingFile, deleteRecording, recordingInfo, saveRecording } from '../recordings.js';
+import { currentRecordingFile, deleteRecording, recordingInfo, saveRecording, undoLastEdit } from '../recordings.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -33,6 +33,7 @@ type AssignmentRow = {
   rec_id: string | null;
   rec_duration: string | null;
   rec_updated: Date | null;
+  rec_history: string | null;
   outcomes: { id: number; code: string; description: string; branch: Branch | null }[];
 };
 
@@ -40,6 +41,7 @@ type AssignmentRow = {
 const SELECT = `
   select a.id, a.status, a.return_note, a.assigned_at, q.id as question_id, q.branch, q.question_number,
          r.id as rec_id, r.duration_seconds as rec_duration, r.updated_at as rec_updated,
+         (select count(*) from recording_history h where h.recording_id = r.id) as rec_history,
          coalesce((select json_agg(json_build_object('id', o.id, 'code', o.code, 'description', o.description, 'branch', o.branch) order by o.code)
                    from question_outcomes qo join learning_outcomes o on o.id = qo.outcome_id where qo.question_id = q.id), '[]'::json) as outcomes
   from assignments a join questions q on q.id = a.question_id
@@ -51,7 +53,7 @@ const toAssignment = (r: AssignmentRow): TeacherAssignment => ({
   status: r.status,
   returnNote: r.return_note,
   assignedAt: r.assigned_at.toISOString(),
-  recording: r.rec_id && r.rec_updated ? recordingInfo({ id: r.rec_id, duration_seconds: r.rec_duration, updated_at: r.rec_updated }) : null,
+  recording: r.rec_id && r.rec_updated ? { ...recordingInfo({ id: r.rec_id, duration_seconds: r.rec_duration, updated_at: r.rec_updated }), canUndo: Number(r.rec_history ?? 0) > 0 } : null,
   question: {
     id: r.question_id,
     branch: r.branch,
@@ -246,6 +248,26 @@ function editFile(input: string, output: string, keep: { start: number; end: num
   });
 }
 
+// Son düzenlemeyi geri alır (kırpma/silme işlemleri geçmişte tutulur).
+teacherRouter.post('/assignments/:id/recording/undo', async (req, res) => {
+  const own = await ownAssignment(req.user?.id, req.params.id);
+  if (!own) {
+    res.status(404).json({ error: 'Soru bulunamadı veya size atanmamış.' });
+    return;
+  }
+  try {
+    if (!(await undoLastEdit(own.id))) {
+      res.status(400).json({ error: 'Geri alınacak düzenleme yok.' });
+      return;
+    }
+    await resetReviewState(own.id);
+    await respondWithAssignment(res, req.user?.id, own.id);
+  } catch (err) {
+    console.error('Düzenleme geri alınamadı:', err);
+    res.status(500).json({ error: 'Düzenleme geri alınamadı.' });
+  }
+});
+
 // body: { op: 'keep' | 'cut', start, end } — keep: yalnızca [start, end] kalır; cut: [start, end] videodan silinir.
 teacherRouter.post('/assignments/:id/recording/edit', async (req, res) => {
   const own = await ownAssignment(req.user?.id, req.params.id);
@@ -277,7 +299,7 @@ teacherRouter.post('/assignments/:id/recording/edit', async (req, res) => {
   try {
     const output = path.join(dir, 'edited.mp4');
     await editFile(current.file, output, keep);
-    await saveRecording(own.id, output, resultSeconds);
+    await saveRecording(own.id, output, resultSeconds, true);
     await resetReviewState(own.id);
     await respondWithAssignment(res, req.user?.id, own.id);
   } catch (err) {

@@ -78,7 +78,7 @@ export const ASSIGNMENT_STATUS_LABEL: Record<AssignmentStatus, string> = {
 };
 
 // Atamanın güncel çözüm videosu (sunucuda üretilmiş MP4). videoUrl, süreli imzalı bir adrestir.
-export type RecordingInfo = { id: string; videoUrl: string; durationSeconds: number; updatedAt: string };
+export type RecordingInfo = { id: string; videoUrl: string; durationSeconds: number; updatedAt: string; canUndo?: boolean };
 
 export type AssignmentInfo = {
   id: string;
