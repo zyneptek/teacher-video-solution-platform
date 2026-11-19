@@ -86,7 +86,7 @@ mobile/   Expo + RN       ─┴─► yalnızca Express API ile konuşur (Supab
 | Alan | Seçim |
 |---|---|
 | Web | React 19, Vite, TypeScript |
-| Mobil/tablet | React Native, Expo SDK 58 (Expo Go), `@shopify/react-native-skia` (çizim), `expo-audio`, `expo-camera`, `expo-video`, `expo-secure-store`, `expo-notifications` |
+| Mobil/tablet | React Native, Expo SDK 58 (Expo Go), `@shopify/react-native-skia` (çizim), `expo-audio`, `expo-camera`, `expo-video`, `expo-secure-store`, `expo-notifications`, `expo-linear-gradient` (buton degradesi) |
 | Sunucu | Node.js, Express, TypeScript, `pg`, `jose`, `multer` |
 | Veritabanı, kimlik doğrulama, dosya deposu | Supabase (Postgres, Auth, Storage) |
 | Video | `@napi-rs/canvas` (kare çizimi) + `ffmpeg-static` (MP4) |
@@ -592,3 +592,7 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 - Kırpma yetmediği için (yalnızca baştan/sondan kesiyordu ve kayıttan hemen sonra görünmüyordu) **kayıt düzenleyici** yapıldı. Öğretmen soru sayfasında **Düzenle (kırp / bölüm sil)** ile videoda bir aralık seçer (kaydırıcılar veya "mevcut konumu başlangıç/bitiş yap") ve iki işlemden birini yapar: **Yalnızca bu aralığı tut** (baştan/sondan kırpma) veya **Bu aralığı sil** (ortadan kesme; kalan parçalar art arda birleştirilir). Düzenleme kayıttan hemen sonraki ekranda da bir bağlantı olarak sunulur. Web ve mobilde aynı işlem ve aynı uç nokta (`POST /api/teacher/assignments/:id/recording/edit`).
 - Sunucu, görüntü ve sesi aynı aralıklarla keser ve yeniden kodlar (ffmpeg `trim/atrim + concat`, kare hassasiyeti); düzenlenmiş MP4 kaydın yerine geçer ve yönetici düzenlenmiş videoyu izler. Arka arkaya birden fazla düzenleme yapılabilir; her düzenlemeden önceki sürüm `recording_history` tablosunda (dosyası Storage'da) saklanır ve **"Geri al"** düğmesi (web ve mobil, `POST /recording/undo`) en son düzenlemeyi geri getirir; birden fazla adım geri alınabilir. Yeniden çekme veya kaydı silme geçmişi temizler. Geri alma da bir değişiklik sayıldığı için onay durumunu sıfırlar. Düzenlemeden sonra videoda en az 1 sn kalmalıdır. Düzenleme de bir düzenleme sayıldığı için onaylı/onaya gönderilmiş atama taslağa döner ve yeniden onaya gönderilmelidir (Karar 23).
 - "Düzenleyip yeniden kaydetme" (görev 6.8): düzenleme + **Yeniden kaydet** (stüdyo yeniden açılır) birlikte bu gereksinimi karşılar. Kayıtlı videonun çizimlerini tek tek değiştirmek (çizgi düzenleme) kapsam dışıdır: sistemde video MP4 olarak saklanır, çizim günlüğü saklanmaz.
+
+### Karar 31 — Buton görünümü (soru sayfası ve düzenleme ekranı)
+- Soru sayfasındaki ve düzenleme ekranındaki işlem butonları (onaya gönder, düzenle, yeniden kaydet, sil; kırpma kontrolleri, geri al, kapat) **aynı stilde**dir: paletin iki turuncusu (`#f14e13` → `#d6400d`) arasında **degrade**, hafif gölge, beyaz yazı. Web ve mobilde aynıdır. Gezinti butonları ("← Geri") ve giriş/form gibi ana işlem butonları bu stile dahil değildir.
+- Web: `.accent-btn` sınıfı (CSS `linear-gradient`; `<a>` bağlantısı da aynı görünür). Mobil: React Native'de degrade olmadığı için resmî **`expo-linear-gradient`** (Expo Go içinde hazır) eklendi; `Button` bileşeninin `accent` varyantı.

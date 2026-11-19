@@ -1,16 +1,19 @@
 // Küçük ortak arayüz parçaları (web ile aynı görsel dil).
 import type { ReactNode } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus } from '@app/shared';
 import { colors } from '../theme';
 
-// primary: dolu turuncu (ana işlem: giriş, kayıt oluştur); soft: açık turuncu zemin + koyu turuncu yazı (soru ve düzenleme ekranı işlemleri);
+// primary: dolu turuncu (ana işlem: giriş, kayıt oluştur); accent: turuncu degrade + hafif gölge (soru ve düzenleme ekranı işlemleri, web ile aynı);
 // ghost: çerçeveli (gezinti ve ikincil işlemler); danger: kırmızı çerçeveli.
-export function Button({ label, onPress, variant = 'primary', disabled, busy, style }: { label: string; onPress: () => void; variant?: 'primary' | 'soft' | 'ghost' | 'danger'; disabled?: boolean; busy?: boolean; style?: ViewStyle }) {
+export function Button({ label, onPress, variant = 'primary', disabled, busy, style }: { label: string; onPress: () => void; variant?: 'primary' | 'accent' | 'ghost' | 'danger'; disabled?: boolean; busy?: boolean; style?: ViewStyle }) {
   const off = disabled || busy;
+  const filled = variant === 'primary' || variant === 'accent';
   return (
-    <Pressable accessibilityRole="button" disabled={off} onPress={onPress} style={({ pressed }) => [styles.btn, variant === 'primary' && styles.btnPrimary, variant === 'soft' && styles.btnSoft, variant === 'soft' && pressed && styles.btnSoftPressed, variant === 'ghost' && styles.btnGhost, variant === 'danger' && styles.btnDanger, off && { opacity: 0.5 }, style]}>
-      {busy ? <ActivityIndicator color={variant === 'primary' ? '#fff' : variant === 'soft' ? colors.brandDark : colors.ink} /> : <Text style={[styles.btnText, variant === 'primary' && { color: '#fff' }, variant === 'soft' && { color: colors.brandDark }, variant === 'danger' && { color: colors.danger }]}>{label}</Text>}
+    <Pressable accessibilityRole="button" disabled={off} onPress={onPress} style={({ pressed }) => [styles.btn, variant === 'primary' && styles.btnPrimary, variant === 'accent' && styles.btnAccent, variant === 'ghost' && styles.btnGhost, variant === 'danger' && styles.btnDanger, variant === 'accent' && pressed && { opacity: 0.85 }, off && { opacity: 0.5 }, style]}>
+      {variant === 'accent' && <LinearGradient colors={[colors.brand, colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btnGradient} />}
+      {busy ? <ActivityIndicator color={filled ? '#fff' : colors.ink} /> : <Text style={[styles.btnText, filled && { color: '#fff' }, variant === 'danger' && { color: colors.danger }]}>{label}</Text>}
     </Pressable>
   );
 }
@@ -64,8 +67,8 @@ export function Notice({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   btn: { minHeight: 46, paddingHorizontal: 18, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
   btnPrimary: { backgroundColor: colors.brand },
-  btnSoft: { backgroundColor: colors.brandLight, borderWidth: 1, borderColor: colors.brandLightPressed },
-  btnSoftPressed: { backgroundColor: colors.brandLightPressed },
+  btnAccent: { backgroundColor: colors.brand, shadowColor: colors.brandDark, shadowOpacity: 0.35, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  btnGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 12 },
   btnGhost: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.sage },
   btnDanger: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.danger },
   btnText: { fontSize: 15, fontWeight: '700', color: colors.ink },
