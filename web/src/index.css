@@ -170,10 +170,12 @@ a { color: var(--brand-dark); }
 .marker-row { display: flex; gap: 10px; align-items: center; }
 /* Çerçeveli buton; <a> üzerinde de aynı görünür (yeniden kaydet bağlantısı). */
 .ghost-btn { display: inline-block; padding: 8px 14px; background: #fff; border: 1px solid var(--sage); border-radius: 8px; cursor: pointer; color: var(--ink); font-size: 14px; line-height: normal; text-decoration: none; }
+.ghost-btn:disabled { opacity: .5; cursor: default; }
 
 /* Kırpma */
 .trim { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
 .trim-controls { display: flex; flex-direction: column; gap: 12px; }
+.trim-controls label .ghost-btn { align-self: flex-start; }
 @media (max-width: 800px) { .trim { grid-template-columns: 1fr; } }
 .trim-video { width: 100%; border-radius: 8px; background: #000; }
 .trim input[type=range] { width: 100%; accent-color: var(--brand); padding: 0; }
