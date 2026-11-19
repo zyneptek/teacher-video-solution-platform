@@ -89,7 +89,7 @@ function QuestionsList({ open }: { open: (p: AdminPage) => void }) {
       <Status error={error} loading={!data} empty={data?.length === 0 && 'Soru yok.'} />
       <Grid>
       {data?.map((q) => (
-        <Cell key={q.id}><Pressable onPress={() => open({ name: 'question', question: q })} testID="question-row"><Card style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Cell key={q.id}><Pressable onPress={() => open({ name: 'question', question: q })} style={({ pressed }) => (pressed ? { opacity: 0.6 } : undefined)} accessibilityRole="button" testID="question-row"><Card style={{ flexDirection: 'row', alignItems: 'center' }}>
           {q.imageUrl && <Image source={{ uri: abs(q.imageUrl) }} style={[styles.thumb, wide && { width: 110, height: 90 }]} resizeMode="contain" />}
           <View style={{ flex: 1, gap: 4 }}>
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
