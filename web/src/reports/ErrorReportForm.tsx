@@ -93,7 +93,7 @@ export function ErrorReportForm({ assignmentId, marker, picking, onPickingChange
         </select>
       </label>
       <label>
-        Kısa açıklama {type === 'other' ? '(zorunlu)' : '(isteğe bağlı)'}
+        Kısa açıklama {type === 'other' ? '(zorunlu)' : ''}
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={ERROR_REPORT_LIMITS.descriptionMax} rows={3} required={type === 'other'} data-testid="report-description-input" />
       </label>
       <div className="marker-row">
@@ -105,7 +105,7 @@ export function ErrorReportForm({ assignmentId, marker, picking, onPickingChange
         )}
       </div>
       <label>
-        Ek (ekran görüntüsü veya en fazla 1 dakikalık video, isteğe bağlı)
+        Ek (ekran görüntüsü veya en fazla 1 dakikalık video)
         <input type="file" accept={[...ERROR_REPORT_LIMITS.imageTypes, ...ERROR_REPORT_LIMITS.videoTypes].join(',')} onChange={(e) => void pickFile(e.target.files?.[0] ?? null)} data-testid="report-file" />
       </label>
       {fileError && <p role="alert" className="error" data-testid="file-error">{fileError}</p>}

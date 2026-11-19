@@ -86,14 +86,14 @@ export function ReportScreen({ id, nav }: { id: string; nav: Nav }) {
           ))}
         </View>
 
-        <Text style={styles.label}>Kısa açıklama {type === 'other' ? '(zorunlu)' : '(isteğe bağlı)'}</Text>
+        <Text style={styles.label}>Kısa açıklama {type === 'other' ? '(zorunlu)' : ''}</Text>
         <TextInput style={styles.textarea} value={description} onChangeText={setDescription} multiline maxLength={ERROR_REPORT_LIMITS.descriptionMax} placeholder="Hatayı kısaca anlatın" accessibilityLabel="Açıklama" />
 
     </>
   );
   const markerPicker = (
     <>
-        <Text style={styles.label}>Hatanın yeri (isteğe bağlı)</Text>
+        <Text style={styles.label}>Hatanın yeri</Text>
         <Button label={picking ? 'Görsele dokunun…' : marker ? 'İşareti değiştir' : 'Görselde hatayı işaretle'} variant={picking ? 'primary' : 'ghost'} onPress={() => setPicking(!picking)} />
         {assignment && (
           <Pressable
@@ -116,7 +116,7 @@ export function ReportScreen({ id, nav }: { id: string; nav: Nav }) {
   );
   const attachmentAndSend = (
     <>
-        <Text style={styles.label}>Ek (ekran görüntüsü veya en fazla 1 dakikalık video, isteğe bağlı)</Text>
+        <Text style={styles.label}>Ek (ekran görüntüsü veya en fazla 1 dakikalık video)</Text>
         <Button label={attachment ? 'Eki değiştir' : 'Dosya seç'} variant="ghost" onPress={() => void pickAttachment()} />
         {attachment && <Notice>Seçilen ek: {attachment.type === 'video' ? 'video' : 'görüntü'}{attachment.fileName ? ` (${attachment.fileName})` : ''}</Notice>}
         {fileError && <ErrorText>{fileError}</ErrorText>}
