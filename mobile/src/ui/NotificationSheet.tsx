@@ -4,6 +4,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NotificationInfo } from '@app/shared';
 import { colors } from '../theme';
 
+// Bildirim satırları: okunmamışlar vurgulanır; dokununca onOpen çağrılır (okundu yapar ve ilgili soruya gider).
+export function NotificationRows({ notifications, onOpen }: { notifications: NotificationInfo[] | null; onOpen: (n: NotificationInfo) => void }) {
+  if (!notifications || notifications.length === 0) return <Text style={{ color: colors.muted, padding: 8 }}>Henüz bildiriminiz yok.</Text>;
+  return (
+    <>
+      {notifications.map((n) => (
+        <Pressable key={n.id} onPress={() => onOpen(n)} style={[styles.notif, !n.readAt && styles.notifUnread]} testID={n.readAt ? 'notif-read' : 'notif-unread'}>
+          <Text style={[{ color: colors.ink, fontSize: 14 }, !n.readAt && { fontWeight: '700' }]}>{n.text}</Text>
+          <Text style={styles.small}>{new Date(n.createdAt).toLocaleString('tr-TR')}</Text>
+        </Pressable>
+      ))}
+    </>
+  );
+}
+
 export function NotificationSheet({ visible, onClose, notifications, unread, onOpen, onReadAll }: {
   visible: boolean;
   onClose: () => void;
@@ -26,16 +41,7 @@ export function NotificationSheet({ visible, onClose, notifications, unread, onO
             )}
           </View>
           <ScrollView style={{ maxHeight: 420 }}>
-            {!notifications || notifications.length === 0 ? (
-              <Text style={{ color: colors.muted, padding: 8 }}>Henüz bildiriminiz yok.</Text>
-            ) : (
-              notifications.map((n) => (
-                <Pressable key={n.id} onPress={() => onOpen(n)} style={[styles.notif, !n.readAt && styles.notifUnread]} testID={n.readAt ? 'notif-read' : 'notif-unread'}>
-                  <Text style={[{ color: colors.ink, fontSize: 14 }, !n.readAt && { fontWeight: '700' }]}>{n.text}</Text>
-                  <Text style={styles.small}>{new Date(n.createdAt).toLocaleString('tr-TR')}</Text>
-                </Pressable>
-              ))
-            )}
+            <NotificationRows notifications={notifications} onOpen={onOpen} />
           </ScrollView>
         </Pressable>
       </Pressable>

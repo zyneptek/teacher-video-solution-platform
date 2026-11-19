@@ -32,7 +32,6 @@ export function Board({ imageUrl, tool, getTimeMs, onEvent, disabled = false }: 
   const inkRef = useRef<HTMLCanvasElement>(null);
   const controllerRef = useRef<InkController | null>(null);
   const pointerIdRef = useRef<number | null>(null);
-  const lastPenAtRef = useRef(0);
   // Olay işleyicilerinin her çizimde yeniden kurulmaması için en güncel değerler burada tutulur.
   const latest = useRef({ tool, getTimeMs, onEvent, disabled });
   useEffect(() => {

@@ -77,6 +77,7 @@ mobile/   Expo + RN       ─┴─► yalnızca Express API ile konuşur (Supab
 ```
 
 - **Web: tek uygulama mı, iki uygulama mı?** **Tek React uygulaması**, role göre ayrılmış ekranlarla. Gerekçe: giriş, oturum, API istemcisi, bildirim ve video bileşenleri iki rolde ortaktır; iki uygulama bu kodu tekrarlatırdı. Yetki denetimi istemcide değil **sunucudadır** (öğretmen yönetici uç noktalarına 403, başkasının atamasına 404 alır). Ayrıntı: Karar 4.
+- **Mobil: telefon ve tablet tek uygulama.** React Native (Expo) ile yazılmış **tek bir uygulama** hem telefonda hem tabletta çalışır; ekran genişliğine göre düzen değişir (820 px ve üzeri iki sütun). Ayrı telefon/tablet uygulaması yoktur.
 - **Rol ve oturum:** Supabase Auth hesapları; sunucu jetonu doğrular ve her istekte kullanıcının hâlâ aktif olduğunu kontrol eder. Silinen öğretmenin web ve mobildeki oturumu en geç 30 sn içinde otomatik kapanır (Karar 15).
 - **Dosyalar:** soru görselleri, kayıtlar ve hata ekleri özel Storage bucket'larındadır; istemciye süreli, imzalı adreslerle verilir.
 
@@ -134,7 +135,7 @@ Görevin açık bıraktığı noktalarda alınan kararların tamamı aşağıdak
 - Soru ilk atamada da yalnızca **kendi branşındaki** öğretmene atanır; aynı soru aynı öğretmene ikinci kez atanamaz (Karar 8, 19).
 - Silinen öğretmenin verileri **silinmez, arşivde kalır** (yumuşak silme); hesabı kapanır (Karar 8).
 - Düzenleme/silme sonrası onaya gönderilmiş veya onaylı atama **Atandı**'ya döner; *Geri gönderildi* olan, düzenlenince de **Geri gönderildi** kalır (Karar 23).
-- Çapraz atanan öğretmen **başkalarının videolarını görmez** (Karar 27).
+- Çapraz atanan öğretmen, aynı sorunun **yalnızca yönetici tarafından onaylanmış** videolarını izleyebilir; onaysız videoları görmez (Karar 27).
 - Öğretmene **cevap anahtarı gösterilmez**, kazanımlar gösterilir (Karar 21).
 - Hata bildirimi eki her türde eklenebilir: ekran görüntüsü (en fazla 5 MB) veya en fazla 1 dk video (en fazla 30 MB) (Karar 25).
 - Geri gönderme notu en fazla 500 karakterdir (Karar 23). Onay ve geri göndermede öğretmene bildirim gider.
@@ -466,7 +467,7 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 Görevin açık bıraktığı noktaların çoğu karara bağlandı (Karar 15–27). **Hâlâ açık olanlar** (varsayılan davranış yazılıdır, değiştirilebilir):
 
-- **Mevcut video görünürlüğü:** karara bağlandı (Karar 27): çapraz atanan öğretmen başkalarının videolarını görmez.
+- **Mevcut video görünürlüğü:** karara bağlandı (Karar 27): çapraz atanan öğretmen yalnızca onaylanmış videoları izler.
 - **Branşı değişen öğretmenin mevcut atamaları:** şimdilik korunur (branş serbestçe değiştirilebilir).
 - **Yeni soru ekleme ekranı** ve **kazanım ekleme/silme:** yapılmadı; demo "paketten soru açma" ile yapılır, kazanım için zorunlu olan güncelleme vardır.
 - **Arka plana geçiş:** kayıt sırasında uygulama/sekme arka plana alınırsa, tarayıcıda ses kaydı sürebilir; mobilde işletim sistemi kaydı durdurabilir (gerçek cihazda ayrıca denenmelidir).
@@ -545,7 +546,7 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 
 ### Karar 24 — Açılır kapanır menü ve bildirim düğmesi
 - **Menü:** sol koyu menü, üst çubuktaki düğmeyle açılıp kapanır (yönetici ve öğretmen); tercih tarayıcıda hatırlanır, dar ekranda varsayılan kapalıdır.
-- **Bildirimler:** ayrı sayfa kaldırıldı; sağ üstte zil düğmesi ve okunmamış sayısı rozeti vardır. Tıklayınca bildirimler açılır liste olarak gelir (Esc veya dışarı tıklayınca kapanır); bildirime tıklamak onu okundu yapar ve ilgili soruya götürür; "Tümünü okundu yap" vardır. Okunmamış bildirimler vurgulanır, okunanlar listede soluk kalır.
+- **Bildirimler (güncellendi):** görev, atama bildiriminin öğretmenin **dashboard'unda** görünmesini ister. Bu yüzden öğretmenin Panel sayfasında (web ve mobilde ana sayfa) **Bildirimler bölümü** vardır: son bildirimler listelenir, okunmamışlar vurgulanır ve "N okunmamış" sayacı görünür; bildirime tıklayınca okundu olur ve ilgili soruya gidilir; "Tümünü okundu yap" vardır. Öğretmen arayüzündeki zil düğmesi bu nedenle kaldırıldı. **Yönetici** arayüzünde (dashboard'u görevde tanımlı değildir) sağ üstteki zil düğmesi ve açılır liste durur.
 
 ### Karar 25 — Hata bildirimi
 - **Türler:** Soru metninde hata, Şıklarda hata, Yazım yanlışı, Kırpma hatası, Cevap anahtarı hatası, Kazanım hatası + **Diğer** (serbest metin). Kısa açıklama yazılır (en fazla 1000 karakter); yalnızca "Diğer"de zorunludur.
@@ -561,11 +562,11 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 
 ### Karar 27 — Çapraz atama ve kırpma
 - **Çapraz atama:** yönetici, videosu olan bir soruyu **aynı branştan başka bir öğretmene** de atayabilir (atama formu yalnızca sorunun branşındaki öğretmenleri listeler; aynı öğretmene ikinci kez atanamaz). Her öğretmen soruyu açar, **kendi kaydını** üretir ve onaya gönderir; her atamanın durumu (Atandı, Onaya gönderildi, Onaylandı, Geri gönderildi) hem o öğretmene hem yöneticiye görünür.
-- **Açık nokta kararı — mevcut video görünürlüğü:** çapraz atanan öğretmen, aynı soru için **başka öğretmenlerin videolarını görmez** (onaylanmış olsa bile). Öğretmen yalnızca kendi kayıtlarını görür (görevdeki "öğretmen yalnızca kendi kayıtlarını görür" kuralıyla tutarlı); tüm videoları yalnızca yönetici izler. *(İlk sürümde yalnızca onaylı videolar referans olarak gösteriliyordu; kullanıcı kararıyla kaldırıldı.)*
+- **Açık nokta kararı — mevcut video görünürlüğü (güncellendi):** görev, çapraz atanan öğretmenin *mevcut videoyu izleyip kendi kaydını üretebileceğini* zorunlu kılar. Bu yüzden yeni öğretmen soru sayfasında, aynı sorunun başka öğretmenlerce üretilmiş ve **yönetici tarafından onaylanmış** videolarını "Bu soru için onaylanmış çözüm videosu" kartında izler (web ve mobil). Onaylanmamış (gönderilmiş, geri gönderilmiş, taslak) videolar ve öğretmenin kendi videosu bu kartta gösterilmez; öğretmen yalnızca kendi kayıtlarını düzenler, tüm videoları yalnızca yönetici izler. *(Geçmiş: ilk sürümde bu kart vardı, ara sürümde kaldırıldı, görev metnine uymak için geri getirildi.)*
 - **Kırpma:** öğretmen kayıt sayfasında "Kırp"a basar, başlangıç ve bitiş kaydırıcılarıyla (veya "mevcut konumu başlangıç/bitiş yap" ile) aralığı seçer; sunucu ffmpeg ile aralığı keser (yeniden kodlama, kare hassasiyeti) ve **kırpılmış MP4 kaydın yerine geçer**; yönetici kırpılmış videoyu izler. Kırpma geri alınamaz; aradaki süre en az 1 sn olmalıdır. Kırpma da bir düzenlemedir: onaya gönderilmiş/onaylanmış atama taslağa (Atandı) döner ve yeniden gönderilmelidir (Karar 23).
 
 ### Karar 28 — Mobil uygulama (öğretmen)
-- **Ekranlar:** Giriş (yönetici/öğretmen sekmeleri) → Ana sayfa (atama durumu sayıları, sorular, sağ üstte bildirim zili ve çıkış) → Soru sayfası (görsel, durum, yönetici notu, kayıt izleme, yeniden kaydet, kırp, sil, onaya gönder, çapraz atamada onaylı örnek video, kazanımlar, hata bildirimi) → Kayıt stüdyosu, Kırpma, Hata bildirimi. Web ile **aynı hesap, aynı soru listesi, bildirimler ve kayıtlar**; aynı sunucu uç noktaları ve kurallar (web'den gönderilen video mobilde, mobilden gönderilen video webde ve yönetici panelinde görünür).
+- **Ekranlar:** Giriş (yönetici/öğretmen sekmeleri) → Ana sayfa (atama durumu sayıları, bildirimler, sorular, çıkış) → Soru sayfası (görsel, durum, yönetici notu, kayıt izleme, yeniden kaydet, kırp, sil, onaya gönder, çapraz atamada onaylı örnek video, kazanımlar, hata bildirimi) → Kayıt stüdyosu, Kırpma, Hata bildirimi. Web ile **aynı hesap, aynı soru listesi, bildirimler ve kayıtlar**; aynı sunucu uç noktaları ve kurallar (web'den gönderilen video mobilde, mobilden gönderilen video webde ve yönetici panelinde görünür).
 - **Oturum:** jetonlar `expo-secure-store` ile güvenli depoda tutulur; 401'de bir kez yenilenir; açıkken 30 sn'de bir hesap kontrol edilir, **silinen öğretmenin oturumu otomatik kapanır** ve giriş ekranında bilgilendirilir.
 - **Kaydet = sisteme kaydet:** stüdyoda Dur'dan sonra sunucu MP4'ü üretir ve sisteme kaydeder (galeriye indirme yoktur); izleme ekranında **Onaya gönder / Taslak olarak kaydet / Yeniden çek**. Yükleme hatasında "Tekrar dene".
 - **Tablet düzeni:** ekran genişliği 820 px ve üzerindeyse (iPad, özellikle yatayda) web'deki gibi iki sütun kullanılır: soru sayfasında görsel solda, durum/kayıt/kazanım/hata kartları sağda; düzenlemede video solda, kontroller sağda; hata bildiriminde form solda, işaretlenecek görsel sağda; ana sayfada sorular iki sütunlu ızgara. Telefonda tek sütun düzeni aynen kalır (`mobile/src/ui/layout.ts`).

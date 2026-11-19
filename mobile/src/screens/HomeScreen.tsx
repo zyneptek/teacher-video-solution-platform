@@ -12,7 +12,7 @@ import { colors } from '../theme';
 import { ErrorText, StatCard } from '../ui';
 import { AssignmentRow } from '../ui/AssignmentRow';
 import { useWide } from '../ui/layout';
-import { NotificationSheet } from '../ui/NotificationSheet';
+import { NotificationRows } from '../ui/NotificationSheet';
 
 export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }) {
   const { user, logout } = useSession();
@@ -22,7 +22,6 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
   const [assignments, setAssignments] = useState<TeacherAssignment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [bellOpen, setBellOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -47,7 +46,6 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
   async function openNotification(n: NotificationInfo) {
     if (!n.readAt) await api(`/api/notifications/${n.id}/read`, { method: 'POST' }).catch(() => undefined);
     void refreshNotifs();
-    setBellOpen(false);
     const route = routeFromHref(n.href);
     if (route) nav.push(route);
   }
@@ -64,14 +62,6 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
           <Text style={styles.hello} numberOfLines={1}>{user?.firstName} {user?.lastName}</Text>
           <Text style={styles.role}>Öğretmen · {user?.branch}</Text>
         </View>
-        <Pressable accessibilityLabel={`Bildirimler${unread ? `, ${unread} okunmamış` : ''}`} onPress={() => setBellOpen(true)} style={styles.iconBtn} testID="bell">
-          <Text style={{ fontSize: 20 }}>🔔</Text>
-          {unread > 0 && (
-            <View style={styles.badge} testID="bell-badge">
-              <Text style={styles.badgeText}>{unread}</Text>
-            </View>
-          )}
-        </Pressable>
         <Pressable accessibilityLabel="Çıkış" onPress={() => void logout()} style={styles.logout} testID="logout">
           <Text style={styles.logoutText}>Çıkış</Text>
         </Pressable>
@@ -86,6 +76,16 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
             <StatCard key={s} wide={wide} onPress={() => nav.push({ name: 'list', status: s })} label={ASSIGNMENT_STATUS_LABEL[s]} value={counts[s]} tone={s === 'submitted' ? 'brand' : s === 'returned' ? 'warn' : undefined} />
           ))}
         </View>
+
+        <View style={styles.sectionRow}>
+          <Text style={styles.section}>Bildirimler{unread > 0 ? ` (${unread} okunmamış)` : ''}</Text>
+          {unread > 0 && (
+            <Pressable onPress={() => void readAll()} hitSlop={10}>
+              <Text style={{ color: colors.brandDark, fontWeight: '700' }}>Tümünü okundu yap</Text>
+            </Pressable>
+          )}
+        </View>
+        <NotificationRows notifications={notifications?.slice(0, 6) ?? null} onOpen={(n) => void openNotification(n)} />
 
         <Text style={styles.section}>Sorularım</Text>
         {error && <ErrorText>{error}</ErrorText>}
@@ -103,7 +103,6 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
         </View>
       </ScrollView>
 
-      <NotificationSheet visible={bellOpen} onClose={() => setBellOpen(false)} notifications={notifications} unread={unread} onOpen={(n) => void openNotification(n)} onReadAll={() => void readAll()} />
     </View>
   );
 }
@@ -112,13 +111,11 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: colors.ink, borderBottomWidth: 3, borderBottomColor: colors.brand },
   hello: { color: '#fff', fontSize: 17, fontWeight: '800' },
   role: { color: colors.sage, fontSize: 12 },
-  iconBtn: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#ffffff1a', alignItems: 'center', justifyContent: 'center' },
-  badge: { position: 'absolute', top: -4, right: -4, minWidth: 20, height: 20, borderRadius: 10, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  badgeText: { color: '#fff', fontSize: 12, fontWeight: '800' },
   logout: { paddingHorizontal: 12, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#ffffff44', alignItems: 'center', justifyContent: 'center' },
   logoutText: { color: colors.sage, fontWeight: '700' },
   content: { padding: 16, gap: 12, width: '100%', maxWidth: 1240, alignSelf: 'center' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
   section: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 6 },
   empty: { backgroundColor: '#fff', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sage, borderRadius: 12, padding: 20, alignItems: 'center', gap: 6 },
   small: { fontSize: 12, color: colors.muted },

@@ -101,12 +101,16 @@ export type AssignmentDelivery = {
 };
 
 // Öğretmen: atanan soru ve bildirim tipleri.
+// Aynı soru için başka bir öğretmenin onaylanmış çözüm videosu (çapraz atamada yeni öğretmen izleyebilir).
+export type ReferenceVideo = { teacherName: string; recording: RecordingInfo };
+
 export type TeacherAssignment = {
   id: string;
   status: AssignmentStatus;
   returnNote: string | null;
   assignedAt: string;
   recording: RecordingInfo | null;
+  referenceVideos?: ReferenceVideo[]; // yalnızca soru detayında dolar
   question: { id: string; branch: Branch; questionNumber: number | null; imageUrl: string; outcomes: OutcomeInfo[] };
 };
 

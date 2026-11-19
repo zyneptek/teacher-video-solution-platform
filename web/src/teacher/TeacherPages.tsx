@@ -1,10 +1,11 @@
-// Öğretmen sayfaları: Panel, Sorularım (liste + soru sayfası) ve Bildirimler.
+// Öğretmen sayfaları: Panel (sayılar, bildirimler, sorular) ve Sorularım (liste + soru sayfası).
 import { useCallback, useEffect, useState } from 'react';
-import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus, type ErrorReportInfo, type TeacherAssignment } from '@app/shared';
+import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus, type ErrorReportInfo, type NotificationInfo, type TeacherAssignment } from '@app/shared';
 import { StatusBadge } from '../admin/AssignmentsTable';
 import { api } from '../auth/session';
 import StudioPage from '../studio/StudioPage';
 import { VideoPreview } from '../studio/VideoPreview';
+import { NotificationList } from '../notifications/NotificationList';
 import { ErrorReportForm } from '../reports/ErrorReportForm';
 import { MarkedImage, type Marker } from '../reports/MarkedImage';
 import { ReportCard } from '../reports/ReportViews';
@@ -29,7 +30,7 @@ function useAssignments() {
   return { assignments, error, load };
 }
 
-export function TeacherDashboard() {
+export function TeacherDashboard({ notifications, unread, refresh }: { notifications: NotificationInfo[] | null; unread: number; refresh: () => void }) {
   const { assignments, error } = useAssignments();
   const counts: Record<AssignmentStatus, number> = { assigned: 0, submitted: 0, approved: 0, returned: 0 };
   for (const a of assignments ?? []) counts[a.status]++;
@@ -48,6 +49,16 @@ export function TeacherDashboard() {
           </div>
         ))}
       </div>
+
+      <div className="row" style={{ marginTop: 18 }}>
+        <h3 style={{ margin: 0 }}>Bildirimler{unread > 0 && <span className="notif-count" data-testid="unread-count">{unread} okunmamış</span>}</h3>
+        {unread > 0 && (
+          <button type="button" className="link" onClick={() => void api('/api/notifications/read-all', { method: 'POST' }).then(refresh, refresh)} data-testid="read-all">
+            Tümünü okundu yap
+          </button>
+        )}
+      </div>
+      {!notifications ? <p className="muted">Yükleniyor…</p> : <NotificationList notifications={notifications.slice(0, 8)} onChanged={refresh} />}
 
       <h3>Sorularım</h3>
       {!assignments && !error && <p>Yükleniyor…</p>}
@@ -187,6 +198,19 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
               </>
             )}
           </div>
+
+          {assignment.referenceVideos && assignment.referenceVideos.length > 0 && !editing && (
+            <div className="card" data-testid="reference-videos">
+              <strong>Bu soru için onaylanmış çözüm videosu</strong>
+              <span className="muted small">Başka bir öğretmenin yöneticice onaylanmış çözümüdür; izleyip kendi kaydınızı oluşturabilirsiniz.</span>
+              {assignment.referenceVideos.map((v) => (
+                <div key={v.recording.id}>
+                  <div className="muted small" style={{ marginBottom: 4 }}>{v.teacherName}</div>
+                  <VideoPreview src={v.recording.videoUrl} />
+                </div>
+              ))}
+            </div>
+          )}
 
           {!editing && <div className="card">
             <strong>Kazanımlar</strong>

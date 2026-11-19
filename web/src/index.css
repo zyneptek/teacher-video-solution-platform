@@ -178,3 +178,5 @@ a { color: var(--brand-dark); }
 @media (max-width: 800px) { .trim { grid-template-columns: 1fr; } }
 .trim-video { width: 100%; border-radius: 8px; background: #000; }
 .trim input[type=range] { width: 100%; accent-color: var(--brand); padding: 0; }
+
+.notif-count { margin-left: 10px; padding: 2px 10px; border-radius: 999px; background: #fde6dc; color: var(--brand-dark, #d6400d); font-size: 12px; font-weight: 700; vertical-align: middle; }
