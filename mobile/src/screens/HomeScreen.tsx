@@ -79,7 +79,7 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
         {assignments && assignments.length === 0 && (
           <View style={styles.empty} testID="empty-questions">
             <Text style={{ fontWeight: '700', color: colors.ink }}>Henüz size atanmış soru yok.</Text>
-            <Text style={{ color: colors.muted, textAlign: 'center' }}>Yönetici size bir soru atadığında burada görünür ve bildirim alırsınız.</Text>
+            <Text style={{ color: colors.muted, textAlign: 'center' }}>Yönetici soru atadığında burada görünür.</Text>
           </View>
         )}
         <View style={wide ? { flexDirection: 'row', flexWrap: 'wrap', gap: 12 } : { gap: 12 }}>

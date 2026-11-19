@@ -1,7 +1,7 @@
 // Atama formu: soru + aynı branştaki öğretmen seçilir. Soru sabit verilirse (soru detayı) yalnızca öğretmen seçilir.
-// Atamadan sonra e-posta ve push sonucu yöneticiye gösterilir.
+// E-posta ve push sunucuda atama kaydedilirken gönderilir; yöneticiye yalnızca atamanın yapıldığı bildirilir.
 import { useEffect, useState, type FormEvent } from 'react';
-import type { AssignmentDelivery, AssignmentInfo, QuestionInfo, TeacherInfo } from '@app/shared';
+import type { AssignmentInfo, QuestionInfo, TeacherInfo } from '@app/shared';
 import { api } from '../auth/session';
 
 type Props = {
@@ -9,12 +9,6 @@ type Props = {
   fixedQuestionId?: string;
   onAssigned: () => void;
 };
-
-export function deliveryText(d: AssignmentDelivery): string {
-  const email = d.email === 'sent' ? 'E-posta gönderildi.' : d.email === 'not_configured' ? 'E-posta gönderilmedi (e-posta ayarı yapılmamış).' : 'E-posta gönderilemedi.';
-  const push = d.pushDevices > 0 ? `Push ${d.pushDevices} cihaza gönderildi.` : 'Push gönderilmedi (öğretmenin mobil uygulaması yüklü değil).';
-  return `${email} ${push} Bildirim öğretmenin panelinde görünür.`;
-}
 
 export function AssignForm({ questions, fixedQuestionId, onAssigned }: Props) {
   const [teachers, setTeachers] = useState<TeacherInfo[]>([]);
@@ -38,11 +32,11 @@ export function AssignForm({ questions, fixedQuestionId, onAssigned }: Props) {
     setResult(null);
     setBusy(true);
     try {
-      const r = await api<{ assignment: AssignmentInfo; delivery: AssignmentDelivery }>('/api/admin/assignments', {
+      const r = await api<{ assignment: AssignmentInfo }>('/api/admin/assignments', {
         method: 'POST',
         body: { questionId: fixedQuestionId ?? questionId, teacherId },
       });
-      setResult(`${r.assignment.teacherName} öğretmene atandı. ${deliveryText(r.delivery)}`);
+      setResult(`${r.assignment.teacherName} öğretmene atandı.`);
       setTeacherId('');
       onAssigned();
     } catch (err) {

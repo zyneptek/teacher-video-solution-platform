@@ -138,7 +138,6 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
   }
 
   const canSubmit = !!assignment.recording && (assignment.status === 'assigned' || assignment.status === 'returned');
-  const locked = assignment.status === 'submitted';
 
   return (
     <div>
@@ -189,14 +188,12 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
                       {assignment.status === 'returned' ? 'Yeniden onaya gönder' : 'Onaya gönder'}
                     </button>
                   )}
-                  {locked && <span className="muted small" data-testid="locked">Onaya gönderildi; yönetici değerlendirmesini bekliyor.</span>}
                   {!editing && <button type="button" className="ghost-btn" disabled={busy} onClick={() => setEditing(true)} data-testid="edit-open" title="Kırp veya videodan bölüm sil">Düzenle (kırp / bölüm sil)</button>}
                   <a href={`#/sorularim/${assignment.id}/kayit`} className="link" data-testid="re-record">Yeniden kaydet</a>
                   <button type="button" className="link danger" disabled={busy} onClick={() => void act('/recording', 'DELETE', 'Kayıt silinsin mi? Onaya gönderilmişse yönetici de artık izleyemez.')} data-testid="delete-recording">
                     Kaydı sil
                   </button>
                 </div>
-                {assignment.status === 'approved' && <span className="muted small">Yeniden kaydederseniz, kırparsanız veya silerseniz onay durumu sıfırlanır; yeniden onaya göndermeniz gerekir.</span>}
               </>
             ) : (
               <>
@@ -211,7 +208,6 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
           {assignment.referenceVideos && assignment.referenceVideos.length > 0 && !editing && (
             <div className="card" data-testid="reference-videos">
               <strong>Bu soru için mevcut çözüm videoları</strong>
-              <span className="muted small">Başka öğretmenlerin onaya gönderilmiş veya onaylanmış çözümleridir; izleyip kendi kaydınızı oluşturabilirsiniz.</span>
               {assignment.referenceVideos.map((v) => (
                 <div key={v.recording.id}>
                   <div className="muted small" style={{ marginBottom: 4 }}>{v.teacherName} · {ASSIGNMENT_STATUS_LABEL[v.status]}</div>

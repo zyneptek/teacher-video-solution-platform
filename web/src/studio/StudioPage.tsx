@@ -186,7 +186,7 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl: stri
 
       {phase === 'done' && video ? (
         <section>
-          <p data-testid="done" className="notice">Video hazır. İzleyip kaydedebilir, kaydedip onaya gönderebilir veya silebilirsiniz.</p>
+          <p data-testid="done" className="notice">Video hazır.</p>
           <VideoPreview src={video.url} />
           <p style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <button type="button" className="primary" onClick={() => void submitForReview()} disabled={sending} data-testid="submit-review">

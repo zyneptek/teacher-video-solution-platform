@@ -56,7 +56,8 @@ export function TeachersPage() {
         body: form,
       });
       await load(); // liste yenilendikten sonra mesaj gösterilir
-      const mailText = email === 'sent' ? ' Giriş bilgileri öğretmene e-postayla gönderildi.' : email === 'not_configured' ? ' E-posta gönderilmedi (e-posta ayarı yapılmamış); giriş bilgilerini öğretmene siz iletin.' : email === 'failed' ? ' E-posta gönderilemedi; giriş bilgilerini öğretmene siz iletin.' : '';
+      // Başarılı e-postadan söz edilmez; yalnızca gitmediyse yönetici bilgilendirilir (giriş bilgilerini kendisi iletmesi gerekir).
+      const mailText = email === 'not_configured' || email === 'failed' ? ' Giriş bilgileri e-postayla gönderilemedi; öğretmene siz iletin.' : '';
       setMessage(`${teacher.firstName} ${teacher.lastName} ${isNew ? 'eklendi' : 'güncellendi'}.${mailText}`);
       setEditing(null);
       setForm(EMPTY);
@@ -68,7 +69,7 @@ export function TeachersPage() {
   }
 
   async function remove(t: TeacherInfo) {
-    if (!window.confirm(`${t.firstName} ${t.lastName} silinsin mi? Hesap kapatılır ve öğretmen bir daha giriş yapamaz; kayıtları sistemde kalır.`)) return;
+    if (!window.confirm(`${t.firstName} ${t.lastName} silinsin mi? Öğretmen bir daha giriş yapamaz.`)) return;
     setMessage(null);
     try {
       await api(`/api/admin/teachers/${t.id}`, { method: 'DELETE' });
@@ -113,7 +114,7 @@ export function TeachersPage() {
             <input type="email" value={form.email} onChange={(e) => set('email')(e.target.value)} required data-testid="f-email" />
           </label>
           <label>
-            {isNew ? 'Şifre (en az 8 karakter; öğretmene e-postayla gönderilir)' : 'Yeni şifre (değişmeyecekse boş bırakın; değişirse öğretmene e-postayla gönderilir)'}
+            {isNew ? 'Şifre (en az 8 karakter)' : 'Yeni şifre (değişmeyecekse boş bırakın)'}
             <input type="text" value={form.password} onChange={(e) => set('password')(e.target.value)} minLength={8} required={isNew} autoComplete="off" data-testid="f-password" />
           </label>
           <label>

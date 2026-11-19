@@ -69,7 +69,6 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
 
   const q = assignment.question;
   const canSubmit = !!assignment.recording && (assignment.status === 'assigned' || assignment.status === 'returned');
-  const locked = assignment.status === 'submitted';
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.content, wide && styles.contentWide, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}>
@@ -104,14 +103,12 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
           <>
             <VideoBox key={assignment.recording.videoUrl} url={abs(assignment.recording.videoUrl)} />
             <Text style={styles.small}>Süre: {Math.round(assignment.recording.durationSeconds)} sn · Kaydedilme: {new Date(assignment.recording.updatedAt).toLocaleString('tr-TR')}</Text>
-            {locked && <Text style={styles.small} testID="locked">Onaya gönderildi; yönetici değerlendirmesini bekliyor.</Text>}
             {canSubmit && <Button label={assignment.status === 'returned' ? 'Yeniden onaya gönder' : 'Onaya gönder'} onPress={() => void act('/submit', 'POST')} busy={busy} />}
             <View style={styles.actions}>
               <Button label="Yeniden kaydet" variant="ghost" onPress={() => nav.push({ name: 'record', id })} style={{ flex: 1 }} />
               <Button label="Düzenle" variant="ghost" onPress={() => nav.push({ name: 'trim', id })} style={{ flex: 1 }} />
               <Button label="Sil" variant="danger" onPress={confirmDelete} disabled={busy} style={{ flex: 1 }} />
             </View>
-            {assignment.status === 'approved' && <Text style={styles.small}>Yeniden kaydederseniz, kırparsanız veya silerseniz onay durumu sıfırlanır; yeniden onaya göndermeniz gerekir.</Text>}
           </>
         ) : (
           <>
@@ -124,7 +121,6 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
       {assignment.referenceVideos && assignment.referenceVideos.length > 0 && (
         <Card>
           <Text style={styles.bold}>Bu soru için mevcut çözüm videoları</Text>
-          <Text style={styles.small}>Başka öğretmenlerin onaya gönderilmiş veya onaylanmış çözümleridir; izleyip kendi kaydınızı oluşturabilirsiniz.</Text>
           {assignment.referenceVideos.map((v) => (
             <View key={v.recording.id} style={{ gap: 4 }}>
               <Text style={styles.small}>{v.teacherName} · {ASSIGNMENT_STATUS_LABEL[v.status]}</Text>

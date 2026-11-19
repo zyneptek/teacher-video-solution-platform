@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ANSWER_KEYS, ASSIGNMENT_STATUS_LABEL, type AssignmentDelivery, type AssignmentInfo, type AssignmentStatus, type OutcomeInfo, type QuestionInfo, type TeacherInfo } from '@app/shared';
+import { ANSWER_KEYS, ASSIGNMENT_STATUS_LABEL, type AssignmentInfo, type AssignmentStatus, type OutcomeInfo, type QuestionInfo, type TeacherInfo } from '@app/shared';
 import { abs, api } from '../api';
 import { colors } from '../theme';
 import { Badge, Button, Card, ErrorText, Notice, StatusBadge } from '../ui';
@@ -173,10 +173,8 @@ function QuestionDetail({ question: initial }: { question: QuestionInfo }) {
     setMessage(null);
     setFailure(null);
     try {
-      const r = await api<{ assignment: AssignmentInfo; delivery: AssignmentDelivery }>('/api/admin/assignments', { method: 'POST', body: { questionId: q.id, teacherId: t.id } });
-      const email = r.delivery.email === 'sent' ? 'E-posta gönderildi.' : r.delivery.email === 'not_configured' ? 'E-posta gönderilmedi (ayar yok).' : 'E-posta gönderilemedi.';
-      const push = r.delivery.pushDevices > 0 ? `Push ${r.delivery.pushDevices} cihaza gönderildi.` : 'Push gönderilmedi (mobil uygulama yüklü değil).';
-      setMessage(`${r.assignment.teacherName} öğretmene atandı. ${email} ${push}`);
+      const r = await api<{ assignment: AssignmentInfo }>('/api/admin/assignments', { method: 'POST', body: { questionId: q.id, teacherId: t.id } });
+      setMessage(`${r.assignment.teacherName} öğretmene atandı.`);
       await reload();
     } catch (err) {
       setFailure(err instanceof Error ? err.message : 'Atama yapılamadı.');
@@ -186,7 +184,7 @@ function QuestionDetail({ question: initial }: { question: QuestionInfo }) {
   }
 
   function confirmAssign(t: TeacherInfo) {
-    Alert.alert('Soru atansın mı?', `${t.firstName} ${t.lastName} öğretmene atanacak; e-posta ve push bildirimi gider.`, [
+    Alert.alert('Soru atansın mı?', `${t.firstName} ${t.lastName} öğretmene atanacak.`, [
       { text: 'Vazgeç', style: 'cancel' },
       { text: 'Ata', onPress: () => void assign(t) },
     ]);

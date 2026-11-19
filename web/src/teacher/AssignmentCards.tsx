@@ -14,7 +14,7 @@ export function AssignmentCards({ assignments, emptyText }: { assignments: Teach
     return (
       <div className="empty" data-testid="empty-questions">
         <strong>Henüz size atanmış soru yok.</strong>
-        <p style={{ margin: '6px 0 0' }}>Yönetici size bir soru atadığında burada görünür ve bildirim alırsınız.</p>
+        <p style={{ margin: '6px 0 0' }}>Yönetici soru atadığında burada görünür.</p>
       </div>
     );
   }
