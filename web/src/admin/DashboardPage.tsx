@@ -46,10 +46,10 @@ export function DashboardPage() {
 
       <h3>Atama durumları</h3>
       <div className="stats">
-        <Stat label="Atandı" value={stats.assignments.assigned} />
+        <Stat label="Atandı" value={stats.assignments.assigned} href="#/atamalar/assigned" />
         <Stat label="Onaya gönderildi" value={stats.assignments.submitted} tone="brand" href="#/onay-kuyrugu" />
-        <Stat label="Onaylandı" value={stats.assignments.approved} />
-        <Stat label="Geri gönderildi" value={stats.assignments.returned} tone="warn" />
+        <Stat label="Onaylandı" value={stats.assignments.approved} href="#/atamalar/approved" />
+        <Stat label="Geri gönderildi" value={stats.assignments.returned} tone="warn" href="#/atamalar/returned" />
       </div>
     </div>
   );

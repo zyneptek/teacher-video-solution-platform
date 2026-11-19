@@ -5,10 +5,16 @@ import { api } from '../auth/session';
 import { AssignForm } from './AssignForm';
 import { AssignmentsTable } from './AssignmentsTable';
 
-export function AssignmentsPage() {
+const isStatus = (v?: string): v is AssignmentStatus => !!v && v in ASSIGNMENT_STATUS_LABEL;
+
+// initialStatus: panel kartından gelinen adres (#/atamalar/<durum>) listeyi o duruma süzer.
+export function AssignmentsPage({ initialStatus }: { initialStatus?: string }) {
   const [assignments, setAssignments] = useState<AssignmentInfo[] | null>(null);
   const [questions, setQuestions] = useState<QuestionInfo[]>([]);
-  const [status, setStatus] = useState<AssignmentStatus | ''>('');
+  const [status, setStatus] = useState<AssignmentStatus | ''>(isStatus(initialStatus) ? initialStatus : '');
+  useEffect(() => {
+    setStatus(isStatus(initialStatus) ? initialStatus : '');
+  }, [initialStatus]);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {

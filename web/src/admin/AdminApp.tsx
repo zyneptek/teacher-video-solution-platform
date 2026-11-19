@@ -17,7 +17,7 @@ const PAGES: Page[] = [
   { path: '/ogretmenler', label: 'Öğretmenler', render: () => <TeachersPage /> },
   { path: '/sorular', label: 'Sorular', render: (r) => <QuestionsPage id={r.param} /> },
   { path: '/kazanimlar', label: 'Kazanımlar', render: () => <OutcomesPage /> },
-  { path: '/atamalar', label: 'Atamalar', render: () => <AssignmentsPage /> },
+  { path: '/atamalar', label: 'Atamalar', render: (r) => <AssignmentsPage initialStatus={r.param} /> },
   { path: '/onay-kuyrugu', label: 'Onay kuyruğu', render: () => <ReviewQueuePage /> },
   { path: '/hata-bildirimleri', label: 'Hata bildirimleri', render: () => <ErrorReportsPage /> },
 ];

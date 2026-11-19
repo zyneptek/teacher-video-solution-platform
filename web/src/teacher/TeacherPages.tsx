@@ -60,12 +60,12 @@ export function TeacherDashboard({ notifications, unread, refresh }: { notificat
       {error && <p role="alert" className="error">{error}</p>}
       <div className="stats">
         {(Object.keys(ASSIGNMENT_STATUS_LABEL) as AssignmentStatus[]).map((s) => (
-          <div key={s} className="stat">
+          <a key={s} href={`#/durum/${s}`} className="stat" data-testid={`stat-${s}`}>
             <div className={`stat-value ${s === 'assigned' || s === 'returned' ? 'tone-brand' : ''}`} data-testid={`count-${s}`}>
               {counts[s]}
             </div>
             <div className="stat-label">{ASSIGNMENT_STATUS_LABEL[s]}</div>
-          </div>
+          </a>
         ))}
       </div>
 
@@ -87,6 +87,23 @@ export function TeacherDashboard({ notifications, unread, refresh }: { notificat
       <h3>Sorularım</h3>
       {!assignments && !error && <p>Yükleniyor…</p>}
       {assignments && <AssignmentCards assignments={assignments} />}
+    </div>
+  );
+}
+
+// Panel kartından açılan liste: seçilen durumdaki sorular (#/durum/<durum>).
+export function StatusListPage({ status }: { status?: string }) {
+  const { assignments, error } = useAssignments();
+  const valid = !!status && status in ASSIGNMENT_STATUS_LABEL;
+  const label = valid ? ASSIGNMENT_STATUS_LABEL[status as AssignmentStatus] : 'Sorular';
+  const list = assignments?.filter((a) => !valid || a.status === status);
+  return (
+    <div>
+      <a href="#/" className="link">← Panel</a>
+      <h2 style={{ margin: '8px 0' }}>{label}</h2>
+      {error && <p role="alert" className="error">{error}</p>}
+      {!list && !error && <p>Yükleniyor…</p>}
+      {list && <AssignmentCards assignments={list} emptyText="Bu durumda soru yok." />}
     </div>
   );
 }

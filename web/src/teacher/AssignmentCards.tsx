@@ -8,7 +8,8 @@ export function solutionLabel(a: TeacherAssignment): string {
   return ASSIGNMENT_STATUS_LABEL[a.status];
 }
 
-export function AssignmentCards({ assignments }: { assignments: TeacherAssignment[] }) {
+export function AssignmentCards({ assignments, emptyText }: { assignments: TeacherAssignment[]; emptyText?: string }) {
+  if (assignments.length === 0 && emptyText) return <div className="empty" data-testid="empty-status">{emptyText}</div>;
   if (assignments.length === 0) {
     return (
       <div className="empty" data-testid="empty-questions">
