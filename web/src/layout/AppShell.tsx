@@ -4,7 +4,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 
 export type Route = { path: string; param?: string; sub?: string };
-export type Page = { path: string; label: string; badge?: number; render: (route: Route) => ReactNode };
+export type Page = { path: string; label: string; badge?: number; hidden?: boolean; render: (route: Route) => ReactNode };
 
 function currentRoute(pages: Page[]): Route {
   const [, first = '', param, sub] = window.location.hash.replace(/^#/, '').split('/');
@@ -50,7 +50,7 @@ export function AppShell({ pages, userName, roleLabel, onLogout, topRight }: { p
       <aside className="sidebar" data-testid="sidebar">
         <div className="brand">Video Çözüm<br />Platformu</div>
         <nav>
-          {pages.map((p) => (
+          {pages.filter((p) => !p.hidden).map((p) => (
             <a key={p.path} href={`#${p.path}`} className={p.path === route.path ? 'nav active' : 'nav'} data-testid={`nav-${p.path.replace('/', '') || 'panel'}`}>
               {p.label}
               {p.badge ? <span className="nav-badge" data-testid={`badge-${p.path.replace('/', '')}`}>{p.badge}</span> : null}
