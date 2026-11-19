@@ -103,11 +103,11 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
           <>
             <VideoBox key={assignment.recording.videoUrl} url={abs(assignment.recording.videoUrl)} />
             <Text style={styles.small}>Süre: {Math.round(assignment.recording.durationSeconds)} sn · Kaydedilme: {new Date(assignment.recording.updatedAt).toLocaleString('tr-TR')}</Text>
-            {canSubmit && <Button label={assignment.status === 'returned' ? 'Yeniden onaya gönder' : 'Onaya gönder'} onPress={() => void act('/submit', 'POST')} busy={busy} />}
+            {canSubmit && <Button label={assignment.status === 'returned' ? 'Yeniden onaya gönder' : 'Onaya gönder'} variant="soft" onPress={() => void act('/submit', 'POST')} busy={busy} />}
             <View style={styles.actions}>
-              <Button label="Yeniden kaydet" onPress={() => nav.push({ name: 'record', id })} style={{ flex: 1 }} />
-              <Button label="Düzenle" onPress={() => nav.push({ name: 'trim', id })} style={{ flex: 1 }} />
-              <Button label="Sil" onPress={confirmDelete} disabled={busy} style={{ flex: 1 }} />
+              <Button label="Yeniden kaydet" variant="soft" onPress={() => nav.push({ name: 'record', id })} style={{ flex: 1 }} />
+              <Button label="Düzenle" variant="soft" onPress={() => nav.push({ name: 'trim', id })} style={{ flex: 1 }} />
+              <Button label="Sil" variant="soft" onPress={confirmDelete} disabled={busy} style={{ flex: 1 }} />
             </View>
           </>
         ) : (

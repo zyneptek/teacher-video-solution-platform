@@ -2,6 +2,8 @@
 export const colors = {
   brand: '#f14e13',
   brandDark: '#d6400d',
+  brandLight: '#fde6dc', // turuncunun açık tonu (durum etiketleriyle aynı)
+  brandLightPressed: '#fbd5c4', // aynı tonun biraz koyusu: basılıyken
   ink: '#1a0e1c',
   sage: '#b5cbc8',
   sageLight: '#e6eeed',

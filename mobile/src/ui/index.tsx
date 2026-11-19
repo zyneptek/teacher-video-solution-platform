@@ -4,11 +4,13 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } 
 import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus } from '@app/shared';
 import { colors } from '../theme';
 
-export function Button({ label, onPress, variant = 'primary', disabled, busy, style }: { label: string; onPress: () => void; variant?: 'primary' | 'ghost' | 'danger'; disabled?: boolean; busy?: boolean; style?: ViewStyle }) {
+// primary: dolu turuncu (ana işlem: giriş, kayıt oluştur); soft: açık turuncu zemin + koyu turuncu yazı (soru ve düzenleme ekranı işlemleri);
+// ghost: çerçeveli (gezinti ve ikincil işlemler); danger: kırmızı çerçeveli.
+export function Button({ label, onPress, variant = 'primary', disabled, busy, style }: { label: string; onPress: () => void; variant?: 'primary' | 'soft' | 'ghost' | 'danger'; disabled?: boolean; busy?: boolean; style?: ViewStyle }) {
   const off = disabled || busy;
   return (
-    <Pressable accessibilityRole="button" disabled={off} onPress={onPress} style={[styles.btn, variant === 'primary' && styles.btnPrimary, variant === 'ghost' && styles.btnGhost, variant === 'danger' && styles.btnDanger, off && { opacity: 0.5 }, style]}>
-      {busy ? <ActivityIndicator color={variant === 'primary' ? '#fff' : colors.ink} /> : <Text style={[styles.btnText, variant === 'primary' && { color: '#fff' }, variant === 'danger' && { color: colors.danger }]}>{label}</Text>}
+    <Pressable accessibilityRole="button" disabled={off} onPress={onPress} style={({ pressed }) => [styles.btn, variant === 'primary' && styles.btnPrimary, variant === 'soft' && styles.btnSoft, variant === 'soft' && pressed && styles.btnSoftPressed, variant === 'ghost' && styles.btnGhost, variant === 'danger' && styles.btnDanger, off && { opacity: 0.5 }, style]}>
+      {busy ? <ActivityIndicator color={variant === 'primary' ? '#fff' : variant === 'soft' ? colors.brandDark : colors.ink} /> : <Text style={[styles.btnText, variant === 'primary' && { color: '#fff' }, variant === 'soft' && { color: colors.brandDark }, variant === 'danger' && { color: colors.danger }]}>{label}</Text>}
     </Pressable>
   );
 }
@@ -62,6 +64,8 @@ export function Notice({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   btn: { minHeight: 46, paddingHorizontal: 18, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
   btnPrimary: { backgroundColor: colors.brand },
+  btnSoft: { backgroundColor: colors.brandLight, borderWidth: 1, borderColor: colors.brandLightPressed },
+  btnSoftPressed: { backgroundColor: colors.brandLightPressed },
   btnGhost: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.sage },
   btnDanger: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.danger },
   btnText: { fontSize: 15, fontWeight: '700', color: colors.ink },
