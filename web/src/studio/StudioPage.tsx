@@ -179,8 +179,8 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl: stri
       {phase === 'rendering' && <p data-testid="rendering">Video hazırlanıyor ve sisteme kaydediliyor…</p>}
       {phase === 'failed' && (
         <p style={{ display: 'flex', gap: 8 }}>
-          <button type="button" className="primary" onClick={() => void upload()} data-testid="retry-upload">Tekrar dene</button>
-          <button type="button" onClick={handleNewRecording}>Vazgeç ve yeniden çek</button>
+          <button type="button" className="accent-btn" onClick={() => void upload()} data-testid="retry-upload">Tekrar dene</button>
+          <button type="button" className="accent-btn" onClick={handleNewRecording}>Vazgeç ve yeniden çek</button>
         </p>
       )}
 
@@ -189,13 +189,13 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl: stri
           <p data-testid="done" className="notice">Video hazır.</p>
           <VideoPreview src={video.url} />
           <p style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button type="button" className="primary" onClick={() => void submitForReview()} disabled={sending} data-testid="submit-review">
+            <button type="button" className="accent-btn" onClick={() => void submitForReview()} disabled={sending} data-testid="submit-review">
               {sending ? 'Gönderiliyor…' : 'Kaydet ve onaya gönder'}
             </button>
-            <a href={`#/sorularim/${assignmentId}`} data-testid="save-draft">Kaydet</a>
-            <button type="button" className="link danger" onClick={() => void deleteRecording()} disabled={sending} data-testid="delete-new">Sil</button>
-            <a href={`#/sorularim/${assignmentId}/duzenle`} data-testid="edit-after">Düzenle (kırp / bölüm sil)</a>
-            <button type="button" onClick={handleNewRecording}>Yeniden çek</button>
+            <a href={`#/sorularim/${assignmentId}`} className="accent-btn" data-testid="save-draft">Kaydet</a>
+            <button type="button" className="accent-btn" onClick={() => void deleteRecording()} disabled={sending} data-testid="delete-new">Sil</button>
+            <a href={`#/sorularim/${assignmentId}/duzenle`} className="accent-btn" data-testid="edit-after">Düzenle (kırp / bölüm sil)</a>
+            <button type="button" className="accent-btn" onClick={handleNewRecording}>Yeniden çek</button>
           </p>
         </section>
       ) : (
