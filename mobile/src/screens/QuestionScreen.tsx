@@ -105,9 +105,9 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
             <Text style={styles.small}>Süre: {Math.round(assignment.recording.durationSeconds)} sn · Kaydedilme: {new Date(assignment.recording.updatedAt).toLocaleString('tr-TR')}</Text>
             {canSubmit && <Button label={assignment.status === 'returned' ? 'Yeniden onaya gönder' : 'Onaya gönder'} onPress={() => void act('/submit', 'POST')} busy={busy} />}
             <View style={styles.actions}>
-              <Button label="Yeniden kaydet" variant="ghost" onPress={() => nav.push({ name: 'record', id })} style={{ flex: 1 }} />
-              <Button label="Düzenle" variant="ghost" onPress={() => nav.push({ name: 'trim', id })} style={{ flex: 1 }} />
-              <Button label="Sil" variant="danger" onPress={confirmDelete} disabled={busy} style={{ flex: 1 }} />
+              <Button label="Yeniden kaydet" onPress={() => nav.push({ name: 'record', id })} style={{ flex: 1 }} />
+              <Button label="Düzenle" onPress={() => nav.push({ name: 'trim', id })} style={{ flex: 1 }} />
+              <Button label="Sil" onPress={confirmDelete} disabled={busy} style={{ flex: 1 }} />
             </View>
           </>
         ) : (

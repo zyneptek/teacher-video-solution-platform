@@ -106,16 +106,16 @@ export function TrimScreen({ id, nav }: { id: string; nav: Nav }) {
       <View style={[{ gap: 10 }, wide && { flex: 2 }]}>
       <Text style={styles.label}>Aralık başlangıcı: {fmt(start)}</Text>
       <Slider minimumValue={0} maximumValue={total} step={0.1} value={start} onValueChange={changeStart} minimumTrackTintColor={colors.brand} thumbTintColor={colors.brand} />
-      <Button label="Mevcut konumu başlangıç yap" variant="ghost" onPress={() => changeStart(player.current?.currentTime ?? 0)} />
+      <Button label="Mevcut konumu başlangıç yap" onPress={() => changeStart(player.current?.currentTime ?? 0)} />
       <Text style={styles.label}>Aralık bitişi: {fmt(end)}</Text>
       <Slider minimumValue={0} maximumValue={total} step={0.1} value={end} onValueChange={changeEnd} minimumTrackTintColor={colors.brand} thumbTintColor={colors.brand} />
-      <Button label="Mevcut konumu bitiş yap" variant="ghost" onPress={() => changeEnd(player.current?.currentTime ?? total)} />
+      <Button label="Mevcut konumu bitiş yap" onPress={() => changeEnd(player.current?.currentTime ?? total)} />
       <Text style={styles.small}>Seçili aralık: {keepSeconds.toFixed(1)} sn · Toplam: {total.toFixed(1)} sn</Text>
       {done && <Notice>{done}</Notice>}
       {error && <ErrorText>{error}</ErrorText>}
       <Button label={`Yalnızca bu aralığı tut (${keepSeconds.toFixed(1)} sn)`} onPress={() => void apply('keep')} busy={busy} disabled={keepSeconds < 1} />
-      <Button label="Bu aralığı sil" variant="ghost" onPress={() => void apply('cut')} disabled={busy || cutSeconds < 1} />
-      <Button label="↶ Geri al" variant="ghost" onPress={() => void undo()} disabled={busy || !recording.canUndo} />
+      <Button label="Bu aralığı sil" onPress={() => void apply('cut')} disabled={busy || cutSeconds < 1} />
+      <Button label="↶ Geri al" onPress={() => void undo()} disabled={busy || !recording.canUndo} />
       </View>
       </View>
     </ScrollView>
