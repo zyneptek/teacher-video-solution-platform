@@ -17,7 +17,7 @@ export function ReviewQueuePage() {
       setItems(r.assignments);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Onay kuyruğu yüklenemedi.');
+      setError(err instanceof Error ? err.message : 'Onay bekleyenler yüklenemedi.');
     }
   }, []);
 
@@ -27,7 +27,7 @@ export function ReviewQueuePage() {
 
   return (
     <div>
-      <h2>Onay kuyruğu</h2>
+      <h2>Onay bekleyenler</h2>
       {message && <p className="notice" data-testid="review-message">{message}</p>}
       {error && <p role="alert" className="error">{error}</p>}
       {!items && !error && <p>Yükleniyor…</p>}

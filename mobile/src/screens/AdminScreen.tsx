@@ -1,4 +1,4 @@
-// Yönetici (mobil, en küçük kapsam): Panel (sayılar), Onay kuyruğu (izle, onayla, notla geri gönder) ve Hata bildirimleri.
+// Yönetici (mobil, en küçük kapsam): Panel (sayılar), Onay bekleyenler (izle, onayla, notla geri gönder) ve Hata bildirimleri.
 // Panelde öğretmendeki gibi Bildirimler bölümü vardır (video onaya gönderildi, hata bildirildi); sağ üstte çıkış bulunur.
 import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -18,7 +18,7 @@ import { VideoBox } from '../ui/VideoBox';
 type Tab = 'panel' | 'queue' | 'reports';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'panel', label: 'Panel' },
-  { id: 'queue', label: 'Onay kuyruğu' },
+  { id: 'queue', label: 'Onay bekleyenler' },
   { id: 'reports', label: 'Hata bildirimleri' },
 ];
 const MAX_NOTE = 500;
@@ -37,7 +37,7 @@ export function AdminScreen() {
   const [tab, setTab] = useState<Tab>('panel');
   const [page, setPage] = useState<AdminPage | null>(null); // panel kartından açılan liste sayfası
 
-  // Bildirime dokununca okundu olur ve ilgili sekme açılır (onay kuyruğu veya hata bildirimleri).
+  // Bildirime dokununca okundu olur ve ilgili sekme açılır (onay bekleyenler veya hata bildirimleri).
   function openNotification(n: NotificationInfo) {
     if (!n.readAt) void markRead(n.id);
     const target = tabFromHref(n.href);
