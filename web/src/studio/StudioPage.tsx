@@ -89,6 +89,20 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl: stri
     }
   }
 
+  // "Sil": video sunucudan da silinir (Storage dosyası ve veritabanı kaydı); soru sayfasına dönülür.
+  async function deleteRecording() {
+    if (!window.confirm('Video silinsin mi? Bu işlem geri alınamaz.')) return;
+    setSending(true);
+    setMessage(null);
+    try {
+      await api(`/api/teacher/assignments/${assignmentId}/recording`, { method: 'DELETE' });
+      window.location.hash = `#/sorularim/${assignmentId}`;
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Video silinemedi.');
+      setSending(false);
+    }
+  }
+
   function handleNewRecording() {
     setVideo(null);
     setPhase('recording');
@@ -172,14 +186,15 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl: stri
 
       {phase === 'done' && video ? (
         <section>
-          <p data-testid="done" className="notice">Kaydınız sisteme kaydedildi. İsterseniz izleyip onaya gönderebilir, isterseniz taslak olarak bırakabilirsiniz.</p>
+          <p data-testid="done" className="notice">Video hazır. İzleyip kaydedebilir, kaydedip onaya gönderebilir veya silebilirsiniz.</p>
           <VideoPreview src={video.url} />
           <p style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <button type="button" className="primary" onClick={() => void submitForReview()} disabled={sending} data-testid="submit-review">
-              {sending ? 'Gönderiliyor…' : 'Onaya gönder'}
+              {sending ? 'Gönderiliyor…' : 'Kaydet ve onaya gönder'}
             </button>
+            <a href={`#/sorularim/${assignmentId}`} data-testid="save-draft">Kaydet</a>
+            <button type="button" className="link danger" onClick={() => void deleteRecording()} disabled={sending} data-testid="delete-new">Sil</button>
             <a href={`#/sorularim/${assignmentId}/duzenle`} data-testid="edit-after">Düzenle (kırp / bölüm sil)</a>
-            <a href={`#/sorularim/${assignmentId}`} data-testid="save-draft">Taslak olarak kaydet</a>
             <button type="button" onClick={handleNewRecording}>Yeniden çek</button>
           </p>
         </section>

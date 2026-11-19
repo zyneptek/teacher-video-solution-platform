@@ -1,5 +1,5 @@
 // Çözüm kayıtları: üretilen MP4'ler özel "recordings" bucket'ında saklanır, kayıt bilgisi `recordings` tablosundadır.
-// Atama başına tek güncel kayıt vardır (yeniden çekilince yenisi eskisinin yerine geçer; silinen kayıt deleted_at ile işaretlenir).
+// Atama başına tek güncel kayıt vardır (yeniden çekilince yenisi eskisinin yerine geçer; silinen kayıt satırı ve dosyası tamamen kaldırılır).
 // Videolar tarayıcıya, kimlik doğrulaması olmadan çalışan <video> etiketi için HMAC imzalı, süreli bir adresle sunulur;
 // adres yalnızca yetkili kullanıcıya (kaydın sahibi öğretmen veya yönetici) üretilir. Dosyalar sunucu diskinde önbelleğe
 // alınır ve aralıklı istekle (Range) sunulur, böylece tarayıcı videoda ileri-geri sarabilir.
@@ -105,16 +105,15 @@ export async function undoLastEdit(assignmentId: string): Promise<boolean> {
   return true;
 }
 
-// Kaydı siler (yumuşak): satır işaretlenir, dosya Storage'dan kaldırılır; silinen kayıt artık izlenemez.
+// Kaydı kalıcı siler: video dosyası Storage'dan, kayıt satırı (ve düzenleme geçmişi) veritabanından kaldırılır; silinen kayıt artık izlenemez.
 export async function deleteRecording(assignmentId: string): Promise<boolean> {
-  const current = await pool.query<{ id: string; video_path: string | null; updated_at: Date }>('select id, video_path, updated_at from recordings where assignment_id = $1 and deleted_at is null', [assignmentId]);
-  if (current.rows.length === 0) return false;
-  await pool.query("update recordings set deleted_at = now(), status = 'failed', video_path = null, updated_at = now() where assignment_id = $1", [assignmentId]);
+  const current = await pool.query<{ id: string; video_path: string | null; updated_at: Date }>('select id, video_path, updated_at from recordings where assignment_id = $1', [assignmentId]);
   const old = current.rows[0];
-  if (old) await clearHistory(old.id);
-  if (old) await rm(cachePath(old.id, old.updated_at.getTime()), { force: true });
-  const videoPath = old?.video_path;
-  if (videoPath) await supabase.storage.from(BUCKETS.recordings).remove([videoPath]).catch(() => undefined);
+  if (!old) return false;
+  await clearHistory(old.id);
+  await pool.query('delete from recordings where id = $1', [old.id]);
+  await rm(cachePath(old.id, old.updated_at.getTime()), { force: true });
+  if (old.video_path) await supabase.storage.from(BUCKETS.recordings).remove([old.video_path]).catch(() => undefined);
   return true;
 }
 

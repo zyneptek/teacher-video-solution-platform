@@ -1,4 +1,4 @@
-// Kayıt önizlemesi: izle (oynat/duraklat, baştan oynat, konum çubuğu); onaya gönder, taslak olarak bırak veya yeniden çek.
+// Kayıt önizlemesi: izle (oynat/duraklat, baştan oynat, konum çubuğu); kaydet, kaydet ve onaya gönder, sil veya yeniden çek.
 // Video, sunucunun ürettiği MP4'tür ve bir adresten oynatılır.
 import { useEvent } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -15,6 +15,7 @@ type Props = {
   message: string | null;
   onSubmit: () => void;
   onDraft: () => void;
+  onDelete: () => void;
   onRetake: () => void;
 };
 
@@ -26,7 +27,7 @@ function Pill({ label, disabled, onPress }: { label: string; disabled?: boolean;
   );
 }
 
-export function PreviewScreen({ videoUrl, landscape, sending, message, onSubmit, onDraft, onRetake }: Props) {
+export function PreviewScreen({ videoUrl, landscape, sending, message, onSubmit, onDraft, onDelete, onRetake }: Props) {
   const insets = useSafeAreaInsets();
   const player = useVideoPlayer(videoUrl, (p) => {
     p.loop = false;
@@ -85,10 +86,10 @@ export function PreviewScreen({ videoUrl, landscape, sending, message, onSubmit,
         </Text>
       </View>
       <View style={styles.row}>
-        <Pill label={sending ? 'Gönderiliyor…' : 'Onaya gönder'} disabled={sending} onPress={onSubmit} />
-        <Pill label="Taslak olarak kaydet" disabled={sending} onPress={onDraft} />
+        <Pill label={sending ? 'Gönderiliyor…' : 'Kaydet ve onaya gönder'} disabled={sending} onPress={onSubmit} />
+        <Pill label="Kaydet" disabled={sending} onPress={onDraft} />
+        <Pill label="Sil" disabled={sending} onPress={onDelete} />
         <Pill label="Yeniden çek" disabled={sending} onPress={onRetake} />
-        <Text style={[styles.message, landscape && styles.timeLandscape]}>Kaydınız sisteme kaydedildi.</Text>
         {message && <Text style={[styles.messageError, landscape && styles.timeLandscape]}>{message}</Text>}
       </View>
     </View>

@@ -133,7 +133,8 @@ Ayrıntılar: Karar 1, 11, 12, 13, 14.
 Görevin açık bıraktığı noktalarda alınan kararların tamamı aşağıdaki **Karar 15–30** bölümlerinde ve "Açık noktalar" listesindedir. Başlıcaları:
 
 - Soru ilk atamada da yalnızca **kendi branşındaki** öğretmene atanır; aynı soru aynı öğretmene ikinci kez atanamaz (Karar 8, 19).
-- Silinen öğretmenin verileri **silinmez, arşivde kalır** (yumuşak silme); hesabı kapanır (Karar 8).
+- Silinen öğretmenin verileri **silinmez, arşivde kalır** (yumuşak silme); hesabı kapanır (Karar 8). Videoları da kalır: yönetici izleyip onaylayabilir, çapraz atanan öğretmen referans olarak izleyebilir.
+- Öğretmen **kendi videosunu silerse** dosya Storage'dan ve satır veritabanından kalıcı silinir (öğretmen hesabının silinmesinden farklıdır).
 - Düzenleme/silme sonrası onaya gönderilmiş veya onaylı atama **Atandı**'ya döner; *Geri gönderildi* olan, düzenlenince de **Geri gönderildi** kalır (Karar 23).
 - Çapraz atanan öğretmen, aynı sorunun **onaya gönderilmiş veya onaylanmış** videolarını izleyebilir; taslak ve geri gönderilmiş videoları görmez (Karar 27).
 - Öğretmene **cevap anahtarı gösterilmez**, kazanımlar gösterilir (Karar 21).
@@ -307,7 +308,8 @@ shared/   ortak tipler ve fonksiyonlar
 | `questions` | Sorular: görsel yolu, branş, cevap anahtarı (A–E), paketteki orijinal kimlik (`source_id`), sayfa ve soru no |
 | `question_outcomes` | Soru–kazanım ilişkisi (bir soruda birden fazla kazanım) |
 | `assignments` | Atama: soru, öğretmen, durum (`assigned`, `submitted`, `approved`, `returned`), geri gönderme notu. `(soru, öğretmen)` benzersiz |
-| `recordings` | Atamanın güncel videosu (atama başına en fazla bir), durum (`processing`, `ready`, `failed`), `deleted_at` |
+| `recordings` | Atamanın güncel videosu (atama başına en fazla bir), durum (`processing`, `ready`, `failed`); öğretmen silince satır ve dosya **kalıcı silinir** |
+| `recording_history` | Her kırpma/silme düzenlemesinden önceki sürüm ("Geri al" için) |
 | `notifications` | Bildirim: alıcı, atama, tür, `read_at` (boşsa okunmamış). Metin saklanmaz, gösterilirken üretilir |
 | `error_reports` | Hata bildirimi: soru, gönderen öğretmen, tür, açıklama, isteğe bağlı ek |
 
@@ -537,7 +539,7 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 - **Güvenlik notu:** şifrenin düz metin e-postayla gitmesi bilinçli bir kolaylıktır (yönetici şifreyi belirliyor ve öğretmene iletmesi gerekiyor). Canlıda daha güvenli yol, öğretmene tek kullanımlık "şifre belirle" bağlantısı göndermek olurdu; şifre değiştirme ekranı yapılırsa öğretmenden ilk girişte şifresini değiştirmesi istenebilir.
 
 ### Karar 23 — Çözüm kaydını sisteme kaydetme, onaya gönderme ve onay akışı
-- **Kaydet = sisteme kaydet:** öğretmen kaydı bitirince sunucu MP4'ü üretir ve **otomatik olarak sisteme kaydeder** (özel `recordings` Storage bucket'ı + `recordings` tablosu, atama başına tek güncel kayıt). Cihaza indirme yoktur (yalnızca geçici geliştirme akışında kaldı). Kayıt sonrası seçenekler: **Onaya gönder**, **Taslak olarak kaydet** (soru sayfasına dön), **Yeniden çek**. Yükleme başarısız olursa kayıt bellekte tutulur ve "Tekrar dene" ile yeniden gönderilir.
+- **Kaydet = sisteme kaydet:** öğretmen kaydı bitirince sunucu MP4'ü üretir ve **otomatik olarak sisteme kaydeder** (özel `recordings` Storage bucket'ı + `recordings` tablosu, atama başına tek güncel kayıt). Cihaza indirme yoktur (yalnızca geçici geliştirme akışında kaldı). Kayıt sonrası seçenekler: **Kaydet ve onaya gönder**, **Kaydet** (taslak olarak kalır, soru sayfasına dön), **Sil** (video kalıcı silinir), **Yeniden çek**. Hiçbir kayıt kendiliğinden onaya gitmez; onaya yalnızca öğretmen gönderir. Yükleme başarısız olursa kayıt bellekte tutulur ve "Tekrar dene" ile yeniden gönderilir.
 - **Öğretmen erişimi:** kendi soru sayfasında kaydını izler, yeniden kaydeder, **siler** ve onaya gönderir. Başkasının kaydına erişemez (404).
 - **Video sunumu:** `<video>` kimlik başlığı gönderemediğinden video, HMAC imzalı + süreli adresle (`/api/recording-videos/...`) ve Range desteğiyle sunulur; adres yalnızca yetkili kullanıcıya üretilir, sunucu diskinde önbelleklenir. Silinen kaydın dosyası Storage'dan kaldırılır, eski adres 404 döner (yönetici izleyemez).
 - **Onaya gönderme:** yalnızca hazır kaydı olan ve "Atandı" ya da "Geri gönderildi" durumundaki atama gönderilebilir. Gönderilmeyen kayıt yönetici kuyruğunda görünmez.
@@ -568,7 +570,7 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 ### Karar 28 — Mobil uygulama (öğretmen)
 - **Ekranlar:** Giriş (yönetici/öğretmen sekmeleri) → Ana sayfa (atama durumu sayıları, bildirimler, sorular, çıkış) → Soru sayfası (görsel, durum, yönetici notu, kayıt izleme, yeniden kaydet, kırp, sil, onaya gönder, çapraz atamada onaylı örnek video, kazanımlar, hata bildirimi) → Kayıt stüdyosu, Kırpma, Hata bildirimi. Web ile **aynı hesap, aynı soru listesi, bildirimler ve kayıtlar**; aynı sunucu uç noktaları ve kurallar (web'den gönderilen video mobilde, mobilden gönderilen video webde ve yönetici panelinde görünür).
 - **Oturum:** jetonlar `expo-secure-store` ile güvenli depoda tutulur; 401'de bir kez yenilenir; açıkken 30 sn'de bir hesap kontrol edilir, **silinen öğretmenin oturumu otomatik kapanır** ve giriş ekranında bilgilendirilir.
-- **Kaydet = sisteme kaydet:** stüdyoda Dur'dan sonra sunucu MP4'ü üretir ve sisteme kaydeder (galeriye indirme yoktur); izleme ekranında **Onaya gönder / Taslak olarak kaydet / Yeniden çek**. Yükleme hatasında "Tekrar dene".
+- **Kaydet = sisteme kaydet:** stüdyoda Dur'dan sonra sunucu MP4'ü üretir ve sisteme kaydeder (galeriye indirme yoktur); izleme ekranında **Kaydet ve onaya gönder / Kaydet / Sil / Yeniden çek**. Yükleme hatasında "Tekrar dene".
 - **Tablet düzeni:** ekran genişliği 820 px ve üzerindeyse (iPad, özellikle yatayda) web'deki gibi iki sütun kullanılır: soru sayfasında görsel solda, durum/kayıt/kazanım/hata kartları sağda; düzenlemede video solda, kontroller sağda; hata bildiriminde form solda, işaretlenecek görsel sağda; ana sayfada sorular iki sütunlu ızgara. Telefonda tek sütun düzeni aynen kalır (`mobile/src/ui/layout.ts`).
 - **Yönetici girişi (isteğe bağlı, en küçük kapsam):** giriş ekranında web'deki gibi *Yönetici girişi / Öğretmen girişi* sekmeleri vardır (sunucu sekmeyi gerçek rolle karşılaştırır). Yönetici mobilde yalnızca **Panel** (sayılar), **Onay kuyruğu** (videoyu izle, onayla, notla geri gönder) ve **Hata bildirimleri** ile bildirim zilini görür; öğretmen/soru/kazanım/atama yönetimi web panelindedir (görev mobilde yönetici ekranı istemez). Yöneticiye push gönderilmez.
 - **Sayı kartları sayfaya gider:** yönetici panelinde *Öğretmen*, *Soru*, *Kazanım* kartları salt okunur liste sayfalarını açar (kazanım sayfasında arama kutusu vardır); *Atandı / Onaylandı / Geri gönderildi* kartları o durumdaki atamaları (videoyu izle ile) listeler; *Onaya gönderildi* Onay kuyruğuna, *Hata bildirimi* Hata bildirimleri sekmesine gider. Öğretmen ana sayfasında her durum kartı o durumdaki soruların listesini açar; satıra dokununca soru sayfasına geçilir.

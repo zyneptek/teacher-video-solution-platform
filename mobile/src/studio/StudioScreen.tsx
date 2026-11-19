@@ -4,7 +4,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { StatusBar } from 'expo-status-bar';
 import { CameraView } from 'expo-camera';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VIDEO, type DrawingEvent, type InkController, type TeacherAssignment, type Tool } from '@app/shared';
 import { abs, api } from '../api';
@@ -116,6 +116,26 @@ export function StudioScreen({ assignment, nav }: { assignment: TeacherAssignmen
     }
   }
 
+  // "Sil": video sunucudan da silinir (dosya ve veritabanı kaydı); soru sayfasına dönülür.
+  function confirmDelete() {
+    Alert.alert('Video silinsin mi?', 'Bu işlem geri alınamaz.', [
+      { text: 'Vazgeç', style: 'cancel' },
+      {
+        text: 'Sil',
+        style: 'destructive',
+        onPress: () => {
+          setSending(true);
+          api(`/api/teacher/assignments/${assignment.id}/recording`, { method: 'DELETE' })
+            .then(() => nav.pop())
+            .catch((err) => {
+              setMessage(errorMessage(err, 'Video silinemedi.'));
+              setSending(false);
+            });
+        },
+      },
+    ]);
+  }
+
   // Yeni kayıt (veya vazgeç): tahta ve kayıt temizlenir.
   function resetStudio() {
     pendingRef.current = null;
@@ -149,6 +169,7 @@ export function StudioScreen({ assignment, nav }: { assignment: TeacherAssignmen
           message={message}
           onSubmit={() => void submitForReview()}
           onDraft={() => nav.pop()}
+          onDelete={confirmDelete}
           onRetake={resetStudio}
         />
         <StatusBar hidden={landscape} style="auto" />

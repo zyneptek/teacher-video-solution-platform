@@ -1,9 +1,9 @@
-// Yönetici liste sayfaları (salt okunur): Öğretmenler, Sorular, Kazanımlar (arama) ve duruma göre Atamalar.
-// Panel kartlarına dokununca açılır; düzenleme ve atama işlemleri web panelindedir.
+// Yönetici sayfaları: Öğretmenler, Sorular, Kazanımlar (arama) ve duruma göre Atamalar listeleri (panel kartlarından açılır).
+// Soru detayında cevap anahtarı ve kazanımlar düzenlenir, soru aynı branştaki öğretmenlere atanır (web ile aynı uç noktalar).
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ASSIGNMENT_STATUS_LABEL, type AssignmentDelivery, type AssignmentInfo, type AssignmentStatus, type OutcomeInfo, type QuestionInfo, type TeacherInfo } from '@app/shared';
+import { ANSWER_KEYS, ASSIGNMENT_STATUS_LABEL, type AssignmentDelivery, type AssignmentInfo, type AssignmentStatus, type OutcomeInfo, type QuestionInfo, type TeacherInfo } from '@app/shared';
 import { abs, api } from '../api';
 import { colors } from '../theme';
 import { Badge, Button, Card, ErrorText, Notice, StatusBadge } from '../ui';
@@ -107,8 +107,45 @@ function QuestionsList({ open }: { open: (p: AdminPage) => void }) {
 }
 
 // Soru detayı: görsel, cevap anahtarı, kazanımlar, mevcut atamalar ve aynı branştaki öğretmenlere atama.
-function QuestionDetail({ question: q }: { question: QuestionInfo }) {
+function QuestionDetail({ question: initial }: { question: QuestionInfo }) {
   const wide = useWide();
+  const [q, setQ] = useState(initial);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editNotice, setEditNotice] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [found, setFound] = useState<OutcomeInfo[]>([]);
+
+  // Cevap anahtarı / kazanım değişikliği veritabanına yazılır, sonra soru yeniden okunur.
+  async function change(run: () => Promise<unknown>, message: string) {
+    setSaving(true);
+    setEditError(null);
+    setEditNotice(null);
+    try {
+      await run();
+      setQ((await api<{ question: QuestionInfo }>(`/api/admin/questions/${q.id}`)).question);
+      setEditNotice(message);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Kaydedilemedi.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Kazanım araması: yazdıkça veritabanındaki liste süzülür; sonuca dokununca soruya eklenir.
+  useEffect(() => {
+    const term = search.trim();
+    if (!term) {
+      setFound([]);
+      return;
+    }
+    const id = setTimeout(() => {
+      api<{ outcomes: OutcomeInfo[] }>(`/api/admin/outcomes?q=${encodeURIComponent(term)}`).then((r) => setFound(r.outcomes), () => setFound([]));
+    }, 250);
+    return () => clearTimeout(id);
+  }, [search]);
+  const addable = found.filter((o) => !q.outcomes.some((x) => x.id === o.id)).slice(0, 8);
+
   const { data: teachers } = useList(useCallback(async () => (await api<{ teachers: TeacherInfo[] }>('/api/admin/teachers')).teachers, []));
   const { data: assignments, error, reload } = useList(useCallback(async () => (await api<{ assignments: AssignmentInfo[] }>(`/api/admin/assignments?questionId=${q.id}`)).assignments, [q.id]));
   const [ratio, setRatio] = useState(0.75);
@@ -147,25 +184,45 @@ function QuestionDetail({ question: q }: { question: QuestionInfo }) {
     ]);
   }
 
+  // Telefonda önce işlem kartları, soru görseli en altta; tablette görsel solda.
+  const image = q.imageUrl ? (
+    <View style={styles.imageBox}>
+      <Image source={{ uri: abs(q.imageUrl) }} style={{ width: '100%', aspectRatio: ratio }} resizeMode="contain" />
+    </View>
+  ) : null;
+
   return (
     <View style={wide ? { flexDirection: 'row', gap: 16, alignItems: 'flex-start' } : { gap: 12 }}>
-      <View style={wide ? { flex: 1 } : undefined}>
-        {q.imageUrl && (
-          <View style={styles.imageBox}>
-            <Image source={{ uri: abs(q.imageUrl) }} style={{ width: '100%', aspectRatio: ratio }} resizeMode="contain" />
-          </View>
-        )}
-      </View>
+      {wide && <View style={{ flex: 1 }}>{image}</View>}
       <View style={[{ gap: 12 }, wide && { flex: 1 }]}>
         <Card>
-          <View style={styles.between}>
-            <Text style={styles.bold}>Cevap anahtarı</Text>
-            <Badge label={q.answerKey} tone="brand" />
+          <Text style={styles.bold}>Cevap anahtarı</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {ANSWER_KEYS.map((k) => (
+              <Pressable key={k} disabled={saving} onPress={() => k !== q.answerKey && void change(() => api(`/api/admin/questions/${q.id}`, { method: 'PATCH', body: { answerKey: k } }), 'Cevap anahtarı kaydedildi.')} style={[styles.key, q.answerKey === k && styles.keyOn]} testID={`answer-${k}`}>
+                <Text style={[styles.keyText, q.answerKey === k && { color: '#fff' }]}>{k}</Text>
+              </Pressable>
+            ))}
           </View>
           <Text style={styles.bold}>Kazanımlar</Text>
+          {q.outcomes.length === 0 && <Text style={styles.small}>Bu soruya kazanım eklenmemiş.</Text>}
           {q.outcomes.map((o) => (
-            <Text key={o.id} style={{ color: colors.ink, fontSize: 14 }}><Text style={{ fontWeight: '800' }}>{o.code}</Text> {o.description}</Text>
+            <View key={o.id} style={styles.between}>
+              <Text style={{ color: colors.ink, fontSize: 14, flex: 1 }}><Text style={{ fontWeight: '800' }}>{o.code}</Text> {o.description}</Text>
+              <Pressable disabled={saving || q.outcomes.length <= 1} onPress={() => void change(() => api(`/api/admin/questions/${q.id}/outcomes/${o.id}`, { method: 'DELETE' }), 'Kazanım çıkarıldı.')} hitSlop={8} style={[styles.remove, q.outcomes.length <= 1 && { opacity: 0.35 }]} accessibilityLabel={`${o.code} kazanımını çıkar`}>
+                <Text style={{ color: colors.danger, fontWeight: '800', fontSize: 16 }}>×</Text>
+              </Pressable>
+            </View>
           ))}
+          <TextInput style={styles.search} value={search} onChangeText={setSearch} placeholder="Kazanım ekle: kod veya açıklama ara" autoCorrect={false} accessibilityLabel="Kazanım ara" />
+          {addable.map((o) => (
+            <Pressable key={o.id} disabled={saving} onPress={() => { setSearch(''); void change(() => api(`/api/admin/questions/${q.id}/outcomes`, { method: 'POST', body: { outcomeId: o.id } }), `${o.code} soruya eklendi.`); }} style={styles.result} testID="outcome-result">
+              <Text style={{ color: colors.ink, fontSize: 14 }}><Text style={{ fontWeight: '800' }}>{o.code}</Text> {o.description}</Text>
+            </Pressable>
+          ))}
+          {search.trim() !== '' && addable.length === 0 && <Text style={styles.small}>Eklenebilecek sonuç yok.</Text>}
+          {editNotice && <Notice>{editNotice}</Notice>}
+          {editError && <ErrorText>{editError}</ErrorText>}
         </Card>
 
         <Card>
@@ -198,6 +255,7 @@ function QuestionDetail({ question: q }: { question: QuestionInfo }) {
             </View>
           ))}
         </Card>
+        {!wide && image}
       </View>
     </View>
   );
@@ -261,6 +319,11 @@ const styles = StyleSheet.create({
   bold: { fontWeight: '800', color: colors.ink, fontSize: 15 },
   small: { fontSize: 12, color: colors.muted },
   empty: { color: colors.muted, textAlign: 'center', padding: 24 },
+  key: { width: 44, height: 44, borderRadius: 10, borderWidth: 1, borderColor: colors.sage, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
+  keyOn: { backgroundColor: colors.brand, borderColor: colors.brand },
+  keyText: { fontSize: 17, fontWeight: '800', color: colors.ink },
+  remove: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  result: { padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.line, backgroundColor: '#fff7f3' },
   imageBox: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 8 },
   thumb: { width: 72, height: 56, backgroundColor: '#fff', marginRight: 10 },
   search: { borderWidth: 1, borderColor: colors.sage, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 16, color: colors.ink, backgroundColor: colors.white },
