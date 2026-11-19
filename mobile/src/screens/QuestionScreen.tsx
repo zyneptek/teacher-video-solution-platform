@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ERROR_REPORT_TYPES, type ErrorReportInfo, type TeacherAssignment } from '@app/shared';
+import { ASSIGNMENT_STATUS_LABEL, ERROR_REPORT_TYPES, type ErrorReportInfo, type TeacherAssignment } from '@app/shared';
 import { abs, api } from '../api';
 import type { Nav } from '../nav';
 import { colors } from '../theme';
@@ -123,11 +123,11 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
 
       {assignment.referenceVideos && assignment.referenceVideos.length > 0 && (
         <Card>
-          <Text style={styles.bold}>Bu soru için onaylanmış çözüm videosu</Text>
-          <Text style={styles.small}>Başka bir öğretmenin yöneticice onaylanmış çözümüdür; izleyip kendi kaydınızı oluşturabilirsiniz.</Text>
+          <Text style={styles.bold}>Bu soru için mevcut çözüm videoları</Text>
+          <Text style={styles.small}>Başka öğretmenlerin onaya gönderilmiş veya onaylanmış çözümleridir; izleyip kendi kaydınızı oluşturabilirsiniz.</Text>
           {assignment.referenceVideos.map((v) => (
             <View key={v.recording.id} style={{ gap: 4 }}>
-              <Text style={styles.small}>{v.teacherName}</Text>
+              <Text style={styles.small}>{v.teacherName} · {ASSIGNMENT_STATUS_LABEL[v.status]}</Text>
               <VideoBox url={abs(v.recording.videoUrl)} />
             </View>
           ))}

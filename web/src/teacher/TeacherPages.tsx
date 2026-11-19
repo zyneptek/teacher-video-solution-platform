@@ -201,11 +201,11 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
 
           {assignment.referenceVideos && assignment.referenceVideos.length > 0 && !editing && (
             <div className="card" data-testid="reference-videos">
-              <strong>Bu soru için onaylanmış çözüm videosu</strong>
-              <span className="muted small">Başka bir öğretmenin yöneticice onaylanmış çözümüdür; izleyip kendi kaydınızı oluşturabilirsiniz.</span>
+              <strong>Bu soru için mevcut çözüm videoları</strong>
+              <span className="muted small">Başka öğretmenlerin onaya gönderilmiş veya onaylanmış çözümleridir; izleyip kendi kaydınızı oluşturabilirsiniz.</span>
               {assignment.referenceVideos.map((v) => (
                 <div key={v.recording.id}>
-                  <div className="muted small" style={{ marginBottom: 4 }}>{v.teacherName}</div>
+                  <div className="muted small" style={{ marginBottom: 4 }}>{v.teacherName} · {ASSIGNMENT_STATUS_LABEL[v.status]}</div>
                   <VideoPreview src={v.recording.videoUrl} />
                 </div>
               ))}

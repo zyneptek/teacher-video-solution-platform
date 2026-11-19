@@ -135,7 +135,7 @@ Görevin açık bıraktığı noktalarda alınan kararların tamamı aşağıdak
 - Soru ilk atamada da yalnızca **kendi branşındaki** öğretmene atanır; aynı soru aynı öğretmene ikinci kez atanamaz (Karar 8, 19).
 - Silinen öğretmenin verileri **silinmez, arşivde kalır** (yumuşak silme); hesabı kapanır (Karar 8).
 - Düzenleme/silme sonrası onaya gönderilmiş veya onaylı atama **Atandı**'ya döner; *Geri gönderildi* olan, düzenlenince de **Geri gönderildi** kalır (Karar 23).
-- Çapraz atanan öğretmen, aynı sorunun **yalnızca yönetici tarafından onaylanmış** videolarını izleyebilir; onaysız videoları görmez (Karar 27).
+- Çapraz atanan öğretmen, aynı sorunun **onaya gönderilmiş veya onaylanmış** videolarını izleyebilir; taslak ve geri gönderilmiş videoları görmez (Karar 27).
 - Öğretmene **cevap anahtarı gösterilmez**, kazanımlar gösterilir (Karar 21).
 - Hata bildirimi eki her türde eklenebilir: ekran görüntüsü (en fazla 5 MB) veya en fazla 1 dk video (en fazla 30 MB) (Karar 25).
 - Geri gönderme notu en fazla 500 karakterdir (Karar 23). Onay ve geri göndermede öğretmene bildirim gider.
@@ -467,7 +467,7 @@ Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde
 
 Görevin açık bıraktığı noktaların çoğu karara bağlandı (Karar 15–27). **Hâlâ açık olanlar** (varsayılan davranış yazılıdır, değiştirilebilir):
 
-- **Mevcut video görünürlüğü:** karara bağlandı (Karar 27): çapraz atanan öğretmen yalnızca onaylanmış videoları izler.
+- **Mevcut video görünürlüğü:** karara bağlandı (Karar 27): çapraz atanan öğretmen onaya gönderilmiş ve onaylanmış videoları izler.
 - **Branşı değişen öğretmenin mevcut atamaları:** şimdilik korunur (branş serbestçe değiştirilebilir).
 - **Yeni soru ekleme ekranı** ve **kazanım ekleme/silme:** yapılmadı; demo "paketten soru açma" ile yapılır, kazanım için zorunlu olan güncelleme vardır.
 - **Arka plana geçiş:** kayıt sırasında uygulama/sekme arka plana alınırsa, tarayıcıda ses kaydı sürebilir; mobilde işletim sistemi kaydı durdurabilir (gerçek cihazda ayrıca denenmelidir).
@@ -562,7 +562,7 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 
 ### Karar 27 — Çapraz atama ve kırpma
 - **Çapraz atama:** yönetici, videosu olan bir soruyu **aynı branştan başka bir öğretmene** de atayabilir (atama formu yalnızca sorunun branşındaki öğretmenleri listeler; aynı öğretmene ikinci kez atanamaz). Her öğretmen soruyu açar, **kendi kaydını** üretir ve onaya gönderir; her atamanın durumu (Atandı, Onaya gönderildi, Onaylandı, Geri gönderildi) hem o öğretmene hem yöneticiye görünür.
-- **Açık nokta kararı — mevcut video görünürlüğü (güncellendi):** görev, çapraz atanan öğretmenin *mevcut videoyu izleyip kendi kaydını üretebileceğini* zorunlu kılar. Bu yüzden yeni öğretmen soru sayfasında, aynı sorunun başka öğretmenlerce üretilmiş ve **yönetici tarafından onaylanmış** videolarını "Bu soru için onaylanmış çözüm videosu" kartında izler (web ve mobil). Onaylanmamış (gönderilmiş, geri gönderilmiş, taslak) videolar ve öğretmenin kendi videosu bu kartta gösterilmez; öğretmen yalnızca kendi kayıtlarını düzenler, tüm videoları yalnızca yönetici izler. *(Geçmiş: ilk sürümde bu kart vardı, ara sürümde kaldırıldı, görev metnine uymak için geri getirildi.)*
+- **Açık nokta kararı — mevcut video görünürlüğü (güncellendi):** görev, çapraz atanan öğretmenin *mevcut videoyu izleyip kendi kaydını üretebileceğini* zorunlu kılar. Bu yüzden yeni öğretmen soru sayfasında, aynı sorunun başka öğretmenlerce üretilmiş ve **onaya gönderilmiş veya yönetici tarafından onaylanmış** videolarını "Bu soru için mevcut çözüm videoları" kartında (öğretmen adı ve durumuyla) izler (web ve mobil). Taslak (gönderilmemiş) ve geri gönderilmiş videolar ile öğretmenin kendi videosu bu kartta gösterilmez; öğretmen yalnızca kendi kayıtlarını düzenler, tüm videoları yalnızca yönetici izler. *(Geçmiş: ilk sürümde yalnızca onaylı videolar gösteriliyordu, ara sürümde kart kaldırıldı; görev metnine uymak için geri getirildi ve kapsam onaya gönderilmişleri de içerecek şekilde genişletildi.)*
 - **Kırpma:** öğretmen kayıt sayfasında "Kırp"a basar, başlangıç ve bitiş kaydırıcılarıyla (veya "mevcut konumu başlangıç/bitiş yap" ile) aralığı seçer; sunucu ffmpeg ile aralığı keser (yeniden kodlama, kare hassasiyeti) ve **kırpılmış MP4 kaydın yerine geçer**; yönetici kırpılmış videoyu izler. Kırpma geri alınamaz; aradaki süre en az 1 sn olmalıdır. Kırpma da bir düzenlemedir: onaya gönderilmiş/onaylanmış atama taslağa (Atandı) döner ve yeniden gönderilmelidir (Karar 23).
 
 ### Karar 28 — Mobil uygulama (öğretmen)

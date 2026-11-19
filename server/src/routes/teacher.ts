@@ -82,18 +82,19 @@ teacherRouter.get('/assignments/:id', async (req, res) => {
       res.status(404).json({ error: 'Soru bulunamadı veya size atanmamış.' });
       return;
     }
-    // Çapraz atama: aynı sorunun BAŞKA öğretmenlerce üretilmiş ve yönetici tarafından ONAYLANMIŞ videoları da gösterilir
-    // (onaylanmamış video referans olarak gösterilmez).
-    const refs = await pool.query<{ first_name: string; last_name: string; rec_id: string; rec_duration: string | null; rec_updated: Date }>(
-      `select p.first_name, p.last_name, r.id as rec_id, r.duration_seconds as rec_duration, r.updated_at as rec_updated
+    // Çapraz atama: aynı sorunun BAŞKA öğretmenlerce üretilmiş ve onaya gönderilmiş ya da onaylanmış videoları da gösterilir
+    // (taslak ve geri gönderilmiş videolar gösterilmez).
+    const refs = await pool.query<{ first_name: string; last_name: string; rec_id: string; rec_duration: string | null; rec_updated: Date; status: AssignmentStatus }>(
+      `select p.first_name, p.last_name, a.status, r.id as rec_id, r.duration_seconds as rec_duration, r.updated_at as rec_updated
        from assignments a join recordings r on r.assignment_id = a.id and r.deleted_at is null and r.status = 'ready'
        join profiles p on p.id = a.teacher_id
-       where a.question_id = $1 and a.teacher_id <> $2 and a.status = 'approved' order by r.updated_at desc`,
+       where a.question_id = $1 and a.teacher_id <> $2 and a.status in ('submitted', 'approved') order by r.updated_at desc`,
       [rows[0].question_id, req.user?.id],
     );
     const assignment = toAssignment(rows[0]);
     assignment.referenceVideos = refs.rows.map((r) => ({
       teacherName: `${r.first_name} ${r.last_name}`,
+      status: r.status,
       recording: recordingInfo({ id: r.rec_id, duration_seconds: r.rec_duration, updated_at: r.rec_updated }),
     }));
     res.json({ assignment });

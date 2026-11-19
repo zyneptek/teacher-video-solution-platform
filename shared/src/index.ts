@@ -101,8 +101,8 @@ export type AssignmentDelivery = {
 };
 
 // Öğretmen: atanan soru ve bildirim tipleri.
-// Aynı soru için başka bir öğretmenin onaylanmış çözüm videosu (çapraz atamada yeni öğretmen izleyebilir).
-export type ReferenceVideo = { teacherName: string; recording: RecordingInfo };
+// Aynı soru için başka bir öğretmenin onaya gönderilmiş veya onaylanmış çözüm videosu (çapraz atamada yeni öğretmen izleyebilir).
+export type ReferenceVideo = { teacherName: string; status: AssignmentStatus; recording: RecordingInfo };
 
 export type TeacherAssignment = {
   id: string;
