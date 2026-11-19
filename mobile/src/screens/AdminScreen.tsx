@@ -81,7 +81,7 @@ export function AdminScreen() {
         ))}
       </View>
 
-      {page && <AdminPageView page={page} onBack={() => setPage(null)} />}
+      {page && <AdminPageView page={page} onBack={() => setPage(null)} open={setPage} />}
       {!page && tab === 'panel' && <PanelTab goTo={setTab} open={setPage} />}
       {!page && tab === 'queue' && <QueueTab />}
       {!page && tab === 'reports' && <ReportsTab />}
