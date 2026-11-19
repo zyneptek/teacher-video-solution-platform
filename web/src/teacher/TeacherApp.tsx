@@ -1,8 +1,9 @@
 // Öğretmen arayüzü: Panel (sayılar, bildirimler, sorular) ve Sorularım. Bildirimler dashboard'da listelenir.
 import type { UserInfo } from '@app/shared';
 import { AppShell, type Page } from '../layout/AppShell';
+import { NotificationsPage } from '../notifications/NotificationsSection';
 import { useNotifications } from '../notifications/useNotifications';
-import { MyQuestionsPage, NotificationsPage, StatusListPage, TeacherDashboard } from './TeacherPages';
+import { MyQuestionsPage, StatusListPage, TeacherDashboard } from './TeacherPages';
 
 export function TeacherApp({ user, onLogout }: { user: UserInfo; onLogout: () => void }) {
   const { notifications, unread, refresh } = useNotifications();

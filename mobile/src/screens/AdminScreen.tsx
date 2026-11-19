@@ -1,5 +1,5 @@
 // Yönetici (mobil, en küçük kapsam): Panel (sayılar), Onay kuyruğu (izle, onayla, notla geri gönder) ve Hata bildirimleri.
-// Öğretmen, soru ve atama yönetimi web panelindedir. Sağ üstte bildirim zili ve çıkış vardır.
+// Panelde öğretmendeki gibi Bildirimler bölümü vardır (video onaya gönderildi, hata bildirildi); sağ üstte çıkış bulunur.
 import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,7 @@ import { useSession } from '../session';
 import { colors } from '../theme';
 import { Button, Card, ErrorText, Notice, StatCard } from '../ui';
 import { useWide } from '../ui/layout';
-import { NotificationSheet } from '../ui/NotificationSheet';
+import { NotificationsSection, type NotifProps } from '../ui/NotificationsSection';
 import { useList } from '../ui/useList';
 import { AdminPageView, type AdminPage } from './AdminLists';
 import { VideoBox } from '../ui/VideoBox';
@@ -33,25 +33,20 @@ function tabFromHref(href: string): Tab | null {
 export function AdminScreen() {
   const { user, logout } = useSession();
   const insets = useSafeAreaInsets();
-  const { notifications, unread, refresh: refreshNotifs } = useNotifications();
+  const { notifications, unread, markRead, readAll } = useNotifications();
   const [tab, setTab] = useState<Tab>('panel');
-  const [bellOpen, setBellOpen] = useState(false);
   const [page, setPage] = useState<AdminPage | null>(null); // panel kartından açılan liste sayfası
 
-  async function openNotification(n: NotificationInfo) {
-    if (!n.readAt) await api(`/api/notifications/${n.id}/read`, { method: 'POST' }).catch(() => undefined);
-    void refreshNotifs();
-    setBellOpen(false);
+  // Bildirime dokununca okundu olur ve ilgili sekme açılır (onay kuyruğu veya hata bildirimleri).
+  function openNotification(n: NotificationInfo) {
+    if (!n.readAt) void markRead(n.id);
     const target = tabFromHref(n.href);
     if (target) {
       setPage(null);
       setTab(target);
     }
   }
-  async function readAll() {
-    await api('/api/notifications/read-all', { method: 'POST' }).catch(() => undefined);
-    void refreshNotifs();
-  }
+  const notif = { notifications, unread, onOpen: openNotification, onReadAll: () => void readAll(), onSeeAll: () => setPage({ name: 'notifications' }) };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -60,14 +55,6 @@ export function AdminScreen() {
           <Text style={styles.hello} numberOfLines={1}>{user?.firstName} {user?.lastName}</Text>
           <Text style={styles.role}>Yönetici</Text>
         </View>
-        <Pressable accessibilityLabel={`Bildirimler${unread ? `, ${unread} okunmamış` : ''}`} onPress={() => setBellOpen(true)} style={styles.iconBtn} testID="bell">
-          <Text style={{ fontSize: 20 }}>🔔</Text>
-          {unread > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unread}</Text>
-            </View>
-          )}
-        </Pressable>
         <Pressable accessibilityLabel="Çıkış" onPress={() => void logout()} style={styles.logout} testID="logout">
           <Text style={styles.logoutText}>Çıkış</Text>
         </Pressable>
@@ -81,18 +68,17 @@ export function AdminScreen() {
         ))}
       </View>
 
-      {page && <AdminPageView page={page} onBack={() => setPage(null)} open={setPage} />}
-      {!page && tab === 'panel' && <PanelTab goTo={setTab} open={setPage} />}
+      {page && <AdminPageView page={page} onBack={() => setPage(null)} open={setPage} notif={notif} />}
+      {!page && tab === 'panel' && <PanelTab goTo={setTab} open={setPage} notif={notif} />}
       {!page && tab === 'queue' && <QueueTab />}
       {!page && tab === 'reports' && <ReportsTab />}
 
-      <NotificationSheet visible={bellOpen} onClose={() => setBellOpen(false)} notifications={notifications} unread={unread} onOpen={(n) => void openNotification(n)} onReadAll={() => void readAll()} />
     </View>
   );
 }
 
 // Panel: iki grup (sayılar, atama durumları); telefonda 2x2, tablette tek sırada dört kart.
-function PanelTab({ goTo, open }: { goTo: (t: Tab) => void; open: (p: AdminPage) => void }) {
+function PanelTab({ goTo, open, notif }: { goTo: (t: Tab) => void; open: (p: AdminPage) => void; notif: NotifProps }) {
   const insets = useSafeAreaInsets();
   const { data: stats, error, refreshControl } = useList(useCallback(() => api<DashboardStats>('/api/admin/dashboard'), []));
   const wide = useWide();
@@ -117,6 +103,7 @@ function PanelTab({ goTo, open }: { goTo: (t: Tab) => void; open: (p: AdminPage)
           </View>
         </>
       )}
+      <NotificationsSection {...notif} />
     </ScrollView>
   );
 }

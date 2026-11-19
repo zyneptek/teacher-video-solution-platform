@@ -24,8 +24,7 @@ function readCollapsed(): boolean {
   return window.innerWidth < 800; // dar ekranda menü varsayılan olarak kapalı
 }
 
-// topRight: sayfanın sağ üstünde gösterilecek içerik (örneğin öğretmenin bildirim düğmesi).
-export function AppShell({ pages, userName, roleLabel, onLogout, topRight }: { pages: Page[]; userName: string; roleLabel: string; onLogout: () => void; topRight?: ReactNode }) {
+export function AppShell({ pages, userName, roleLabel, onLogout }: { pages: Page[]; userName: string; roleLabel: string; onLogout: () => void }) {
   const [collapsed, setCollapsed] = useState(readCollapsed);
   function toggleSidebar() {
     setCollapsed((value) => {
@@ -73,7 +72,6 @@ export function AppShell({ pages, userName, roleLabel, onLogout, topRight }: { p
             <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" /></svg>
           </button>
           <span className="spacer" />
-          {topRight}
         </header>
         <main className="page">{page.render(route)}</main>
       </div>

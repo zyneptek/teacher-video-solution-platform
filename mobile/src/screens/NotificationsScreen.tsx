@@ -6,7 +6,7 @@ import { routeFromHref, type Nav } from '../nav';
 import { useNotifications } from '../notifications';
 import { colors } from '../theme';
 import { Button } from '../ui';
-import { NotificationRows } from '../ui/NotificationSheet';
+import { NotificationRows } from '../ui/NotificationsSection';
 
 export function NotificationsScreen({ nav }: { nav: Nav }) {
   const insets = useSafeAreaInsets();

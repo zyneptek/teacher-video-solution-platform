@@ -8,12 +8,14 @@ import { abs, api } from '../api';
 import { colors } from '../theme';
 import { Badge, Button, Card, ErrorText, Notice, StatusBadge } from '../ui';
 import { useWide } from '../ui/layout';
+import { NotificationRows, type NotifProps } from '../ui/NotificationsSection';
 import { useList } from '../ui/useList';
 import { VideoBox } from '../ui/VideoBox';
 
-export type AdminPage = { name: 'teachers' } | { name: 'questions' } | { name: 'question'; question: QuestionInfo } | { name: 'outcomes' } | { name: 'assignments'; status: AssignmentStatus };
+export type AdminPage = { name: 'notifications' } | { name: 'teachers' } | { name: 'questions' } | { name: 'question'; question: QuestionInfo } | { name: 'outcomes' } | { name: 'assignments'; status: AssignmentStatus };
 
 export function pageTitle(page: AdminPage): string {
+  if (page.name === 'notifications') return 'Bildirimler';
   if (page.name === 'teachers') return 'Öğretmenler';
   if (page.name === 'questions') return 'Sorular';
   if (page.name === 'question') return `${page.question.branch} sorusu${page.question.questionNumber ? ` (Soru ${page.question.questionNumber})` : ''}`;
@@ -21,9 +23,15 @@ export function pageTitle(page: AdminPage): string {
   return ASSIGNMENT_STATUS_LABEL[page.status];
 }
 
-export function AdminPageView({ page, onBack, open }: { page: AdminPage; onBack: () => void; open: (p: AdminPage) => void }) {
+export function AdminPageView({ page, onBack, open, notif }: { page: AdminPage; onBack: () => void; open: (p: AdminPage) => void; notif: NotifProps }) {
   return (
     <Shell title={pageTitle(page)} onBack={page.name === 'question' ? () => open({ name: 'questions' }) : onBack} backLabel={page.name === 'question' ? '← Sorular' : '← Panel'}>
+      {page.name === 'notifications' && (
+        <>
+          {notif.unread > 0 && <Button label="Tümünü okundu yap" variant="ghost" onPress={notif.onReadAll} style={{ alignSelf: 'flex-start' }} />}
+          <NotificationRows notifications={notif.notifications} onOpen={notif.onOpen} />
+        </>
+      )}
       {page.name === 'teachers' && <TeachersList />}
       {page.name === 'questions' && <QuestionsList open={open} />}
       {page.name === 'question' && <QuestionDetail question={page.question} />}

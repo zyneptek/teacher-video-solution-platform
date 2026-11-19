@@ -1,7 +1,8 @@
 // Yönetici ana sayfası: genel sayılar ve atama durumlarının özeti.
 import { useEffect, useState } from 'react';
-import type { DashboardStats } from '@app/shared';
+import type { DashboardStats, NotificationInfo } from '@app/shared';
 import { api } from '../auth/session';
+import { NotificationsSection } from '../notifications/NotificationsSection';
 
 function Stat({ label, value, tone, href, testId }: { label: string; value: number; tone?: 'brand' | 'warn'; href?: string; testId?: string }) {
   const body = (
@@ -21,7 +22,7 @@ function Stat({ label, value, tone, href, testId }: { label: string; value: numb
   );
 }
 
-export function DashboardPage() {
+export function DashboardPage({ notifications, unread, refresh }: { notifications: NotificationInfo[] | null; unread: number; refresh: () => void }) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +52,8 @@ export function DashboardPage() {
         <Stat label="Onaylandı" value={stats.assignments.approved} href="#/atamalar/approved" />
         <Stat label="Geri gönderildi" value={stats.assignments.returned} tone="warn" href="#/atamalar/returned" />
       </div>
+
+      <NotificationsSection notifications={notifications} unread={unread} refresh={refresh} />
     </div>
   );
 }

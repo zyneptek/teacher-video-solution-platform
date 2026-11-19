@@ -5,7 +5,7 @@ import { StatusBadge } from '../admin/AssignmentsTable';
 import { api } from '../auth/session';
 import StudioPage from '../studio/StudioPage';
 import { VideoPreview } from '../studio/VideoPreview';
-import { NotificationList } from '../notifications/NotificationList';
+import { NotificationsSection } from '../notifications/NotificationsSection';
 import { ErrorReportForm } from '../reports/ErrorReportForm';
 import { MarkedImage, type Marker } from '../reports/MarkedImage';
 import { ReportCard } from '../reports/ReportViews';
@@ -30,25 +30,6 @@ function useAssignments() {
   return { assignments, error, load };
 }
 
-const DASHBOARD_NOTIF_COUNT = 3;
-
-export function NotificationsPage({ notifications, unread, refresh }: { notifications: NotificationInfo[] | null; unread: number; refresh: () => void }) {
-  return (
-    <div>
-      <a href="#/" className="link">← Panel</a>
-      <div className="row">
-        <h2 style={{ margin: '8px 0' }}>Bildirimler</h2>
-        {unread > 0 && (
-          <button type="button" className="link" onClick={() => void api('/api/notifications/read-all', { method: 'POST' }).then(refresh, refresh)}>
-            Tümünü okundu yap
-          </button>
-        )}
-      </div>
-      {!notifications ? <p className="muted">Yükleniyor…</p> : <NotificationList notifications={notifications} onChanged={refresh} />}
-    </div>
-  );
-}
-
 export function TeacherDashboard({ notifications, unread, refresh }: { notifications: NotificationInfo[] | null; unread: number; refresh: () => void }) {
   const { assignments, error } = useAssignments();
   const counts: Record<AssignmentStatus, number> = { assigned: 0, submitted: 0, approved: 0, returned: 0 };
@@ -69,20 +50,7 @@ export function TeacherDashboard({ notifications, unread, refresh }: { notificat
         ))}
       </div>
 
-      <div className="row" style={{ marginTop: 18 }}>
-        <h3 style={{ margin: 0 }}>Bildirimler{unread > 0 && <span className="notif-count" data-testid="unread-count">{unread} okunmamış</span>}</h3>
-        {unread > 0 && (
-          <button type="button" className="link" onClick={() => void api('/api/notifications/read-all', { method: 'POST' }).then(refresh, refresh)} data-testid="read-all">
-            Tümünü okundu yap
-          </button>
-        )}
-      </div>
-      {!notifications ? <p className="muted">Yükleniyor…</p> : <NotificationList notifications={notifications.slice(0, DASHBOARD_NOTIF_COUNT)} onChanged={refresh} />}
-      {notifications && notifications.length > DASHBOARD_NOTIF_COUNT && (
-        <a href="#/bildirimler" className="see-all" data-testid="see-all-notifs">
-          Tümünü gör<span className="notif-count">+{notifications.length - DASHBOARD_NOTIF_COUNT}</span>
-        </a>
-      )}
+      <NotificationsSection notifications={notifications} unread={unread} refresh={refresh} />
 
       <h3>Sorularım</h3>
       {!assignments && !error && <p>Yükleniyor…</p>}

@@ -114,7 +114,7 @@ export function TrimScreen({ id, nav }: { id: string; nav: Nav }) {
       {done && <Notice>{done}</Notice>}
       {error && <ErrorText>{error}</ErrorText>}
       <Button label={`Yalnızca bu aralığı tut (${keepSeconds.toFixed(1)} sn)`} onPress={() => void apply('keep')} busy={busy} disabled={keepSeconds < 1} />
-      <Button label={`Bu aralığı sil (video ${cutSeconds.toFixed(1)} sn kalır)`} variant="ghost" onPress={() => void apply('cut')} disabled={busy || cutSeconds < 1} />
+      <Button label="Bu aralığı sil" variant="ghost" onPress={() => void apply('cut')} disabled={busy || cutSeconds < 1} />
       <Button label="↶ Geri al" variant="ghost" onPress={() => void undo()} disabled={busy || !recording.canUndo} />
       </View>
       </View>

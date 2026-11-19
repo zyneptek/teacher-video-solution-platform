@@ -81,7 +81,7 @@ export function EditPanel({ assignmentId, recording, notice, onEdited, onClose }
           Yalnızca bu aralığı tut ({keepSeconds.toFixed(1)} sn)
         </button>
         <button type="button" className="ghost-btn" disabled={busy || cutSeconds < 1} onClick={() => void apply('cut')} data-testid="edit-cut" title="Seçili aralık videodan çıkarılır, kalan parçalar birleştirilir">
-          Bu aralığı sil (video {cutSeconds.toFixed(1)} sn kalır)
+          Bu aralığı sil
         </button>
         <button type="button" className="ghost-btn" disabled={busy || !recording.canUndo} onClick={() => void undo()} data-testid="edit-undo">
           ↶ Geri al

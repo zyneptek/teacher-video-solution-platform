@@ -12,9 +12,7 @@ import { colors } from '../theme';
 import { ErrorText, StatCard } from '../ui';
 import { AssignmentRow } from '../ui/AssignmentRow';
 import { useWide } from '../ui/layout';
-import { NotificationRows } from '../ui/NotificationSheet';
-
-const DASHBOARD_NOTIF_COUNT = 3;
+import { NotificationsSection } from '../ui/NotificationsSection';
 
 export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }) {
   const { user, logout } = useSession();
@@ -73,21 +71,7 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
           ))}
         </View>
 
-        <View style={styles.sectionRow}>
-          <Text style={styles.section}>Bildirimler{unread > 0 ? ` (${unread} okunmamış)` : ''}</Text>
-          {unread > 0 && (
-            <Pressable onPress={() => void readAll()} hitSlop={10}>
-              <Text style={{ color: colors.brandDark, fontWeight: '700' }}>Tümünü okundu yap</Text>
-            </Pressable>
-          )}
-        </View>
-        <NotificationRows notifications={notifications?.slice(0, DASHBOARD_NOTIF_COUNT) ?? null} onOpen={openNotification} />
-        {notifications && notifications.length > DASHBOARD_NOTIF_COUNT && (
-          <Pressable onPress={() => nav.push({ name: 'notifications' })} style={styles.seeAll} testID="see-all-notifs">
-            <Text style={{ color: colors.brandDark, fontWeight: '700' }}>Tümünü gör</Text>
-            <View style={styles.count}><Text style={styles.countText}>+{notifications.length - DASHBOARD_NOTIF_COUNT}</Text></View>
-          </Pressable>
-        )}
+        <NotificationsSection notifications={notifications} unread={unread} onOpen={openNotification} onReadAll={() => void readAll()} onSeeAll={() => nav.push({ name: 'notifications' })} />
 
         <Text style={styles.section}>Sorularım</Text>
         {error && <ErrorText>{error}</ErrorText>}
@@ -117,11 +101,7 @@ const styles = StyleSheet.create({
   logoutText: { color: colors.sage, fontWeight: '700' },
   content: { padding: 16, gap: 12, width: '100%', maxWidth: 1240, alignSelf: 'center' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
   section: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 6 },
   empty: { backgroundColor: '#fff', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sage, borderRadius: 12, padding: 20, alignItems: 'center', gap: 6 },
-  seeAll: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', paddingVertical: 8 },
-  count: { paddingHorizontal: 9, paddingVertical: 2, borderRadius: 999, backgroundColor: '#fde6dc' },
-  countText: { color: colors.brandDark, fontSize: 12, fontWeight: '800' },
   small: { fontSize: 12, color: colors.muted },
 });

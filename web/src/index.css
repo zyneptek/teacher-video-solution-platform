@@ -150,9 +150,6 @@ a { color: var(--brand-dark); }
 .pagebar { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 20px; background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
 .icon-btn { position: relative; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .icon-btn:hover { border-color: var(--brand); color: var(--brand-dark); }
-.bell { position: relative; }
-.bell-badge { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--brand); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-sizing: border-box; }
-.bell-panel { position: absolute; right: 0; top: 48px; width: 380px; max-width: calc(100vw - 24px); max-height: 70vh; overflow: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 32px rgba(26, 14, 28, 0.18); padding: 14px; z-index: 30; }
 .admin.collapsed .sidebar { display: none; }
 .page { width: 100%; box-sizing: border-box; margin: 0 auto; }
 @media (max-width: 800px) {

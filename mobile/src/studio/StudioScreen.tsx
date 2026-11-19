@@ -169,6 +169,7 @@ export function StudioScreen({ assignment, nav }: { assignment: TeacherAssignmen
           message={message}
           onSubmit={() => void submitForReview()}
           onDraft={() => nav.pop()}
+          onEdit={() => { nav.pop(); nav.push({ name: 'trim', id: assignment.id }); }}
           onDelete={confirmDelete}
           onRetake={resetStudio}
         />
