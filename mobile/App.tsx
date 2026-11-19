@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Nav, Route } from './src/nav';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { AdminScreen } from './src/screens/AdminScreen';
+import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { ListScreen } from './src/screens/ListScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { QuestionScreen } from './src/screens/QuestionScreen';
@@ -85,6 +86,8 @@ function Root() {
   switch (route.name) {
     case 'list':
       return <ListScreen status={route.status} nav={nav} />;
+    case 'notifications':
+      return <NotificationsScreen nav={nav} />;
     case 'question':
       return <QuestionScreen key={`q-${route.id}-${homeKey}`} id={route.id} nav={nav} />;
     case 'record':

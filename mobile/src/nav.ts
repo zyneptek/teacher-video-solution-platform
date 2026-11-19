@@ -3,6 +3,7 @@ import type { AssignmentStatus } from '@app/shared';
 export type Route =
   | { name: 'home' }
   | { name: 'list'; status: AssignmentStatus }
+  | { name: 'notifications' }
   | { name: 'question'; id: string }
   | { name: 'record'; id: string }
   | { name: 'trim'; id: string }

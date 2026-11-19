@@ -14,11 +14,13 @@ import { AssignmentRow } from '../ui/AssignmentRow';
 import { useWide } from '../ui/layout';
 import { NotificationRows } from '../ui/NotificationSheet';
 
+const DASHBOARD_NOTIF_COUNT = 3;
+
 export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }) {
   const { user, logout } = useSession();
   const insets = useSafeAreaInsets();
   const wide = useWide();
-  const { notifications, unread, refresh: refreshNotifs } = useNotifications();
+  const { notifications, unread, refresh: refreshNotifs, markRead, readAll } = useNotifications();
   const [assignments, setAssignments] = useState<TeacherAssignment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,16 +45,10 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
   const counts: Record<AssignmentStatus, number> = { assigned: 0, submitted: 0, approved: 0, returned: 0 };
   for (const a of assignments ?? []) counts[a.status]++;
 
-  async function openNotification(n: NotificationInfo) {
-    if (!n.readAt) await api(`/api/notifications/${n.id}/read`, { method: 'POST' }).catch(() => undefined);
-    void refreshNotifs();
+  function openNotification(n: NotificationInfo) {
+    if (!n.readAt) void markRead(n.id);
     const route = routeFromHref(n.href);
     if (route) nav.push(route);
-  }
-
-  async function readAll() {
-    await api('/api/notifications/read-all', { method: 'POST' }).catch(() => undefined);
-    void refreshNotifs();
   }
 
   return (
@@ -85,7 +81,13 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
             </Pressable>
           )}
         </View>
-        <NotificationRows notifications={notifications?.slice(0, 6) ?? null} onOpen={(n) => void openNotification(n)} />
+        <NotificationRows notifications={notifications?.slice(0, DASHBOARD_NOTIF_COUNT) ?? null} onOpen={openNotification} />
+        {notifications && notifications.length > DASHBOARD_NOTIF_COUNT && (
+          <Pressable onPress={() => nav.push({ name: 'notifications' })} style={styles.seeAll} testID="see-all-notifs">
+            <Text style={{ color: colors.brandDark, fontWeight: '700' }}>Tümünü gör</Text>
+            <View style={styles.count}><Text style={styles.countText}>+{notifications.length - DASHBOARD_NOTIF_COUNT}</Text></View>
+          </Pressable>
+        )}
 
         <Text style={styles.section}>Sorularım</Text>
         {error && <ErrorText>{error}</ErrorText>}
@@ -118,5 +120,8 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
   section: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 6 },
   empty: { backgroundColor: '#fff', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sage, borderRadius: 12, padding: 20, alignItems: 'center', gap: 6 },
+  seeAll: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', paddingVertical: 8 },
+  count: { paddingHorizontal: 9, paddingVertical: 2, borderRadius: 999, backgroundColor: '#fde6dc' },
+  countText: { color: colors.brandDark, fontSize: 12, fontWeight: '800' },
   small: { fontSize: 12, color: colors.muted },
 });

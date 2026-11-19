@@ -25,5 +25,15 @@ export function useNotifications() {
     return () => clearInterval(id);
   }, [refresh]);
 
-  return { notifications, unread, refresh };
+  // Bildirime dokununca okundu yapılır; hepsini okundu yapma ana sayfa ve Bildirimler sayfasında ortaktır.
+  const markRead = useCallback(async (id: string) => {
+    await api(`/api/notifications/${id}/read`, { method: 'POST' }).catch(() => undefined);
+    void refresh();
+  }, [refresh]);
+  const readAll = useCallback(async () => {
+    await api('/api/notifications/read-all', { method: 'POST' }).catch(() => undefined);
+    void refresh();
+  }, [refresh]);
+
+  return { notifications, unread, refresh, markRead, readAll };
 }
