@@ -39,8 +39,11 @@ export function Badge({ label, tone }: { label: string; tone?: 'brand' | 'ok' | 
   );
 }
 
-export function StatusBadge({ status }: { status: AssignmentStatus }) {
-  const tone = status === 'submitted' ? 'brand' : status === 'approved' ? 'ok' : status === 'returned' ? 'warn' : undefined;
+// forTeacher: turuncu, öğretmenin aksiyon alması gereken durumlardır (Atandı, Geri gönderildi); yönetici için Onaya gönderildi.
+export function StatusBadge({ status, forTeacher }: { status: AssignmentStatus; forTeacher?: boolean }) {
+  const tone = forTeacher
+    ? status === 'assigned' || status === 'returned' ? 'brand' : status === 'approved' ? 'ok' : undefined
+    : status === 'submitted' ? 'brand' : status === 'approved' ? 'ok' : status === 'returned' ? 'warn' : undefined;
   return <Badge label={ASSIGNMENT_STATUS_LABEL[status]} tone={tone} />;
 }
 

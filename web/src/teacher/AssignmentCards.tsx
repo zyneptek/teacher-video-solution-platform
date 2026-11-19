@@ -30,7 +30,7 @@ export function AssignmentCards({ assignments }: { assignments: TeacherAssignmen
             <div className="muted small">Atanma: {new Date(a.assignedAt).toLocaleDateString('tr-TR')}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <StatusBadge status={a.status} />
+            <StatusBadge status={a.status} forTeacher />
             <div className="muted small" style={{ marginTop: 4 }}>{solutionLabel(a)}</div>
           </div>
         </a>

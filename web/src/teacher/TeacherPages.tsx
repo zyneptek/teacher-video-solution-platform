@@ -61,7 +61,7 @@ export function TeacherDashboard({ notifications, unread, refresh }: { notificat
       <div className="stats">
         {(Object.keys(ASSIGNMENT_STATUS_LABEL) as AssignmentStatus[]).map((s) => (
           <div key={s} className="stat">
-            <div className={`stat-value ${s === 'submitted' ? 'tone-brand' : s === 'returned' ? 'tone-warn' : ''}`} data-testid={`count-${s}`}>
+            <div className={`stat-value ${s === 'assigned' || s === 'returned' ? 'tone-brand' : ''}`} data-testid={`count-${s}`}>
               {counts[s]}
             </div>
             <div className="stat-label">{ASSIGNMENT_STATUS_LABEL[s]}</div>
@@ -172,7 +172,7 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
           <div className="card">
             <div className="row" style={{ marginBottom: 0 }}>
               <strong>Durum</strong>
-              <StatusBadge status={assignment.status} />
+              <StatusBadge status={assignment.status} forTeacher />
             </div>
             {assignment.status === 'returned' && assignment.returnNote && (
               <div className="return-note" data-testid="return-note"><strong>Yöneticinin notu:</strong> {assignment.returnNote}</div>

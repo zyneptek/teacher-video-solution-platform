@@ -578,6 +578,8 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 - **Kırpma:** `@react-native-community/slider` ile başlangıç/bitiş; sunucu kırpılmış MP4'ü kaydın yerine koyar.
 - **Push:** giriş yapınca izin istenir ve Expo push jetonu `POST /api/push-token` ile kaydedilir; bildirime tıklanınca ilgili soru açılır. **Kurulum notu:** Expo Go'da push yalnızca gerçek cihazda ve (iOS'ta) Expo hesabına bağlı proje kimliğiyle çalışır; simülatörde izin penceresi çıkar ama jeton alınamaz ve sessizce atlanır. Tam doğrulama için gerçek cihaz gerekir.
 
+- **Durum renkleri (role göre):** turuncu, o rolün **aksiyon alması gereken** durumdur. Yöneticide "Onaya gönderildi" (kuyrukta bekliyor); öğretmende "Atandı" ve "Geri gönderildi" (kayıt üretmesi/düzeltmesi gerekiyor). Öğretmende "Onaya gönderildi" nötr (beklemede), "Onaylandı" yeşil. Web ve mobilde aynı kural.
+
 ### Karar 29 — Yükleme sınırları ve çizim günlüğü boyutu
 - **Sorun:** 26 saniyelik bir kayıt "Yükleme geçersiz veya çok büyük" hatası verdi. Sebep: çok parçalı yüklemede çizim günlüğü bir metin alanı olarak gidiyor ve sunucunun varsayılan metin alanı sınırı 1 MB'tı; yoğun çizimde (kalem/fare, yüksek örnekleme, uzun ondalıklı koordinatlar) günlük bunu aşabiliyordu.
 - **Çözüm:** (1) alan sınırı **16 MB**'a çıkarıldı (günlük en fazla 200.000 nokta taşıyabilir); dosya başına sınır 60 MB. (2) İstemciler günlüğü **sıkıştırarak** gönderir: koordinatlar 0,1 piksele, zaman damgaları 1 ms'ye yuvarlanır (tahta 1280x720 olduğundan görsel fark yoktur; sıra ve zaman monotonluğu korunur). (3) Web kamera klibinin bit hızı 0,8 Mb/sn ile sınırlandı (3 dk ≈ 15 MB). (4) Hata mesajları nedenini söyler ("Yüklenen dosya çok büyük", "Çizim verisi çok büyük") ve sunucu günlüğüne neden yazılır.

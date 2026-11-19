@@ -2,8 +2,10 @@ import { Fragment, useState } from 'react';
 import { ASSIGNMENT_STATUS_LABEL, type AssignmentInfo } from '@app/shared';
 import { VideoPreview } from '../studio/VideoPreview';
 
-export function StatusBadge({ status }: { status: AssignmentInfo['status'] }) {
-  return <span className={`status status-${status}`}>{ASSIGNMENT_STATUS_LABEL[status]}</span>;
+// Turuncu = o rolün aksiyon alması gereken durum. Yönetici için "Onaya gönderildi", öğretmen için "Atandı" ve "Geri gönderildi".
+export function StatusBadge({ status, forTeacher }: { status: AssignmentInfo['status']; forTeacher?: boolean }) {
+  const tone = forTeacher ? (status === 'assigned' || status === 'returned' ? 'action' : status === 'approved' ? 'approved' : 'wait') : status;
+  return <span className={`status status-${tone}`}>{ASSIGNMENT_STATUS_LABEL[status]}</span>;
 }
 
 export function AssignmentsTable({ assignments, showQuestion }: { assignments: AssignmentInfo[]; showQuestion: boolean }) {

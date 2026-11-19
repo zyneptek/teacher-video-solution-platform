@@ -69,7 +69,7 @@ export function HomeScreen({ nav, refreshKey }: { nav: Nav; refreshKey: number }
       >
         <View style={styles.stats}>
           {(Object.keys(ASSIGNMENT_STATUS_LABEL) as AssignmentStatus[]).map((s) => (
-            <StatCard key={s} wide={wide} onPress={() => nav.push({ name: 'list', status: s })} label={ASSIGNMENT_STATUS_LABEL[s]} value={counts[s]} tone={s === 'submitted' ? 'brand' : s === 'returned' ? 'warn' : undefined} />
+            <StatCard key={s} wide={wide} onPress={() => nav.push({ name: 'list', status: s })} label={ASSIGNMENT_STATUS_LABEL[s]} value={counts[s]} tone={s === 'assigned' || s === 'returned' ? 'brand' : undefined} />
           ))}
         </View>
 
