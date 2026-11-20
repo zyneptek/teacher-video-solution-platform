@@ -1,4 +1,4 @@
-// İsteğe bağlı kamera (tablet): açıksa kayıt sürerken video klipleri kaydeder; ses ayrı (expo-audio) kaydedilir.
+// İsteğe bağlı kamera (telefon ve tablet): açıksa kayıt sürerken video klipleri kaydeder; ses ayrı (expo-audio) kaydedilir.
 // expo-camera kaydı duraklatamaz; bu yüzden her duraklatmada klip kapatılır, devam edilince yeni klip açılır.
 // Duraklatma süresi kayıt saatinde zaten yok sayıldığı için sunucu klipleri art arda ekler.
 // İzin verilmezse veya kamera hata verirse kayıt ekran ve sesle sürer.

@@ -216,7 +216,7 @@ export function StudioScreen({ assignment, nav }: { assignment: TeacherAssignmen
           onPause={() => void pauseRecording()}
           onResume={resumeRecording}
           cameraOn={camera.enabled}
-          onToggleCamera={isTablet ? () => void camera.toggle() : undefined}
+          onToggleCamera={() => void camera.toggle()}
           onFinish={() => void handleFinish()}
           direction="column"
         />

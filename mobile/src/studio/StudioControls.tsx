@@ -48,7 +48,7 @@ type ControlsProps = {
   onResume: () => void;
   onFinish: () => void;
   direction: 'row' | 'column';
-  // Kamera düğmesi yalnızca tablette verilir (verilmezse gösterilmez).
+  // Kamera düğmesi (telefonda ve tablette); verilmezse gösterilmez.
   cameraOn?: boolean;
   onToggleCamera?: () => void;
 };
