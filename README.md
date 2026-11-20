@@ -78,7 +78,7 @@ mobile/   Expo + RN       ─┴─► yalnızca Express API ile konuşur
 
 | Konu | Karar | Gerekçe |
 |---|---|---|
-| **Web: tek mi, iki uygulama mı?** | **Tek React uygulaması**, role göre ayrılmış ekranlar | Giriş, oturum, API istemcisi, bildirim ve video bileşenleri iki rolde ortak; iki uygulama bu kodu tekrarlatırdı. Yetki denetimi istemcide değil **sunucudadır**. |
+| **Web** | **Tek React uygulaması**, role göre ayrılmış ekranlar | Giriş, oturum, API istemcisi, bildirim ve video bileşenleri iki rolde ortak; iki uygulama bu kodu tekrarlatırdı. Yetki denetimi istemcide değil **sunucudadır**. |
 | **Mobil** | Telefon ve tablet için **tek Expo uygulaması**; yalnızca öğretmen girişi | Ekran genişliği 820 px ve üzerindeyse iki sütunlu tablet düzeni kullanılır. Yönetici işleri web panelindedir. |
 | **Video üretimi** | İstemci ekranı kaydetmez; **çizim olay günlüğü + mikrofon sesi (+ kamera klibi)** toplar, **sunucu MP4 üretir** | Web ve mobil videoyu aynı sunucu kodu ürettiği için sonuç birebir aynıdır. Çizim canlı video kodlamasına bağlı olmadığından akıcı kalır. Expo Go'da çalışır, native ekran kaydı gerekmez. |
 | **Veri ve dosyalar** | **Supabase** (Postgres, Auth, özel Storage). İstemciler Supabase'e değil yalnızca Express API'ye bağlanır | Tek hesapta veritabanı, kimlik doğrulama ve dosya deposu. MP4 üretimi, e-posta ve push için zaten bir sunucu gerekiyor. |
@@ -182,7 +182,7 @@ Ayar yoksa atama yine yapılır, yalnızca e-posta gitmez. `example.com` adresle
 ## Varsayımlar
 
 - Soru ilk atamada da yalnızca **kendi branşındaki** öğretmene atanır; aynı soru aynı öğretmene ikinci kez atanamaz.
-- Öğretmen soru sayfasında sorunun **cevap anahtarını ve kazanımlarını** görür (web ve mobil).
+- Öğretmene **cevap anahtarı gösterilmez**, kazanımlar gösterilir.
 - Çapraz atanan öğretmen yalnızca **onaya gönderilmiş veya onaylanmış** videoları görür; taslak ve geri gönderilmiş videoları görmez.
 - Hata bildirimine her türde ek eklenebilir: ekran görüntüsü (en fazla 5 MB) veya en fazla 1 dk video (en fazla 30 MB).
 - Geri gönderme notu en fazla 500 karakterdir. Onay ve geri gönderme öğretmene bildirim olarak gider.
