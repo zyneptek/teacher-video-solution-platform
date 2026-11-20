@@ -67,6 +67,44 @@ export async function sendAssignmentEmail(mail: AssignmentMail): Promise<Assignm
   }
 }
 
+// ---- Atama geri alındı e-postası: öğretmene "Güncelleme: atama geri alındı" bildirimiyle birlikte gider ----
+
+export type RevokedMail = { to: string; teacherName: string; branch: string; questionLabel: string; hadRecording: boolean };
+
+export function buildRevokedMail(mail: RevokedMail): { subject: string; text: string; html: string } {
+  const subject = `Güncelleme: atama geri alındı: ${mail.branch} - ${mail.questionLabel}`;
+  const detail = mail.hadRecording ? 'Bu soru listenizden kaldırıldı; kaydettiğiniz video da silindi.' : 'Bu soru listenizden kaldırıldı; bu soru için çözüm videosu kaydetmeniz gerekmiyor.';
+  const text = [
+    `Merhaba ${mail.teacherName},`,
+    '',
+    `Size daha önce atanan sorunun ataması yönetici tarafından geri alındı.`,
+    `Branş: ${mail.branch}`,
+    `Soru: ${mail.questionLabel}`,
+    '',
+    detail,
+  ].join('\n');
+  const html = `<p>Merhaba ${escapeHtml(mail.teacherName)},</p>
+<p>Size daha önce atanan sorunun ataması yönetici tarafından geri alındı.</p>
+<ul><li><strong>Branş:</strong> ${escapeHtml(mail.branch)}</li><li><strong>Soru:</strong> ${escapeHtml(mail.questionLabel)}</li></ul>
+<p>${escapeHtml(detail)}</p>`;
+  return { subject, text, html };
+}
+
+export async function sendRevokedEmail(mail: RevokedMail): Promise<AssignmentDelivery['email']> {
+  const transport = getTransporter();
+  if (!transport) {
+    console.warn('E-posta gönderilmedi: SMTP_USER/SMTP_PASS tanımlı değil (server/.env).');
+    return 'not_configured';
+  }
+  try {
+    await transport.sendMail({ from: config.mailFrom ?? config.smtpUser ?? undefined, to: mail.to, ...buildRevokedMail(mail) });
+    return 'sent';
+  } catch (err) {
+    console.error('E-posta gönderilemedi:', err instanceof Error ? err.message : err);
+    return 'failed';
+  }
+}
+
 // ---- Hesap e-postaları: yönetici öğretmen oluşturunca veya şifresini değiştirince giriş bilgileri öğretmene gider ----
 
 export type AccountMail = { to: string; teacherName: string; branch: string; email: string; password: string; kind: 'created' | 'password-changed' };

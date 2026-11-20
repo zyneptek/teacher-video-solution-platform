@@ -126,7 +126,7 @@ export type TeacherAssignment = {
 
 export type NotificationInfo = {
   id: string;
-  type: 'assignment_created' | 'recording_approved' | 'recording_returned' | 'recording_submitted' | 'error_reported' | 'peer_checked';
+  type: 'assignment_created' | 'recording_approved' | 'recording_returned' | 'recording_submitted' | 'error_reported' | 'peer_checked' | 'assignment_revoked';
   text: string;
   href: string; // tıklayınca gidilecek sayfa (#/...)
   readAt: string | null;

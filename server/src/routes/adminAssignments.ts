@@ -6,7 +6,7 @@ import { Router } from 'express';
 import type { AssignmentDelivery, AssignmentInfo, AssignmentStatus, PeerCheckInfo } from '@app/shared';
 import { requireAuth } from '../auth.js';
 import { pool } from '../db.js';
-import { sendAssignmentEmail } from '../mail.js';
+import { sendAssignmentEmail, sendRevokedEmail } from '../mail.js';
 import { sendPush } from '../push.js';
 import { deleteRecording, recordingInfo } from '../recordings.js';
 
@@ -217,6 +217,7 @@ adminAssignmentsRouter.post('/:id/return', async (req, res) => {
 // atamaya bağlı tüm bildirimler (öğretmenin "yeni soru atandı" bildirimi, yöneticiye gitmiş "onaya gönderdi"/çapraz kontrol bildirimleri) ve
 // bu öğretmenin AYNI soruda başkalarının videolarına verdiği çapraz kontroller (kontrol etme yetkisi atamadan geliyordu).
 // Hata bildirimleri soruya ve gönderene bağlıdır, silinmez. Geri alınınca aynı soru aynı öğretmene yeniden atanabilir.
+// Öğretmene "Güncelleme: atama geri alındı" bildirimi, e-posta ve push gider (atama silindiği için bildirim soruya bağlanır).
 adminAssignmentsRouter.delete('/:id', async (req, res) => {
   const row = await loadForReview(req.params.id);
   if (!row) {
@@ -224,9 +225,14 @@ adminAssignmentsRouter.delete('/:id', async (req, res) => {
     return;
   }
   try {
-    const owner = await pool.query<{ question_id: string }>('select question_id from assignments where id = $1', [row.id]);
-    const questionId = (owner.rows[0] as { question_id: string }).question_id;
-    await deleteRecording(row.id); // dosya + kayıt + düzenleme geçmişi + (cascade) bu videoya verilmiş çapraz kontroller
+    const owner = await pool.query<{ question_id: string; first_name: string; last_name: string; email: string; active: boolean }>(
+      `select a.question_id, p.first_name, p.last_name, p.email, (p.deleted_at is null) as active
+       from assignments a join profiles p on p.id = a.teacher_id where a.id = $1`,
+      [row.id],
+    );
+    const info = owner.rows[0] as { question_id: string; first_name: string; last_name: string; email: string; active: boolean };
+    const questionId = info.question_id;
+    const hadRecording = await deleteRecording(row.id); // dosya + kayıt + düzenleme geçmişi + (cascade) bu videoya verilmiş çapraz kontroller
     const client = await pool.connect();
     try {
       await client.query('begin');
@@ -240,6 +246,8 @@ adminAssignmentsRouter.delete('/:id', async (req, res) => {
       );
       await client.query('delete from notifications where assignment_id = $1', [row.id]);
       await client.query('delete from assignments where id = $1', [row.id]);
+      // Öğretmen aktifse "Güncelleme: atama geri alındı" bildirimi (silinmiş öğretmene gönderilmez).
+      if (info.active) await client.query("insert into notifications (recipient_id, question_id, type) values ($1, $2, 'assignment_revoked')", [row.teacher_id, questionId]);
       await client.query('commit');
     } catch (err) {
       await client.query('rollback').catch(() => undefined);
@@ -247,7 +255,16 @@ adminAssignmentsRouter.delete('/:id', async (req, res) => {
     } finally {
       client.release();
     }
-    res.json({ ok: true });
+    // Atama geri alındı; e-posta ve push ayrıca denenir, hataları geri almayı bozmaz.
+    const label = row.question_number ? `Soru ${row.question_number}` : 'Soru';
+    const [email, pushDevices] = info.active
+      ? await Promise.all([
+          sendRevokedEmail({ to: info.email, teacherName: `${info.first_name} ${info.last_name}`, branch: row.branch, questionLabel: label, hadRecording }),
+          sendPush(row.teacher_id, 'Güncelleme: atama geri alındı', `${row.branch} - ${label}`, { type: 'assignment_revoked', questionId }),
+        ])
+      : (['not_configured', 0] as const);
+    const delivery: AssignmentDelivery = { email, pushDevices };
+    res.json({ ok: true, delivery });
   } catch (err) {
     console.error('Atama geri alınamadı:', err);
     res.status(500).json({ error: 'Atama geri alınamadı.' });

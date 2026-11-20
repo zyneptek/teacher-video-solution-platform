@@ -60,6 +60,11 @@ function toInfo(r: Row): NotificationInfo {
       text = `${person} hata bildirdi (${ERROR_REPORT_TYPES.find((t) => t.value === r.report_type)?.label ?? 'Hata'}): ${label}`;
       href = `#/sorular/${r.question_id}`;
       break;
+    case 'assignment_revoked':
+      // Atama silindiği için tıklanacak soru sayfası yoktur; soru listesi açılır.
+      text = `Güncelleme: atama geri alındı: ${label}`;
+      href = '#/sorularim';
+      break;
     case 'peer_checked':
       // Değerlendirme verildikten sonra video değiştiyse eski değerlendirmeler silinmiştir; bildirim kalır ama durumu belirtilir.
       text = `${r.checker ?? 'Bir öğretmen'}, ${person} öğretmenin çözümünü ${r.check_verdict ? PEER_VERDICT_LABEL[r.check_verdict].toLocaleLowerCase('tr') : ''} buldu: ${label}${r.video_state === 'deleted' ? ' (video silindi)' : r.video_state === 'replaced' ? ' (video sonradan yeniden yüklendi)' : ''}`;
@@ -79,9 +84,9 @@ notificationsRouter.get('/', async (req, res) => {
   try {
     const { rows } = await pool.query<Row>(
       `select n.id, n.type, n.read_at, n.created_at, n.assignment_id, e.type as report_type,
-              coalesce(qa.branch, qe.branch) as branch,
-              coalesce(qa.question_number, qe.question_number) as question_number,
-              coalesce(qa.id, qe.id) as question_id,
+              coalesce(qa.branch, qe.branch, qr.branch) as branch,
+              coalesce(qa.question_number, qe.question_number, qr.question_number) as question_number,
+              coalesce(qa.id, qe.id, qr.id) as question_id,
               coalesce(pt.first_name || ' ' || pt.last_name, pr.first_name || ' ' || pr.last_name) as person,
               pc.first_name || ' ' || pc.last_name as checker, n.check_verdict,
               case when n.type = 'peer_checked' and rec.id is null then 'deleted'
@@ -93,6 +98,7 @@ notificationsRouter.get('/', async (req, res) => {
        left join error_reports e on e.id = n.error_report_id
        left join questions qe on qe.id = e.question_id
        left join profiles pr on pr.id = e.reporter_id
+       left join questions qr on qr.id = n.question_id
        left join profiles pc on pc.id = n.checker_id
        left join recordings rec on rec.assignment_id = a.id and rec.deleted_at is null and rec.status = 'ready'
        where n.recipient_id = $1 order by n.created_at desc limit 100`,
