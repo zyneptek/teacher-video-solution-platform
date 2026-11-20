@@ -628,6 +628,6 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 - Mobilde yönetici ekranı olmadığı için yalnızca webdedir (Karar 34).
 
 ### Karar 37 — Yerleşim düzeltmeleri (yönetici soru detayı, tablet)
-- **Yönetici soru detayı (web):** **Cevap anahtarı** kartı soru görselinin altına alındı; sağ sütunun başına **Kazanımlar** geldi (ardından Atamalar ve Hata bildirimleri).
+- **Yönetici soru detayı (web):** sağ sütun sırası **Cevap anahtarı → Kazanımlar → Atamalar → Hata bildirimleri**; görsel solda tek başına kalır. (Önce cevap anahtarı görselin altına alınmıştı, sonra geri yanına döndürüldü; Kazanımlar'ın en altta kalması istenmedi.)
 - **Soru sayfası (tablet, ≥820 dp):** iki sütunun (soru görseli | durum, kayıt, mevcut videolar) altına, sayfa genişliğini kaplayan bir satır eklendi: **Kazanımlar** ve **"Soruda hata mı var?"** yan yana, eşit genişlikte. Önceden sağ sütunun sonunda kaldıkları için sol sütunla dengesiz görünüyordu. Telefonda tek sütun düzeni aynıdır.
 - **Kaydı düzenle (dikey tablet):** video tam genişlikte üstte; altında başlangıç ve bitiş ayarları yan yana, onların altında seçili aralık bilgisi ve üç buton ("Yalnızca bu aralığı tut", "Bu aralığı sil", "Geri al") tek satırda. Her şey tek ekrana sığar. Yatay tablette video solda, ayarlar sağda düzeni korunur; telefon tek sütundur. Dikey/yatay ayrımı `useWidePortrait` (`mobile/src/ui/layout.ts`) ile yapılır. "Yalnızca bu aralığı tut" etiketinden süre ibaresi çıkarıldı (zaten "Seçili aralık" satırında yazıyor; web ile aynı).
