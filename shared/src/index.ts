@@ -64,6 +64,7 @@ export type QuestionInfo = {
   imageUrl: string | null; // Storage'daki özel görsel için süreli imzalı adres
   outcomes: OutcomeInfo[];
   assignmentCount: number;
+  statusCounts: Partial<Record<AssignmentStatus, number>>; // atama durumlarına göre sayı (yönetici soru süzgeci için)
 };
 
 export const ANSWER_KEYS = ['A', 'B', 'C', 'D', 'E'] as const;

@@ -1,7 +1,7 @@
 // Yönetici: soru listesi/detayı, cevap anahtarı ve soruya kazanım ekleme/çıkarma; kazanım arama ve güncelleme.
 // Her değişiklik anında veritabanına yazılır. Soru görselleri özel bucket'tadır; yönetici ekranına süreli imzalı adresle verilir.
 import { Router } from 'express';
-import { ANSWER_KEYS, BRANCHES, type Branch, type OutcomeInfo, type QuestionInfo } from '@app/shared';
+import { ANSWER_KEYS, BRANCHES, type AssignmentStatus, type Branch, type OutcomeInfo, type QuestionInfo } from '@app/shared';
 import { requireAuth } from '../auth.js';
 import { pool } from '../db.js';
 import { questionImageUrl } from '../questionImages.js';
@@ -16,11 +16,13 @@ const toOutcome = (row: OutcomeRow): OutcomeInfo => ({ id: Number(row.id), code:
 // Sorular, kazanımları ve atama sayılarıyla TEK sorguda okunur (veritabanı uzak olduğundan her ek sorgu
 // bir ağ gidiş-dönüşü demektir); görsel adresi sunucunun kendi imzalı adresidir (bkz. questionImages.ts).
 async function loadQuestions(where: string, params: unknown[]): Promise<QuestionInfo[]> {
-  const { rows } = await pool.query<QuestionRow & { outcomes: OutcomeRow[]; assignment_count: string }>(
+  const { rows } = await pool.query<QuestionRow & { outcomes: OutcomeRow[]; assignment_count: string; status_counts: Record<string, number> }>(
     `select q.id, q.branch, q.answer_key, q.question_number, q.image_path,
             coalesce((select json_agg(json_build_object('id', o.id, 'code', o.code, 'description', o.description, 'branch', o.branch) order by o.code)
                       from question_outcomes qo join learning_outcomes o on o.id = qo.outcome_id where qo.question_id = q.id), '[]'::json) as outcomes,
-            (select count(*) from assignments a where a.question_id = q.id) as assignment_count
+            (select count(*) from assignments a where a.question_id = q.id) as assignment_count,
+            (select coalesce(json_object_agg(s.status, s.n), '{}'::json)
+             from (select a.status::text as status, count(*) as n from assignments a where a.question_id = q.id group by a.status) s) as status_counts
      from questions q ${where} order by q.branch, q.question_number nulls last, q.created_at`,
     params,
   );
@@ -33,6 +35,7 @@ async function loadQuestions(where: string, params: unknown[]): Promise<Question
     imageUrl: questionImageUrl(r.id),
     outcomes: r.outcomes.map((o) => toOutcome({ ...o, id: String(o.id) })),
     assignmentCount: Number(r.assignment_count),
+    statusCounts: r.status_counts as Partial<Record<AssignmentStatus, number>>,
   }));
 }
 

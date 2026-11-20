@@ -20,6 +20,7 @@ function QuestionList() {
   const [error, setError] = useState<string | null>(null);
   const [branch, setBranch] = useState<Branch | ''>('');
   const [assigned, setAssigned] = useState<'' | 'yes' | 'no'>('');
+  const [review, setReview] = useState<'' | 'approved' | 'notApproved' | 'returned'>('');
   const [text, setText] = useState('');
 
   useEffect(() => {
@@ -34,12 +35,15 @@ function QuestionList() {
   if (error) return <p role="alert" className="error">{error}</p>;
   if (!questions) return <p>Yükleniyor…</p>;
 
-  // Süzgeçler: branş, atanma durumu ve metin (soru no, kazanım kodu/açıklaması).
+  // Süzgeçler: branş, atanma durumu, onay durumu ve metin (soru no, kazanım kodu/açıklaması).
+  // Onay durumu atamalardan türetilir: Onaylanmış = en az bir onaylı atama var; Onaylanmamış = onaylı atama yok
+  // (atanmamış sorular dahil); Reddedilmiş = en az bir atama geri gönderilmiş.
   const needle = text.trim().toLocaleLowerCase('tr');
   const visible = questions.filter(
     (q) =>
       (!branch || q.branch === branch) &&
       (!assigned || (assigned === 'yes') === q.assignmentCount > 0) &&
+      (!review || (review === 'approved' ? (q.statusCounts.approved ?? 0) > 0 : review === 'returned' ? (q.statusCounts.returned ?? 0) > 0 : !q.statusCounts.approved)) &&
       (!needle ||
         `soru ${q.questionNumber ?? ''}`.toLocaleLowerCase('tr').includes(needle) ||
         q.outcomes.some((o) => `${o.code} ${o.description}`.toLocaleLowerCase('tr').includes(needle))),
@@ -60,6 +64,12 @@ function QuestionList() {
           <option value="">Atama: hepsi</option>
           <option value="yes">Atanmış</option>
           <option value="no">Atanmamış</option>
+        </select>
+        <select value={review} onChange={(e) => setReview(e.target.value as typeof review)} data-testid="q-review">
+          <option value="">Onay: hepsi</option>
+          <option value="approved">Onaylanmış</option>
+          <option value="notApproved">Onaylanmamış</option>
+          <option value="returned">Reddedilmiş</option>
         </select>
       </div>
       <p className="muted small" data-testid="q-count">{visible.length} / {questions.length} soru</p>
