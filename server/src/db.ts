@@ -8,3 +8,10 @@ export const pool = new pg.Pool({
   ssl: { rejectUnauthorized: false },
   max: 5,
 });
+
+// Havuzda boşta bekleyen bir bağlantıyı Supabase kapatırsa (bağlantı havuzu zaman aşımı, bakım, ağ kesintisi) pg havuzda
+// 'error' olayı üretir. Dinleyici yoksa Node bunu yakalanmamış hata sayar ve sunucu süreci kapanır. Burada yalnızca
+// kaydedilir: pg bozuk bağlantıyı havuzdan atar, bir sonraki sorgu yeni bağlantı açar. Çalışan sorgular etkilenmez.
+pool.on('error', (err) => {
+  console.error('Veritabanı havuzunda boşta bağlantı hatası (sunucu çalışmaya devam ediyor):', err.message);
+});

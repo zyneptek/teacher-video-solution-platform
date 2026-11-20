@@ -14,6 +14,12 @@ import { adminErrorReportsRouter, errorAttachmentsRouter, teacherErrorReportsRou
 import { notificationsRouter } from './notifications.js';
 import { pushTokensRouter } from './routes/pushTokens.js';
 
+// Bir istek işleyicisinde yakalanmayan söz reddi Node'un sunucu sürecini kapatmasına yol açar (Node 15+ varsayılanı).
+// Tek bir hatalı isteğin tüm sunucuyu düşürmemesi için kaydedilir; sunucu çalışmaya devam eder.
+process.on('unhandledRejection', (reason) => {
+  console.error('Yakalanmayan söz reddi (sunucu çalışmaya devam ediyor):', reason);
+});
+
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
 
