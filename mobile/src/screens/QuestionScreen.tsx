@@ -71,6 +71,32 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
   const q = assignment.question;
   const canSubmit = !!assignment.recording && (assignment.status === 'assigned' || assignment.status === 'returned');
 
+  const outcomesCard = (
+    <Card>
+      <Text style={styles.bold}>Kazanımlar</Text>
+      {q.outcomes.map((o) => (
+        <Text key={o.id} style={{ color: colors.ink, fontSize: 14 }}><Text style={{ fontWeight: '800' }}>{o.code}</Text> {o.description}</Text>
+      ))}
+    </Card>
+  );
+
+  const reportCard = (
+    <Card>
+      <View style={styles.between}>
+        <Text style={styles.bold}>Soruda hata mı var?</Text>
+        <Button label="Hata bildir" variant="ghost" onPress={() => nav.push({ name: 'report', id })} />
+      </View>
+      {reports.length > 0 && <Text style={styles.small}>Gönderdiğiniz bildirimler</Text>}
+      {reports.map((r) => (
+        <View key={r.id} style={styles.report}>
+          <Text style={{ fontWeight: '700', color: colors.ink }}>{ERROR_REPORT_TYPES.find((t) => t.value === r.type)?.label}</Text>
+          {!!r.description && <Text style={{ color: colors.ink }}>{r.description}</Text>}
+          <Text style={styles.small}>{new Date(r.createdAt).toLocaleString('tr-TR')}{r.marker ? ' · görselde işaretli' : ''}{r.attachment ? ` · ek: ${r.attachment.type === 'video' ? 'video' : 'görüntü'}` : ''}</Text>
+        </View>
+      ))}
+    </Card>
+  );
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.content, wide && styles.contentWide, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}>
       <Pressable onPress={nav.pop} hitSlop={16} style={styles.backBtn} testID="back"><Text style={styles.back}>← Sorularım</Text></Pressable>
@@ -132,29 +158,16 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
         </Card>
       )}
 
-      <Card>
-        <Text style={styles.bold}>Kazanımlar</Text>
-        {q.outcomes.map((o) => (
-          <Text key={o.id} style={{ color: colors.ink, fontSize: 14 }}><Text style={{ fontWeight: '800' }}>{o.code}</Text> {o.description}</Text>
-        ))}
-      </Card>
-
-      <Card>
-        <View style={styles.between}>
-          <Text style={styles.bold}>Soruda hata mı var?</Text>
-          <Button label="Hata bildir" variant="ghost" onPress={() => nav.push({ name: 'report', id })} />
+      {!wide && outcomesCard}
+      {!wide && reportCard}
+      </View>
+      </View>
+      {wide && (
+        <View style={styles.bottomRow}>
+          <View style={styles.bottomCol}>{outcomesCard}</View>
+          <View style={styles.bottomCol}>{reportCard}</View>
         </View>
-        {reports.length > 0 && <Text style={styles.small}>Gönderdiğiniz bildirimler</Text>}
-        {reports.map((r) => (
-          <View key={r.id} style={styles.report}>
-            <Text style={{ fontWeight: '700', color: colors.ink }}>{ERROR_REPORT_TYPES.find((t) => t.value === r.type)?.label}</Text>
-            {!!r.description && <Text style={{ color: colors.ink }}>{r.description}</Text>}
-            <Text style={styles.small}>{new Date(r.createdAt).toLocaleString('tr-TR')}{r.marker ? ' · görselde işaretli' : ''}{r.attachment ? ` · ek: ${r.attachment.type === 'video' ? 'video' : 'görüntü'}` : ''}</Text>
-          </View>
-        ))}
-      </Card>
-      </View>
-      </View>
+      )}
     </ScrollView>
   );
 }
@@ -166,6 +179,8 @@ const styles = StyleSheet.create({
   cols: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
   colLeft: { flex: 1 },
   colRight: { flex: 1, gap: 12 },
+  bottomRow: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
+  bottomCol: { flex: 1 },
   backBtn: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
   back: { color: colors.brandDark, fontWeight: '700', fontSize: 15, paddingVertical: 6 },
   title: { fontSize: 20, fontWeight: '800', color: colors.ink },

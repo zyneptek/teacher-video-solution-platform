@@ -139,10 +139,9 @@ function QuestionDetail({ id }: { id: string }) {
       {error && <p role="alert" className="error" data-testid="q-error">{error}</p>}
 
       <div className="q-detail">
-        <div className="q-image">{question.imageUrl ? <img src={question.imageUrl} alt="Soru görseli" /> : <p className="muted">Görsel bulunamadı.</p>}</div>
-
         <div>
-          <div className="card">
+          <div className="q-image">{question.imageUrl ? <img src={question.imageUrl} alt="Soru görseli" /> : <p className="muted">Görsel bulunamadı.</p>}</div>
+          <div className="card" style={{ marginTop: 16 }}>
             <label>
               Cevap anahtarı
               <select
@@ -158,29 +157,9 @@ function QuestionDetail({ id }: { id: string }) {
               </select>
             </label>
           </div>
+        </div>
 
-          <div className="card">
-            <strong>Atamalar</strong>
-            <AssignmentsTable assignments={assignments} showQuestion={false} onChanged={() => { void loadAssignments(); setVersion((v) => v + 1); }} />
-            <AssignForm
-              questions={[{ id: question.id, branch: question.branch, questionNumber: question.questionNumber }]}
-              fixedQuestionId={question.id}
-              onAssigned={() => void loadAssignments()}
-              refreshKey={version}
-            />
-          </div>
-
-          <div className="card" data-testid="question-reports">
-            <strong>Hata bildirimleri ({reports.length})</strong>
-            {reports.length === 0 ? <p className="muted" style={{ margin: 0 }}>Bu soru için hata bildirimi yok.</p> : (
-              <div className="t-list">
-                {reports.map((r) => (
-                  <ReportCard key={r.id} report={r} imageUrl={question.imageUrl ?? undefined} />
-                ))}
-              </div>
-            )}
-          </div>
-
+        <div>
           <div className="card">
             <strong>Kazanımlar</strong>
             <ul className="outcomes" data-testid="outcome-list">
@@ -205,6 +184,28 @@ function QuestionDetail({ id }: { id: string }) {
               excludeIds={question.outcomes.map((o) => o.id)}
               onSelect={(o) => void change(() => api(`/api/admin/questions/${id}/outcomes`, { method: 'POST', body: { outcomeId: o.id } }), `${o.code} soruya eklendi.`)}
             />
+          </div>
+
+          <div className="card">
+            <strong>Atamalar</strong>
+            <AssignmentsTable assignments={assignments} showQuestion={false} onChanged={() => { void loadAssignments(); setVersion((v) => v + 1); }} />
+            <AssignForm
+              questions={[{ id: question.id, branch: question.branch, questionNumber: question.questionNumber }]}
+              fixedQuestionId={question.id}
+              onAssigned={() => void loadAssignments()}
+              refreshKey={version}
+            />
+          </div>
+
+          <div className="card" data-testid="question-reports">
+            <strong>Hata bildirimleri ({reports.length})</strong>
+            {reports.length === 0 ? <p className="muted" style={{ margin: 0 }}>Bu soru için hata bildirimi yok.</p> : (
+              <div className="t-list">
+                {reports.map((r) => (
+                  <ReportCard key={r.id} report={r} imageUrl={question.imageUrl ?? undefined} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

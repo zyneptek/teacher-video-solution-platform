@@ -10,7 +10,7 @@ import { abs, api } from '../api';
 import type { Nav } from '../nav';
 import { colors } from '../theme';
 import { Button, ErrorText, Notice } from '../ui';
-import { useWide } from '../ui/layout';
+import { useWide, useWidePortrait } from '../ui/layout';
 import { VideoBox } from '../ui/VideoBox';
 
 const MIN_RANGE = 0.1;
@@ -19,6 +19,7 @@ const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart
 export function TrimScreen({ id, nav }: { id: string; nav: Nav }) {
   const insets = useSafeAreaInsets();
   const wide = useWide();
+  const portraitTablet = useWidePortrait();
   const [assignment, setAssignment] = useState<TeacherAssignment | null>(null);
   const [start, setStart] = useState(0);
   const [end, setEnd] = useState(0);
@@ -95,29 +96,62 @@ export function TrimScreen({ id, nav }: { id: string; nav: Nav }) {
   const keepSeconds = end - start;
   const cutSeconds = total - keepSeconds;
 
+  const startControls = (
+    <View style={{ gap: 10 }}>
+      <Text style={styles.label}>Aralık başlangıcı: {fmt(start)}</Text>
+      <Slider minimumValue={0} maximumValue={total} step={0.1} value={start} onValueChange={changeStart} minimumTrackTintColor={colors.brand} thumbTintColor={colors.brand} />
+      <Button label="Mevcut konumu başlangıç yap" variant="accent" onPress={() => changeStart(player.current?.currentTime ?? 0)} />
+    </View>
+  );
+  const endControls = (
+    <View style={{ gap: 10 }}>
+      <Text style={styles.label}>Aralık bitişi: {fmt(end)}</Text>
+      <Slider minimumValue={0} maximumValue={total} step={0.1} value={end} onValueChange={changeEnd} minimumTrackTintColor={colors.brand} thumbTintColor={colors.brand} />
+      <Button label="Mevcut konumu bitiş yap" variant="accent" onPress={() => changeEnd(player.current?.currentTime ?? total)} />
+    </View>
+  );
+  const summary = (
+    <>
+      <Text style={styles.small}>Seçili aralık: {keepSeconds.toFixed(1)} sn · Toplam: {total.toFixed(1)} sn</Text>
+      {done && <Notice>{done}</Notice>}
+      {error && <ErrorText>{error}</ErrorText>}
+    </>
+  );
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.content, wide && { maxWidth: 1240, paddingHorizontal: 24 }, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}>
       <Button label="← Geri" variant="ghost" onPress={nav.pop} style={{ alignSelf: 'flex-start' }} />
       <Text style={styles.title}>Kaydı düzenle</Text>
-      <View style={wide ? { flexDirection: 'row', gap: 20, alignItems: 'flex-start' } : { gap: 10 }}>
-      <View style={wide ? { flex: 3 } : undefined}>
-        <VideoBox key={recording.videoUrl} url={abs(recording.videoUrl)} onPlayer={(p) => (player.current = p)} />
-      </View>
-      <View style={[{ gap: 10 }, wide && { flex: 2 }]}>
-      <Text style={styles.label}>Aralık başlangıcı: {fmt(start)}</Text>
-      <Slider minimumValue={0} maximumValue={total} step={0.1} value={start} onValueChange={changeStart} minimumTrackTintColor={colors.brand} thumbTintColor={colors.brand} />
-      <Button label="Mevcut konumu başlangıç yap" variant="accent" onPress={() => changeStart(player.current?.currentTime ?? 0)} />
-      <Text style={styles.label}>Aralık bitişi: {fmt(end)}</Text>
-      <Slider minimumValue={0} maximumValue={total} step={0.1} value={end} onValueChange={changeEnd} minimumTrackTintColor={colors.brand} thumbTintColor={colors.brand} />
-      <Button label="Mevcut konumu bitiş yap" variant="accent" onPress={() => changeEnd(player.current?.currentTime ?? total)} />
-      <Text style={styles.small}>Seçili aralık: {keepSeconds.toFixed(1)} sn · Toplam: {total.toFixed(1)} sn</Text>
-      {done && <Notice>{done}</Notice>}
-      {error && <ErrorText>{error}</ErrorText>}
-      <Button label={`Yalnızca bu aralığı tut (${keepSeconds.toFixed(1)} sn)`} variant="accent" onPress={() => void apply('keep')} busy={busy} disabled={keepSeconds < 1} />
-      <Button label="Bu aralığı sil" variant="accent" onPress={() => void apply('cut')} disabled={busy || cutSeconds < 1} />
-      <Button label="↶ Geri al" variant="accent" onPress={() => void undo()} disabled={busy || !recording.canUndo} />
-      </View>
-      </View>
+      {portraitTablet ? (
+        // Dikey tablet: video tam genişlikte üstte, ayarlar altında; hepsi tek ekrana sığar.
+        <View style={{ gap: 12 }}>
+          <VideoBox key={recording.videoUrl} url={abs(recording.videoUrl)} onPlayer={(p) => (player.current = p)} />
+          <View style={styles.row}>
+            <View style={styles.half}>{startControls}</View>
+            <View style={styles.half}>{endControls}</View>
+          </View>
+          {summary}
+          <View style={styles.row}>
+            <Button label="Yalnızca bu aralığı tut" variant="accent" onPress={() => void apply('keep')} busy={busy} disabled={keepSeconds < 1} style={{ flex: 1 }} />
+            <Button label="Bu aralığı sil" variant="accent" onPress={() => void apply('cut')} disabled={busy || cutSeconds < 1} style={{ flex: 1 }} />
+            <Button label="↶ Geri al" variant="accent" onPress={() => void undo()} disabled={busy || !recording.canUndo} style={{ flex: 1 }} />
+          </View>
+        </View>
+      ) : (
+        <View style={wide ? { flexDirection: 'row', gap: 20, alignItems: 'flex-start' } : { gap: 10 }}>
+          <View style={wide ? { flex: 3 } : undefined}>
+            <VideoBox key={recording.videoUrl} url={abs(recording.videoUrl)} onPlayer={(p) => (player.current = p)} />
+          </View>
+          <View style={[{ gap: 10 }, wide && { flex: 2 }]}>
+            {startControls}
+            {endControls}
+            {summary}
+            <Button label="Yalnızca bu aralığı tut" variant="accent" onPress={() => void apply('keep')} busy={busy} disabled={keepSeconds < 1} />
+            <Button label="Bu aralığı sil" variant="accent" onPress={() => void apply('cut')} disabled={busy || cutSeconds < 1} />
+            <Button label="↶ Geri al" variant="accent" onPress={() => void undo()} disabled={busy || !recording.canUndo} />
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -127,4 +161,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: '800', color: colors.ink },
   label: { fontWeight: '700', color: colors.ink, marginTop: 4 },
   small: { fontSize: 12, color: colors.muted },
+  row: { flexDirection: 'row', gap: 12 },
+  half: { flex: 1 },
 });
