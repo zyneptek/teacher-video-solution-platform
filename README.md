@@ -635,3 +635,7 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 ### Karar 38 — Telefonda kayıt için kamera
 - Kayıt stüdyosundaki **kamera düğmesi telefonda da** gösterilir (daha önce yalnızca web ve tabletteydi). Davranış tabletle aynıdır: isteğe bağlı, kayıt başlamadan açılır/kapanır, tahtanın sağ altında küçük dikdörtgen olarak önizlenir ve sunucuda videoya aynı yerden bindirilir; izin verilmezse veya kamera hata verirse kayıt ekran ve sesle tamamlanır. Stüdyo yerleşimi iki cihazda aynı olduğundan telefon yatay konumunda kontrol sütunu bir düğme uzar (yaklaşık 270 dp, 360 dp ve üstü yükseklikte süre göstergesine değmez).
 - Doğrulanmadı: gerçek telefon kamerası (simülatörde kamera yok) ve iOS/Android'de kamera + mikrofonun birlikte çalışması.
+
+### Karar 39 — Mobil stüdyoda geri tuşu
+- Kayıt stüdyosunda (telefon ve tablet) sol üstte yuvarlak bir **geri tuşu (←)** vardır; kayıt bitirilmek zorunda değildir, yanlışlıkla açılan stüdyodan çıkılabilir. Kayıt başlamamışsa ve çizim yapılmamışsa doğrudan soru sayfasına dönülür. Kayıt sürüyorsa/duraklatılmışsa veya çizim varsa onay istenir ("Kayıttan çıkılsın mı?" — "Kayda devam et" / "Çık"); **Çık** ses, kamera klipleri ve çizimleri kaydetmeden atar (mikrofon ve kamera durdurulur). Sunucuya hiçbir şey gönderilmez.
+- Android geri tuşu aynı yolu izler. Önizleme aşamasında (video zaten kaydedildi, taslak olarak saklanır) geri tuşu önceki gibi soru sayfasına döner; "Sil" ve "Yeniden çek" seçenekleri o ekranda durur.

@@ -4,14 +4,14 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { StatusBar } from 'expo-status-bar';
 import { CameraView } from 'expo-camera';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VIDEO, type DrawingEvent, type InkController, type TeacherAssignment, type Tool } from '@app/shared';
 import { abs, api } from '../api';
 import type { Nav } from '../nav';
 import { Board } from './Board';
 import { PreviewScreen } from './PreviewScreen';
-import { RecordingTimer, StudioControls } from './StudioControls';
+import { RecordingTimer, RoundButton, StudioControls } from './StudioControls';
 import { uploadRecording } from './api';
 import { useCameraClips } from './useCameraClips';
 import { useRecorder, type RecordingResult } from './useRecorder';
@@ -87,6 +87,43 @@ export function StudioScreen({ assignment, nav }: { assignment: TeacherAssignmen
     }
     await upload();
   }
+
+  // Geri: kayıt başlamadan ve çizim yapılmadan doğrudan çıkılır. Kayıt sürüyorsa veya çizim varsa, yanlışlıkla
+  // basılmış olabileceği için onay istenir; "İptal et" kaydı (ses, kamera, çizimler) atar ve soru sayfasına döner.
+  async function leaveStudio() {
+    try {
+      if (recorder.status !== 'idle') {
+        await camera.stopClip();
+        await recorder.finish(); // mikrofonu ve saati durdurur; sonuç atılır
+      }
+    } catch {
+      // kayıt zaten atılıyor; durdurma hatası çıkışı engellemesin
+    }
+    camera.reset();
+    nav.pop();
+  }
+  // Dönüş değeri: geri işlendi mi (stüdyo aşamasında evet; önizleme/yükleme aşamasında uygulamanın genel işleyicisine bırakılır).
+  function handleBack(): boolean {
+    if (phase !== 'studio') return false;
+    if (recorder.status === 'idle' && eventsRef.current.length === 0) {
+      void leaveStudio();
+      return true;
+    }
+    Alert.alert('Kayıttan çıkılsın mı?', 'Kayıt ve çizimler kaydedilmeden silinir.', [
+      { text: 'Kayda devam et', style: 'cancel' },
+      { text: 'Çık', style: 'destructive', onPress: () => void leaveStudio() },
+    ]);
+    return true;
+  }
+  // Android geri tuşu da aynı yolu izler (uygulamanın genel geri işleyicisinden önce çalışır).
+  const handleBackRef = useRef(handleBack);
+  handleBackRef.current = handleBack;
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      return handleBackRef.current();
+    });
+    return () => sub.remove();
+  }, []);
 
   // Bekleyen kaydı sunucuya gönderir: sunucu MP4'ü üretir ve sisteme kaydeder (cihaza indirme yoktur).
   async function upload() {
@@ -221,11 +258,16 @@ export function StudioScreen({ assignment, nav }: { assignment: TeacherAssignmen
           direction="column"
         />
       </View>
+      <View style={[styles.floating, { left: Math.max(insets.left, 12) + 8, top: insets.top + 8 }]}>
+        <RoundButton label="Geri" onPress={() => void handleBack()}>
+          <Text style={{ fontSize: 22, color: '#27272a' }}>←</Text>
+        </RoundButton>
+      </View>
       <View style={[styles.floating, { right: Math.max(insets.right, 12) + 8, top: insets.top + 8 }]}>
         <RecordingTimer status={recorder.status} elapsedMs={recorder.elapsedMs} />
       </View>
       {(recorder.error || camera.notice) && (
-        <View style={[styles.floating, styles.toast, { left: Math.max(insets.left, 12) + 8, top: insets.top + 8 }]}>
+        <View style={[styles.floating, styles.toast, { left: Math.max(insets.left, 12) + 8 + 52, top: insets.top + 8 }]}>
           <Text style={styles.error}>{recorder.error ?? camera.notice}</Text>
         </View>
       )}
