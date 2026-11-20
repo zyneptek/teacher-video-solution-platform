@@ -210,3 +210,4 @@ a { color: var(--brand-dark); }
 .verdict-correct { background: #dff1e4; color: #1f6b3a; }
 .verdict-faulty { background: #f5dcdc; color: var(--danger); }
 .replaced-note { display: inline-block; margin: 4px 0; padding: 4px 10px; border-radius: 8px; background: #fde6dc; color: var(--brand-dark); font-size: 13px; font-weight: 600; }
+.cell-actions { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 120px; }

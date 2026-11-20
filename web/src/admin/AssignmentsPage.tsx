@@ -11,6 +11,7 @@ const isStatus = (v?: string): v is AssignmentStatus => !!v && v in ASSIGNMENT_S
 export function AssignmentsPage({ initialStatus }: { initialStatus?: string }) {
   const [assignments, setAssignments] = useState<AssignmentInfo[] | null>(null);
   const [questions, setQuestions] = useState<QuestionInfo[]>([]);
+  const [version, setVersion] = useState(0); // atama geri alınınca atama formundaki "zaten atandı" listesini yenilemek için
   const [status, setStatus] = useState<AssignmentStatus | ''>(isStatus(initialStatus) ? initialStatus : '');
   useEffect(() => {
     setStatus(isStatus(initialStatus) ? initialStatus : '');
@@ -39,7 +40,7 @@ export function AssignmentsPage({ initialStatus }: { initialStatus?: string }) {
       <h2>Atamalar</h2>
       <div className="card">
         <strong>Yeni atama</strong>
-        <AssignForm questions={questions} onAssigned={() => void load()} />
+        <AssignForm questions={questions} onAssigned={() => void load()} refreshKey={version} />
       </div>
       <div className="filters">
         <select value={status} onChange={(e) => setStatus(e.target.value as AssignmentStatus | '')} data-testid="status-filter">
@@ -53,7 +54,7 @@ export function AssignmentsPage({ initialStatus }: { initialStatus?: string }) {
       </div>
       {error && <p role="alert" className="error">{error}</p>}
       {!assignments && !error && <p>Yükleniyor…</p>}
-      {assignments && <AssignmentsTable assignments={assignments} showQuestion />}
+      {assignments && <AssignmentsTable assignments={assignments} showQuestion onChanged={() => { void load(); setVersion((v) => v + 1); }} />}
     </div>
   );
 }

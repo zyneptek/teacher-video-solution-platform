@@ -87,6 +87,7 @@ function QuestionDetail({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<AssignmentInfo[]>([]);
+  const [version, setVersion] = useState(0); // atama geri alınınca atama formundaki "zaten atandı" listesini yenilemek için
   const [reports, setReports] = useState<ErrorReportInfo[]>([]);
 
   const loadAssignments = useCallback(async () => {
@@ -160,11 +161,12 @@ function QuestionDetail({ id }: { id: string }) {
 
           <div className="card">
             <strong>Atamalar</strong>
-            <AssignmentsTable assignments={assignments} showQuestion={false} />
+            <AssignmentsTable assignments={assignments} showQuestion={false} onChanged={() => { void loadAssignments(); setVersion((v) => v + 1); }} />
             <AssignForm
               questions={[{ id: question.id, branch: question.branch, questionNumber: question.questionNumber }]}
               fixedQuestionId={question.id}
               onAssigned={() => void loadAssignments()}
+              refreshKey={version}
             />
           </div>
 

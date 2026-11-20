@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { ASSIGNMENT_STATUS_LABEL, type AssignmentInfo } from '@app/shared';
+import { api } from '../auth/session';
 import { VideoPreview } from '../studio/VideoPreview';
 import { PeerChecks } from './PeerChecks';
 import { VideoReplacedNote } from './VideoReplacedNote';
@@ -10,10 +11,35 @@ export function StatusBadge({ status, forTeacher }: { status: AssignmentInfo['st
   return <span className={`status status-${tone}`}>{ASSIGNMENT_STATUS_LABEL[status]}</span>;
 }
 
-export function AssignmentsTable({ assignments, showQuestion }: { assignments: AssignmentInfo[]; showQuestion: boolean }) {
+// onChanged verilirse her satırda "Atamayı geri al" görünür; atama kaldırılınca üst sayfa listeyi yeniler.
+export function AssignmentsTable({ assignments, showQuestion, onChanged }: { assignments: AssignmentInfo[]; showQuestion: boolean; onChanged?: () => void }) {
   const [watching, setWatching] = useState<string | null>(null);
+  const [revoking, setRevoking] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   if (assignments.length === 0) return <p className="muted">Henüz atama yok.</p>;
+
+  async function revoke(a: AssignmentInfo) {
+    const parts = [`${a.teacherName} öğretmenin atamasını geri almak istiyor musunuz?`];
+    parts.push(a.recording ? `Öğretmenin kaydettiği video (${ASSIGNMENT_STATUS_LABEL[a.status]}) kalıcı olarak silinir.` : 'Öğretmen soruyu artık görmez.');
+    parts.push('Bu işlem geri alınamaz.');
+    if (!window.confirm(parts.join('\n\n'))) return;
+    setRevoking(a.id);
+    setError(null);
+    try {
+      await api(`/api/admin/assignments/${a.id}`, { method: 'DELETE' });
+      if (watching === a.id) setWatching(null);
+      onChanged?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Atama geri alınamadı.');
+    } finally {
+      setRevoking(null);
+    }
+  }
+
+  const cols = showQuestion ? 5 : 4;
   return (
+    <>
+      {error && <p role="alert" className="error" data-testid="revoke-error">{error}</p>}
     <table data-testid="assignments-table">
       <thead>
         <tr>
@@ -21,7 +47,7 @@ export function AssignmentsTable({ assignments, showQuestion }: { assignments: A
           <th>Öğretmen</th>
           <th>Durum</th>
           <th>Atanma</th>
-          <th>Video</th>
+          <th>{onChanged ? 'İşlem' : 'Video'}</th>
         </tr>
       </thead>
       <tbody>
@@ -42,32 +68,39 @@ export function AssignmentsTable({ assignments, showQuestion }: { assignments: A
               </td>
               <td>{new Date(a.assignedAt).toLocaleString('tr-TR')}</td>
               <td>
-                {a.recording ? (
-                  <button type="button" className="accent-btn sm" onClick={() => setWatching(watching === a.id ? null : a.id)} data-testid={`watch-${a.id}`}>
-                    {watching === a.id ? 'Kapat' : 'İzle'}
-                  </button>
-                ) : (
-                  <span className="muted small">—</span>
-                )}
+                <div className="cell-actions">
+                  {a.recording ? (
+                    <button type="button" className="accent-btn sm" onClick={() => setWatching(watching === a.id ? null : a.id)} data-testid={`watch-${a.id}`}>
+                      {watching === a.id ? 'Kapat' : 'İzle'}
+                    </button>
+                  ) : (
+                    !onChanged && <span className="muted small">—</span>
+                  )}
+                  {onChanged && (
+                    <button type="button" className="accent-btn sm" disabled={revoking === a.id} onClick={() => void revoke(a)} data-testid={`revoke-${a.id}`}>
+                      Atamayı geri al
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
             {a.videoReplacedAt && (
               <tr>
-                <td colSpan={showQuestion ? 5 : 4}>
+                <td colSpan={cols}>
                   <VideoReplacedNote assignment={a} />
                 </td>
               </tr>
             )}
             {a.peerChecks.length > 0 && (
               <tr>
-                <td colSpan={showQuestion ? 5 : 4}>
+                <td colSpan={cols}>
                   <PeerChecks checks={a.peerChecks} />
                 </td>
               </tr>
             )}
             {watching === a.id && a.recording && (
               <tr>
-                <td colSpan={showQuestion ? 5 : 4}>
+                <td colSpan={cols}>
                   <div style={{ maxWidth: 640 }}>
                     <VideoPreview src={a.recording.videoUrl} />
                   </div>
@@ -78,5 +111,6 @@ export function AssignmentsTable({ assignments, showQuestion }: { assignments: A
         ))}
       </tbody>
     </table>
+    </>
   );
 }

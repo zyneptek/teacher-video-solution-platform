@@ -8,7 +8,7 @@ import { requireAuth } from '../auth.js';
 import { pool } from '../db.js';
 import { sendAssignmentEmail } from '../mail.js';
 import { sendPush } from '../push.js';
-import { recordingInfo } from '../recordings.js';
+import { deleteRecording, recordingInfo } from '../recordings.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const STATUSES: AssignmentStatus[] = ['assigned', 'submitted', 'approved', 'returned'];
@@ -209,5 +209,47 @@ adminAssignmentsRouter.post('/:id/return', async (req, res) => {
   } catch (err) {
     console.error('Geri gönderilemedi:', err);
     res.status(500).json({ error: 'Geri gönderilemedi.' });
+  }
+});
+
+// ---- Atamayı geri alma: yanlışlıkla yapılmış ya da vazgeçilen atama kalıcı olarak kaldırılır ----
+// Atamayla birlikte şunlar da silinir: öğretmenin kaydı/videosu (dosya, düzenleme geçmişi ve o videoya verilmiş çapraz kontroller),
+// atamaya bağlı tüm bildirimler (öğretmenin "yeni soru atandı" bildirimi, yöneticiye gitmiş "onaya gönderdi"/çapraz kontrol bildirimleri) ve
+// bu öğretmenin AYNI soruda başkalarının videolarına verdiği çapraz kontroller (kontrol etme yetkisi atamadan geliyordu).
+// Hata bildirimleri soruya ve gönderene bağlıdır, silinmez. Geri alınınca aynı soru aynı öğretmene yeniden atanabilir.
+adminAssignmentsRouter.delete('/:id', async (req, res) => {
+  const row = await loadForReview(req.params.id);
+  if (!row) {
+    res.status(404).json({ error: 'Atama bulunamadı.' });
+    return;
+  }
+  try {
+    const owner = await pool.query<{ question_id: string }>('select question_id from assignments where id = $1', [row.id]);
+    const questionId = (owner.rows[0] as { question_id: string }).question_id;
+    await deleteRecording(row.id); // dosya + kayıt + düzenleme geçmişi + (cascade) bu videoya verilmiş çapraz kontroller
+    const client = await pool.connect();
+    try {
+      await client.query('begin');
+      await client.query(
+        "delete from notifications where type = 'peer_checked' and checker_id = $1 and assignment_id in (select id from assignments where question_id = $2)",
+        [row.teacher_id, questionId],
+      );
+      await client.query(
+        'delete from peer_checks where reviewer_id = $1 and recording_id in (select r.id from recordings r join assignments a on a.id = r.assignment_id where a.question_id = $2)',
+        [row.teacher_id, questionId],
+      );
+      await client.query('delete from notifications where assignment_id = $1', [row.id]);
+      await client.query('delete from assignments where id = $1', [row.id]);
+      await client.query('commit');
+    } catch (err) {
+      await client.query('rollback').catch(() => undefined);
+      throw err;
+    } finally {
+      client.release();
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Atama geri alınamadı:', err);
+    res.status(500).json({ error: 'Atama geri alınamadı.' });
   }
 });

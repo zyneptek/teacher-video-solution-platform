@@ -10,11 +10,12 @@ type Props = {
   questions: Pick<QuestionInfo, 'id' | 'branch' | 'questionNumber'>[];
   fixedQuestionId?: string;
   onAssigned: () => void;
+  refreshKey?: number; // değişince "zaten atandı" listesi yeniden okunur (atama geri alındığında)
 };
 
 const fullName = (t: Pick<TeacherInfo, 'firstName' | 'lastName'>) => `${t.firstName} ${t.lastName}`;
 
-export function AssignForm({ questions, fixedQuestionId, onAssigned }: Props) {
+export function AssignForm({ questions, fixedQuestionId, onAssigned, refreshKey = 0 }: Props) {
   const [teachers, setTeachers] = useState<TeacherInfo[]>([]);
   const [questionId, setQuestionId] = useState(fixedQuestionId ?? '');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -37,7 +38,7 @@ export function AssignForm({ questions, fixedQuestionId, onAssigned }: Props) {
     }
     const r = await api<{ assignments: AssignmentInfo[] }>(`/api/admin/assignments?questionId=${currentQuestionId}`);
     setTaken(new Set(r.assignments.map((a) => a.teacherId)));
-  }, [currentQuestionId]);
+  }, [currentQuestionId, refreshKey]);
 
   useEffect(() => {
     void loadTaken().catch(() => undefined);
