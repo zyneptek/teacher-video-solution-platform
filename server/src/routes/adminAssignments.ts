@@ -25,6 +25,7 @@ type Row = {
   return_note: string | null;
   assigned_at: Date;
   submitted_at: Date | null;
+  video_replaced_at: Date | null;
   rec_id: string | null;
   rec_duration: string | null;
   rec_updated: Date | null;
@@ -32,7 +33,7 @@ type Row = {
 };
 
 const SELECT = `select a.id, a.question_id, q.question_number, q.branch, a.teacher_id, p.first_name, p.last_name,
-                       a.status, a.return_note, a.assigned_at, a.submitted_at,
+                       a.status, a.return_note, a.assigned_at, a.submitted_at, a.video_replaced_at,
                        r.id as rec_id, r.duration_seconds as rec_duration, r.updated_at as rec_updated,
                        coalesce((select json_agg(json_build_object('checkerName', pc.first_name || ' ' || pc.last_name, 'verdict', c.verdict, 'note', c.note, 'updatedAt', c.updated_at) order by c.updated_at)
                                  from peer_checks c join profiles pc on pc.id = c.reviewer_id where c.recording_id = r.id), '[]'::json) as peer_checks
@@ -52,6 +53,7 @@ const toInfo = (r: Row): AssignmentInfo => ({
   submittedAt: r.submitted_at?.toISOString() ?? null,
   recording: r.rec_id && r.rec_updated ? recordingInfo({ id: r.rec_id, duration_seconds: r.rec_duration, updated_at: r.rec_updated }) : null,
   peerChecks: r.peer_checks,
+  videoReplacedAt: r.video_replaced_at?.toISOString() ?? null,
 });
 
 export const adminAssignmentsRouter = Router();

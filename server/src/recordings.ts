@@ -48,10 +48,21 @@ async function ensureBucket(): Promise<void> {
 
 const cachePath = (id: string, version: number) => path.join(CACHE_DIR, `${id}-${version}.mp4`);
 
+// Video, yöneticinin/diğer öğretmenlerin görmüş olabileceği bir aşamadan sonra (onaya gönderildi, onaylandı, geri gönderildi)
+// ya da daha önce bir kez bu şekilde değiştirildikten sonra yeniden değişirse anı atamada saklar. Henüz hiç gönderilmemiş
+// taslak videonun ilk düzenlemeleri işaretlenmez. Durum, çağıran tarafından sıfırlanmadan ÖNCE okunur (saveRecording/silme sonrası sıfırlanır).
+async function markVideoReplaced(assignmentId: string): Promise<void> {
+  await pool.query(
+    "update assignments set video_replaced_at = now() where id = $1 and (video_replaced_at is not null or status in ('submitted', 'approved', 'returned'))",
+    [assignmentId],
+  );
+}
+
 // Üretilen MP4'ü Storage'a yükler ve atamanın kaydını oluşturur/günceller. Eski dosya silinir.
 // keepPrevious: düzenleme (kırpma/silme) için eski sürüm "Geri al" geçmişine konur; yeniden çekimde geçmiş temizlenir.
 export async function saveRecording(assignmentId: string, mp4Path: string, durationSeconds: number, keepPrevious = false): Promise<RecordingRow> {
   await ensureBucket();
+  await markVideoReplaced(assignmentId);
   const old = await pool.query<{ id: string; video_path: string | null; duration_seconds: string | null }>('select id, video_path, duration_seconds from recordings where assignment_id = $1', [assignmentId]);
   const videoPath = `${assignmentId}/${Date.now()}.mp4`;
   const { error } = await supabase.storage.from(BUCKETS.recordings).upload(videoPath, await readFile(mp4Path), { contentType: 'video/mp4', upsert: true });
@@ -101,6 +112,7 @@ export async function undoLastEdit(assignmentId: string): Promise<boolean> {
   );
   const prev = last.rows[0];
   if (!prev) return false;
+  await markVideoReplaced(assignmentId);
   await pool.query('update recordings set video_path = $2, duration_seconds = $3, updated_at = now() where id = $1', [current.id, prev.video_path, prev.duration_seconds]);
   await pool.query('delete from peer_checks where recording_id = $1', [current.id]); // video değişti: eski değerlendirmeler geçersiz
   await rm(cachePath(current.id, current.updated_at.getTime()), { force: true });
@@ -113,6 +125,7 @@ export async function deleteRecording(assignmentId: string): Promise<boolean> {
   const current = await pool.query<{ id: string; video_path: string | null; updated_at: Date }>('select id, video_path, updated_at from recordings where assignment_id = $1', [assignmentId]);
   const old = current.rows[0];
   if (!old) return false;
+  await markVideoReplaced(assignmentId);
   await clearHistory(old.id);
   await pool.query('delete from recordings where id = $1', [old.id]);
   await rm(cachePath(old.id, old.updated_at.getTime()), { force: true });

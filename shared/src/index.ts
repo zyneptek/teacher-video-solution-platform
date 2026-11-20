@@ -101,6 +101,7 @@ export type AssignmentInfo = {
   submittedAt: string | null;
   recording: RecordingInfo | null;
   peerChecks: PeerCheckInfo[]; // güncel videonun çapraz kontrol değerlendirmeleri
+  videoReplacedAt: string | null; // video onaya gönderildikten sonra düzenlendi/yeniden çekildi/silindiyse son değişiklik anı
 };
 
 // Atama sonrası bildirim sonuçları: e-posta durumu ve push gönderilen cihaz sayısı.

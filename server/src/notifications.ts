@@ -35,6 +35,7 @@ type Row = {
   report_type: string | null;
   checker: string | null;
   check_verdict: PeerVerdict | null;
+  video_state: 'deleted' | 'replaced' | null;
 };
 
 function toInfo(r: Row): NotificationInfo {
@@ -60,7 +61,8 @@ function toInfo(r: Row): NotificationInfo {
       href = `#/sorular/${r.question_id}`;
       break;
     case 'peer_checked':
-      text = `${r.checker ?? 'Bir öğretmen'}, ${person} öğretmenin çözümünü ${r.check_verdict ? PEER_VERDICT_LABEL[r.check_verdict].toLocaleLowerCase('tr') : ''} buldu: ${label}`;
+      // Değerlendirme verildikten sonra video değiştiyse eski değerlendirmeler silinmiştir; bildirim kalır ama durumu belirtilir.
+      text = `${r.checker ?? 'Bir öğretmen'}, ${person} öğretmenin çözümünü ${r.check_verdict ? PEER_VERDICT_LABEL[r.check_verdict].toLocaleLowerCase('tr') : ''} buldu: ${label}${r.video_state === 'deleted' ? ' (video silindi)' : r.video_state === 'replaced' ? ' (video sonradan yeniden yüklendi)' : ''}`;
       href = `#/sorular/${r.question_id}`;
       break;
     default:
@@ -81,7 +83,9 @@ notificationsRouter.get('/', async (req, res) => {
               coalesce(qa.question_number, qe.question_number) as question_number,
               coalesce(qa.id, qe.id) as question_id,
               coalesce(pt.first_name || ' ' || pt.last_name, pr.first_name || ' ' || pr.last_name) as person,
-              pc.first_name || ' ' || pc.last_name as checker, n.check_verdict
+              pc.first_name || ' ' || pc.last_name as checker, n.check_verdict,
+              case when n.type = 'peer_checked' and rec.id is null then 'deleted'
+                   when n.type = 'peer_checked' and a.video_replaced_at is not null and a.video_replaced_at > n.created_at then 'replaced' end as video_state
        from notifications n
        left join assignments a on a.id = n.assignment_id
        left join questions qa on qa.id = a.question_id
@@ -90,6 +94,7 @@ notificationsRouter.get('/', async (req, res) => {
        left join questions qe on qe.id = e.question_id
        left join profiles pr on pr.id = e.reporter_id
        left join profiles pc on pc.id = n.checker_id
+       left join recordings rec on rec.assignment_id = a.id and rec.deleted_at is null and rec.status = 'ready'
        where n.recipient_id = $1 order by n.created_at desc limit 100`,
       [req.user?.id],
     );

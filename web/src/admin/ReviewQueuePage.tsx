@@ -4,6 +4,7 @@ import type { AssignmentInfo } from '@app/shared';
 import { api } from '../auth/session';
 import { VideoPreview } from '../studio/VideoPreview';
 import { PeerChecks } from './PeerChecks';
+import { VideoReplacedNote } from './VideoReplacedNote';
 
 const MAX_NOTE = 500;
 
@@ -86,6 +87,7 @@ function ReviewCard({ assignment: a, onDone }: { assignment: AssignmentInfo; onD
           <div className="muted small">Gönderilme: {a.submittedAt ? new Date(a.submittedAt).toLocaleString('tr-TR') : '—'}</div>
         </div>
       </div>
+      <VideoReplacedNote assignment={a} />
       {a.recording ? <div style={{ maxWidth: 720 }}><VideoPreview src={a.recording.videoUrl} /></div> : <p className="muted">Video bulunamadı.</p>}
       <PeerChecks checks={a.peerChecks} />
       {error && <p role="alert" className="error" data-testid="review-error">{error}</p>}

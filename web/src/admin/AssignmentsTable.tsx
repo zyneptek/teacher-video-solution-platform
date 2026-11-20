@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import { ASSIGNMENT_STATUS_LABEL, type AssignmentInfo } from '@app/shared';
 import { VideoPreview } from '../studio/VideoPreview';
 import { PeerChecks } from './PeerChecks';
+import { VideoReplacedNote } from './VideoReplacedNote';
 
 // Turuncu = o rolün aksiyon alması gereken durum. Yönetici için "Onaya gönderildi", öğretmen için "Atandı" ve "Geri gönderildi".
 export function StatusBadge({ status, forTeacher }: { status: AssignmentInfo['status']; forTeacher?: boolean }) {
@@ -50,6 +51,13 @@ export function AssignmentsTable({ assignments, showQuestion }: { assignments: A
                 )}
               </td>
             </tr>
+            {a.videoReplacedAt && (
+              <tr>
+                <td colSpan={showQuestion ? 5 : 4}>
+                  <VideoReplacedNote assignment={a} />
+                </td>
+              </tr>
+            )}
             {a.peerChecks.length > 0 && (
               <tr>
                 <td colSpan={showQuestion ? 5 : 4}>
