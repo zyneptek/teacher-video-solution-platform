@@ -9,3 +9,6 @@ node_modules/
 .env.*
 !.env.example
 AGENTS.md
+
+# Geliştirme notları ve karar günlüğü (yerel çalışma dosyası, repoya girmez)
+README.gelistirme.md

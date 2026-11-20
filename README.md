@@ -1,645 +1,175 @@
 # İşler Video Çözüm Platformu
 
-İşler Yayınevi için hazırlanan, öğretmenlerin sorulara video çözüm kaydettiği ve yöneticinin bu videoları onayladığı bir teknik değerlendirme projesidir. Üç istemci ve bir sunucudan oluşur:
+Öğretmenlerin soru görselleri üzerinde çizerek sesli video çözüm kaydettiği, yöneticinin bu videoları tarayıcıda izleyip onayladığı veya notla geri gönderdiği bir platform. İşler Yayınevi teknik değerlendirme görevi için hazırlandı.
 
-- **Web (React):** yönetici paneli ve öğretmen uygulaması (tek uygulama, role göre ekranlar)
-- **Mobil/tablet (React Native, Expo):** öğretmen uygulaması (telefon ve tablet için tek uygulama)
-- **Sunucu (Node.js, Express):** tek API, MP4 üretimi, e-posta ve push; veri ve dosyalar Supabase'de
+Üç istemci ve bir sunucudan oluşur:
 
-## Hızlı başlangıç: hazır hesaplar
+- **Web (React):** yönetici paneli ve öğretmen uygulaması, tek uygulama, role göre ekranlar
+- **Mobil ve tablet (React Native, Expo):** öğretmen uygulaması, telefon ve tablet için tek uygulama
+- **Sunucu (Node.js, Express):** tek API, MP4 üretimi, e-posta ve push. Veri ve dosyalar Supabase'de
+
+> **Demo videosu:** _(demo çekildikten sonra buraya bağlantı eklenecek)_
+
+| Yönetici: soru, cevap anahtarı, kazanım, atama | Yönetici: onay bekleyen video |
+|---|---|
+| ![Yönetici soru detayı](screenshots/web-admin-question.png) | ![Onay bekleyenler](screenshots/web-admin-review.png) |
+
+| Web kayıt stüdyosu (canlı çizim) | Öğretmen: mevcut videoyu izleyip çapraz kontrol |
+|---|---|
+| ![Web stüdyo](screenshots/web-studio.png) | ![Öğretmen soru sayfası](screenshots/web-teacher-question.png) |
+
+| Telefon: ana sayfa | Tablet: soru sayfası |
+|---|---|
+| ![Telefon ana sayfa](screenshots/iphone-home.png) | ![Tablet soru sayfası](screenshots/ipad-question.png) |
+
+## Hazır hesaplar
 
 | Rol | E-posta | Şifre |
 |---|---|---|
 | **Yönetici** | `admin@example.com` | `Admin12345!` |
-| Öğretmen (Türkçe, Matematik, Fizik, Kimya, Biyoloji; her branşta bir tane) | `turkce@`, `matematik@`, `fizik@`, `kimya@`, `biyoloji@` + `example.com` | `Ogretmen12345!` |
+| Öğretmen (Türkçe, Matematik, Fizik, Kimya, Biyoloji) | `turkce@`, `matematik@`, `fizik@`, `kimya@`, `biyoloji@` + `example.com` | `Ogretmen12345!` |
 
-Giriş ekranında **Yönetici girişi** ve **Öğretmen girişi** sekmeleri vardır. Herkese açık kayıt formu yoktur; öğretmenleri yönetici oluşturur. Hesaplar `npm run db:seed` ile yüklenir (aşağıda).
+Giriş ekranında **Yönetici girişi** ve **Öğretmen girişi** sekmeleri vardır. Herkese açık kayıt formu yoktur; öğretmenleri yönetici oluşturur. Bu hesaplar `npm run db:seed` ile yüklenir.
 
 ## Kurulum
 
-**Gereksinimler:** Node.js 22 veya üzeri (25 ile denendi), npm, ücretsiz bir [Supabase](https://supabase.com) hesabı. Mobil için telefonda **Expo Go** (SDK 58) veya Xcode/Android simülatörü. ffmpeg ayrıca kurulmaz (`ffmpeg-static` paketiyle gelir).
-
-**1. Bağımlılıklar** (repo kökünde, tek komut dört paketi de kurar):
+**Gereksinimler:** Node.js 22 veya üzeri, npm, ücretsiz bir [Supabase](https://supabase.com) hesabı. Mobil için telefonda **Expo Go** (SDK 58) veya Xcode/Android simülatörü. ffmpeg ayrıca kurulmaz (`ffmpeg-static` ile gelir).
 
 ```bash
-npm install
+npm install                          # repo kökünde, dört paketi birden kurar
 ```
 
-**2. Supabase projesi.** Yeni bir proje açın ve şu ayarları yapın (ayrıntı ve gerekçe: Karar 2):
-
-- *Authentication > Sign In / Providers:* **"Allow new users to sign up" kapalı**
-- *Data API:* kapalı olabilir (sunucu veritabanına doğrudan bağlanır)
-- Şu üç değeri not edin: **Project URL**, **Secret key** (`service_role`), **Session pooler** bağlantı adresi (*Connect* düğmesinden, port 5432)
-
-**3. Sunucu ayarı.** `server/.env.example` dosyasını `server/.env` olarak kopyalayıp doldurun (`SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `DATABASE_URL`). E-posta için bkz. [E-posta](#e-posta-yaklaşımı-ve-kurulumu). `.env` repoya girmez.
-
-**4. Veritabanı ve örnek veri:**
+1. **Supabase projesi açın.** *Authentication > Sign In / Providers* altında **"Allow new users to sign up" kapalı** olmalı. *Connect* düğmesinden **Project URL**, **Secret key** (`service_role`) ve **Session pooler** bağlantı adresini (port 5432) not edin.
+2. **Sunucu ayarı:** `server/.env.example` dosyasını `server/.env` olarak kopyalayıp `SUPABASE_URL`, `SUPABASE_SECRET_KEY` ve `DATABASE_URL` değerlerini doldurun. E-posta için aşağıdaki bölüme bakın. `.env` repoya girmez.
+3. **Veritabanı ve örnek veri:**
 
 ```bash
-npm run check:supabase -w server   # (isteğe bağlı) bağlantıyı dener
-npm run db:migrate -w server       # tabloları oluşturur
-npm run db:seed -w server          # 6.411 kazanım, 10 soru (görselleriyle), yönetici ve 5 örnek öğretmen
+npm run db:migrate -w server         # tabloları oluşturur
+npm run db:seed -w server            # 6.411 kazanım, 10 soru (görselleriyle), yönetici ve 5 öğretmen
 ```
-
-Seed tekrar çalıştırılabilir; var olan kayıtlara dokunmaz. Soru paketi repoda `Örnek sorular/` klasöründedir (alan eşlemesi: Karar 10).
 
 ## Çalıştırma
 
 Üç ayrı terminalde:
 
 ```bash
-npm run dev:server   # API → http://localhost:4000
-npm run dev:web      # Web → http://localhost:5173 (/api isteklerini sunucuya yönlendirir)
-npm run dev:mobile   # Expo (Metro) başlar
+npm run dev:server    # API  → http://localhost:4000
+npm run dev:web       # Web  → http://localhost:5173
+npm run dev:mobile    # Expo (Metro)
 ```
 
-**Web:** tarayıcıda `http://localhost:5173` adresini açın, yönetici hesabıyla girin. Kayıt stüdyosu için tarayıcıdan mikrofon izni verilmelidir (Chrome önerilir).
-
-**Mobil:** `npm run dev:mobile` çalışırken terminalde
-- iOS simülatörü için `i`, Android emülatörü için `a` tuşuna basın veya
-- **gerçek telefon/tablet** için Expo Go ile QR kodu okutun. Cihaz sunucuya `localhost` ile ulaşamaz; bilgisayarın yerel ağ adresini verin (cihaz ve bilgisayar aynı ağda olmalı):
+- **Web:** `http://localhost:5173` adresini açın (Chrome önerilir). Kayıt stüdyosu için tarayıcıdan mikrofon izni verin.
+- **Mobil:** Expo açıkken `i` ile iOS simülatörü, `a` ile Android emülatörü açılır veya telefonda Expo Go ile QR kod okutulur. Gerçek cihaz sunucuya `localhost` ile ulaşamaz; bilgisayarın yerel ağ adresini verin (aynı ağda olmalılar):
 
 ```bash
 EXPO_PUBLIC_API_URL=http://192.168.1.20:4000 npm run dev:mobile
 ```
 
-Mobilde yalnızca öğretmen girişi vardır; aynı hesapla web ve mobilden girilebilir. Kayıt stüdyosu telefonda yatay, tablette serbest yönde çalışır.
+Mobilde yalnızca öğretmen girişi vardır; aynı hesapla web ve mobilden girilir. `npm run typecheck` dört paketin tip denetimini yapar.
 
-**Kontroller:** `npm run typecheck` dört paketin tip denetimini yapar.
-
-## Mimari özet
+## Mimari ve temel kararlar
 
 ```
 shared/   ortak tipler, sabitler ve çizim kodu (web, mobil ve sunucu aynı kodu kullanır)
 server/   Express API  ──►  Supabase (Postgres, Auth, Storage)
 web/      Vite + React   ─┐
-mobile/   Expo + RN       ─┴─► yalnızca Express API ile konuşur (Supabase'e doğrudan bağlanmaz)
+mobile/   Expo + RN       ─┴─► yalnızca Express API ile konuşur
 ```
 
-- **Web: tek uygulama mı, iki uygulama mı?** **Tek React uygulaması**, role göre ayrılmış ekranlarla. Gerekçe: giriş, oturum, API istemcisi, bildirim ve video bileşenleri iki rolde ortaktır; iki uygulama bu kodu tekrarlatırdı. Yetki denetimi istemcide değil **sunucudadır** (öğretmen yönetici uç noktalarına 403, başkasının atamasına 404 alır). Ayrıntı: Karar 4.
-- **Mobil: telefon ve tablet tek uygulama.** React Native (Expo) ile yazılmış **tek bir uygulama** hem telefonda hem tabletta çalışır; ekran genişliğine göre düzen değişir (820 px ve üzeri iki sütun). Ayrı telefon/tablet uygulaması yoktur.
-- **Rol ve oturum:** Supabase Auth hesapları; sunucu jetonu doğrular ve her istekte kullanıcının hâlâ aktif olduğunu kontrol eder. Silinen öğretmenin web ve mobildeki oturumu en geç 30 sn içinde otomatik kapanır (Karar 15).
-- **Dosyalar:** soru görselleri, kayıtlar ve hata ekleri özel Storage bucket'larındadır; istemciye süreli, imzalı adreslerle verilir.
+| Konu | Karar | Gerekçe |
+|---|---|---|
+| **Web: tek mi, iki uygulama mı?** | **Tek React uygulaması**, role göre ayrılmış ekranlar | Giriş, oturum, API istemcisi, bildirim ve video bileşenleri iki rolde ortak; iki uygulama bu kodu tekrarlatırdı. Yetki denetimi istemcide değil **sunucudadır**. |
+| **Mobil** | Telefon ve tablet için **tek Expo uygulaması**; yalnızca öğretmen girişi | Ekran genişliği 820 px ve üzerindeyse iki sütunlu tablet düzeni kullanılır. Yönetici işleri web panelindedir. |
+| **Video üretimi** | İstemci ekranı kaydetmez; **çizim olay günlüğü + mikrofon sesi (+ kamera klibi)** toplar, **sunucu MP4 üretir** | Web ve mobil videoyu aynı sunucu kodu ürettiği için sonuç birebir aynıdır. Çizim canlı video kodlamasına bağlı olmadığından akıcı kalır. Expo Go'da çalışır, native ekran kaydı gerekmez. |
+| **Veri ve dosyalar** | **Supabase** (Postgres, Auth, özel Storage). İstemciler Supabase'e değil yalnızca Express API'ye bağlanır | Tek hesapta veritabanı, kimlik doğrulama ve dosya deposu. MP4 üretimi, e-posta ve push için zaten bir sunucu gerekiyor. |
+| **Yetki** | Her istekte sunucu jetonu ve kullanıcının hâlâ aktif olduğunu doğrular | Silinen öğretmenin web ve mobildeki oturumu en geç 30 sn içinde otomatik kapanır. Öğretmen yalnızca kendi atamalarını görür; başkasının atamasına 404 döner. |
+| **Dosyalar** | Soru görselleri, videolar ve hata ekleri özel bucket'larda; istemciye süreli, imzalı adreslerle verilir | Atanmamış soruya ve başkasının videosuna erişilemez. |
+| **Kod düzeni** | **TypeScript**, tek repo (npm workspaces: `shared`, `server`, `web`, `mobile`) | Üç parça aynı veriyi kullanır (çizim olayı, atama durumları, API cevapları); tip tanımı uyumsuzlukları kod çalışmadan yakalar. `shared/` paketindeki çizgi yumuşatma kodu sayesinde ekranda çizilen çizgi ile sunucunun videoya işlediği çizgi aynı koddan çıkar. |
+| **Veritabanı erişimi** | Düz SQL (`pg`) ve numaralı migrasyon dosyaları; ORM yok. Supabase Data API kapalı, tüm tablolarda satır düzeyi güvenlik açık ve politikasız. Bağlantı **Session pooler** üzerinden | Web ve mobil tablolara doğrudan erişemez, yalnızca API'den geçer. Session pooler ücretsiz planda IPv4'te çalışır ve `pg` kütüphanesini olduğu gibi kullanmaya izin verir. |
+| **Hız** | Erişim jetonu Supabase'in açık anahtarlarıyla sunucuda yerel doğrulanır; soru görselleri sunucu belleğinde önbelleklenir | Her ağ gidiş-dönüşü uzak Supabase'e ~0,3 sn tuttuğu için soru listesi 3,5 sn'den görselleriyle birlikte ~0,4 sn'ye indi. |
+| **Yükleme boyutu** | İstemci çizim günlüğünü sıkıştırarak gönderir (koordinatlar 0,1 piksele, zamanlar 1 ms'ye yuvarlanır) | Yoğun çizimli uzun kayıtlarda yükleme sınırı aşılıyordu; tahta 1280×720 olduğundan görsel fark yoktur. |
+| **Silme** | Öğretmen silinince hesap kapanır, atama ve kayıtları arşivde kalır. Öğretmen kendi videosunu silerse dosya ve kayıt kalıcı silinir | Yönetici geçmiş kayıtları izleyebilsin. |
 
-## Kullanılan teknolojiler ve servisler
+### Kullanılan teknolojiler
 
 | Alan | Seçim |
 |---|---|
 | Web | React 19, Vite, TypeScript |
-| Mobil/tablet | React Native, Expo SDK 58 (Expo Go), `@shopify/react-native-skia` (çizim), `expo-audio`, `expo-camera`, `expo-video`, `expo-secure-store`, `expo-notifications`, `expo-linear-gradient` (buton degradesi) |
-| Sunucu | Node.js, Express, TypeScript, `pg`, `jose`, `multer` |
-| Veritabanı, kimlik doğrulama, dosya deposu | Supabase (Postgres, Auth, Storage) |
+| Mobil | React Native, Expo SDK 58 (Expo Go), `@shopify/react-native-skia` (çizim), `expo-audio`, `expo-camera`, `expo-video`, `expo-notifications`, `expo-secure-store` |
+| Sunucu | Node.js, Express, TypeScript, `pg` (düz SQL, ORM yok), `multer` |
+| Veri, kimlik, dosya | Supabase (Postgres, Auth, Storage) |
 | Video | `@napi-rs/canvas` (kare çizimi) + `ffmpeg-static` (MP4) |
-| E-posta | Nodemailer + Gmail SMTP |
-| Push | Expo Push API |
+| E-posta / Push | Nodemailer + Gmail SMTP / Expo Push API |
+
+## Kayıt, çizim ve MP4
+
+1. Öğretmen soruyu açar; soru görseli stüdyoda çizim yüzeyinin arka planıdır. **Kalem ve silgi**, **başlat, duraklat, devam ettir, bitir** ve önizleme vardır. Kamera isteğe bağlıdır.
+2. Kayıt sırasında istemci yalnızca nokta ekler: web HTML canvas, mobil Skia kullanır; yumuşatma kodu ortaktır. Böylece çizim işaretçiyi gecikmesiz izler.
+3. Kayıt bitince çizim olayları, ses ve varsa kamera klibi sunucuya gider. Sunucu soru görselini arka plan alıp olayları zamanına göre **kare kare çizer** ve ffmpeg ile sesi ekleyerek **tek bir MP4** üretir (1280×720, 15 kare/sn, H.264/AAC, en fazla 3 dk). Ara format yoktur.
+
+- **Silgi** değdiği çizginin tamamını siler; çizgi, silindiği andan sonra videoda görünmez.
+- **Duraklatma:** duraklatılan kayıtta kalem ve silgi kullanılabilir; bu çizimler devam anında videoya girer. Duraklatılıp sürdürülen kayıt tek MP4 olur.
+- **Kamera** yalnızca öğretmen açtıysa sağ altta küçük bir dikdörtgen olarak videoya girer. Kapalıysa ya da izin verilmediyse kayıt ekran ve sesle tamamlanır. **Mikrofon izni yoksa** kayıt bitirilemez ve anlaşılır bir uyarı gösterilir.
+- **Kırpma ve ortadan kesme** sunucuda ffmpeg ile yapılır; her düzenleme "Geri al" ile geri alınabilir. Düzenleme veya yeniden kayıt, onaylanmış ya da onaya gönderilmiş atamayı **Atandı** durumuna döndürür; öğretmen yeniden onaya gönderir.
+
+## Onay ve çapraz atama akışı
+
+Atama durumları: **Atandı → Onaya gönderildi → Onaylandı** ya da **Geri gönderildi** (yönetici notuyla; öğretmen düzeltip yeniden gönderir). Gönderilmeyen video yönetici kuyruğunda görünmez.
+
+- **Çapraz atama:** aynı soru aynı branştan birden çok öğretmene atanabilir (toplu seçimle); her öğretmen kendi kaydını üretir. Öğretmen, aynı sorunun onaya gönderilmiş veya onaylanmış diğer videolarını soru sayfasında izler.
+- **Çapraz kontrol:** soruya atanmış öğretmenler birbirinin videosunu **Hatasız / Hatalı** diye işaretler (not isteğe bağlı). Değerlendirmeyi yalnızca yönetici görür, videonun sahibi görmez. Video değişirse o videonun değerlendirmeleri silinir.
+- **Atamayı geri alma:** yönetici yanlış atamayı geri alabilir; öğretmene "atama geri alındı" bildirimi, e-postası ve push'u gider.
+- **Hata bildirimi:** öğretmen soru için hata türü seçerek (soru metni, şıklar, yazım, kırpma, cevap anahtarı, kazanım, serbest metin) bildirim gönderir; görselde yeri işaretleyebilir, ekran görüntüsü veya en fazla 1 dk video ekleyebilir. Yönetici bildirimi ilgili sorunun üzerinde, gönderen öğretmenin adıyla görür.
 
 ## Veri paketi ve yükleme
 
-Paket (10 JPEG, soru bilgisi JSON'u, kazanım JSON'u) `npm run db:seed -w server` ile yüklenir. **Alan eşlemesi, branşın nasıl belirlendiği ve hesap tablosu: Karar 10.** Kazanım dosyası düz bir kod → açıklama listesidir; 6.411 kaydın tamamı yüklenir. Soru metni ve şıklar pakette olmadığı için hata bildiriminde bu alanlar, hata türü seçilerek ve görsel üzerinde yer işaretlenerek belirtilir (Karar 25).
-
-## E-posta yaklaşımı ve kurulumu
-
-Atama kaydedildiği anda öğretmene e-posta gider (branş, soru, kazanım kodları ve uygulama bağlantısı); yönetici öğretmen oluşturunca da giriş bilgileri e-postayla gider. Nodemailer ile **Gmail SMTP** kullanılır.
-
-1. Gönderici Gmail hesabında *Google Hesabı > Güvenlik > 2 Adımlı Doğrulama*'yı açın.
-2. *Güvenlik > Uygulama şifreleri*nden 16 haneli bir şifre üretin (normal Gmail şifreniz değil).
-3. `server/.env` içine `SMTP_USER=<gmail adresi>` ve `SMTP_PASS=<uygulama şifresi>` yazın; isteğe bağlı `MAIL_FROM` ve `APP_URL` (e-postadaki bağlantı; varsayılan `http://localhost:5173`).
-4. Sunucuyu yeniden başlatın.
-
-Ayar yoksa atama yine yapılır; ekranda "e-posta gönderilmedi (ayar yapılmamış)" uyarısı çıkar. **Test:** `example.com` adresleri gerçek posta kutusu değildir; e-postayı görmek için yönetici panelinden **kendi adresinizle bir öğretmen oluşturup** ona soru atayın. Ayrıntı: Karar 19 ve 22.
-
-## Push yaklaşımı ve kurulumu
-
-Öğretmen mobil uygulamaya girince Expo push jetonu sunucuya kaydedilir (`push_tokens`; bir öğretmenin birden çok cihazı olabilir). Atamada sunucu, öğretmenin jetonlarına **Expo Push API** ile bildirim gönderir; jeton yoksa (uygulama yüklü değil) sessizce geçilir. Bildirime dokunmak ilgili soruyu açar. Aynı bildirim web ve mobil dashboard'unda da görünür.
-
-**Kurulum:** sunucuda ek ayar gerekmez. Mobilde giriş yapınca bildirim izni istenir. **Push yalnızca gerçek cihazda çalışır** (simülatör uzaktan push alamaz); iOS'ta Expo Go'da jeton için cihazın Expo hesabına bağlı proje kimliği gerekebilir (Karar 28).
-
-## Kayıt, çizim ve MP4 yaklaşımı
-
-İstemciler ekranı video olarak kaydetmez. Web ve mobil kayıt sırasında **çizim olay günlüğünü** (kalem/silgi, noktalar, zamanlar), **mikrofon sesini** ve (isteğe bağlı) **kamera klibini** toplar ve sunucuya yükler. **Sunucu** soru görselini arka plan olarak alıp olayları zamanına göre kare kare çizer ve ffmpeg ile sesi ekleyerek **tek bir MP4** (1280×720, 15 kare/sn, H.264/AAC, en fazla 3 dk) üretir.
-
-- **Aynı sonuç:** iki istemci de aynı sunucu kodunu kullandığı için web ve mobil videoları birebir aynı biçimdedir.
-- **Akıcı çizim:** çizim canlı video kodlamasına bağlı değildir; istemci yalnızca nokta ekler (web: HTML canvas, mobil: Skia). Yumuşatma kodu ortaktır.
-- **Silgi:** değdiği çizginin tamamını siler; çizgi silindiği andan sonra videoda görünmez.
-- **Duraklatma:** duraklatılan kayıtta kalem ve silgi kullanılabilir; bu çizimler devam anında videoya girer. Duraklatılıp sürdürülen kayıt tek MP4 olur.
-- **Kamera:** yalnızca öğretmen açtıysa, sağ altta küçük dikdörtgen bindirme olarak girer; kapalıysa veya izin yoksa kayıt ekran ve sesle tamamlanır. Mikrofon izni yoksa kayıt bitirilemez ve anlaşılır bir uyarı gösterilir.
-- **MP4'e dönüşüm:** ara format yoktur; sunucu doğrudan MP4 üretir. **Kırpma ve ortadan kesme** de sunucuda ffmpeg ile yapılır (Karar 27 ve 30).
-- **Bilinen kısıt:** çıktı cihaz ekranının birebir kaydı değil, soru görseli ve çizimlerin yeniden çizimidir (Karar 1).
-
-Ayrıntılar: Karar 1, 11, 12, 13, 14.
-
-## Varsayımlar
-
-Görevin açık bıraktığı noktalarda alınan kararların tamamı aşağıdaki **Karar 15–30** bölümlerinde ve "Açık noktalar" listesindedir. Başlıcaları:
-
-- Soru ilk atamada da yalnızca **kendi branşındaki** öğretmene atanır; aynı soru aynı öğretmene ikinci kez atanamaz (Karar 8, 19).
-- Silinen öğretmenin verileri **silinmez, arşivde kalır** (yumuşak silme); hesabı kapanır (Karar 8). Videoları da kalır: yönetici izleyip onaylayabilir, çapraz atanan öğretmen referans olarak izleyebilir.
-- Öğretmen **kendi videosunu silerse** dosya Storage'dan ve satır veritabanından kalıcı silinir (öğretmen hesabının silinmesinden farklıdır).
-- Düzenleme/silme sonrası onaya gönderilmiş veya onaylı atama **Atandı**'ya döner; *Geri gönderildi* olan, düzenlenince de **Geri gönderildi** kalır (Karar 23).
-- Çapraz atanan öğretmen, aynı sorunun **onaya gönderilmiş veya onaylanmış** videolarını izleyebilir; taslak ve geri gönderilmiş videoları görmez (Karar 27).
-- Öğretmene **cevap anahtarı gösterilmez**, kazanımlar gösterilir (Karar 21).
-- Hata bildirimi eki her türde eklenebilir: ekran görüntüsü (en fazla 5 MB) veya en fazla 1 dk video (en fazla 30 MB) (Karar 25).
-- Geri gönderme notu en fazla 500 karakterdir (Karar 23). Onay ve geri göndermede öğretmene bildirim gider.
-- Mobil uygulama **yalnızca öğretmenler içindir**; yönetici girişi ve yönetici ekranları yalnızca web panelindedir (Karar 34).
-- Yeni soru ekleme ekranı ve kazanım ekleme/silme yapılmadı; zorunlu olan güncelleme vardır.
-
----
-
-# Karar günlüğü
-
-Aşağıda, geliştirme sırasında alınan her kararın gerekçesi sırasıyla yer alır.
-
-## Geliştirme yaklaşımı
-
-Önce yalnızca **zorunlu özelliklerle çalışan bir MVP** çıkarılır, iyileştirmeler çalışan sürüm üzerinde yapılır. Her özellik tek tek eklenir, test edilir ve ardından commit'lenir. Örneğin web ve mobil stüdyo ilk sürümde basittir: kalem, silgi, tek renk ve tek kalınlık. Kamera bindirmesi gibi isteğe bağlı özellikler MVP sonrasına kalır.
-
-## Mimari kararlar
-
-### 1. Video kaydı ve MP4 üretimi: istemci olay günlüğü, sunucuda MP4
-
-**Karar:** Web ve mobil istemci ekranı doğrudan video olarak kaydetmez. İki istemci de kayıt sırasında şunları toplayıp sunucuya yükler:
-
-- **Çizim olayları:** kalem/silgi, noktalar, renk, kalınlık ve her olayın kayıt süresi içindeki zamanı
-- **Mikrofon sesi** (zorunlu)
-- **Kamera klibi** (isteğe bağlı)
-
-Sunucu, soru görselini arka plan olarak alıp çizim olaylarını zamanına göre kare kare yeniden çizer ve **ffmpeg** ile sesi ekleyerek tek bir **MP4** üretir. Kamera açıldıysa küçük bir bindirme olarak eklenir.
-
-**Gerekçe**
-
-- Web ve mobil videoyu **aynı sunucu kodu** ürettiği için iki istemci birebir aynı sonucu verir.
-- Çizim, canlı video kodlamasından bağımsız olduğu için akıcı kalır; istemci yalnızca nokta listesine ekleme yapar.
-- Duraklatma sırasında yapılan çizimler, kayıt devam ettiğinde olay zamanıyla videoya girer. Silinen çizim, silme olayından sonraki karelerde çizilmez.
-- Kırpma, MP4 üzerinde ffmpeg ile yapılır.
-- Expo Go'da çalışır. Native ekran kaydı modülü ve development build gerekmez.
-
-**Bilinen kısıtlar**
-
-- Çıktı tarayıcı veya cihaz ekranının birebir kaydı değildir. Görev metni, kayda soru görseli ve çizimlerin girmesini yeterli saydığı için bu yaklaşım kabul edilmiştir.
-- Önizleme, sunucunun ürettiği MP4 ile yapılır; kayıt bittikten sonra kısa bir işleme süresi olur.
-- Canlı çizim (web canvas, mobil Skia) ile sunucudaki çizimin aynı görünmesi için çizgi yumuşatma kodu ortak tutulacaktır.
-
-**Değerlendirilip seçilmeyen yöntemler**
-
-- *Webde `MediaRecorder` ile gerçek kayıt, mobilde olay günlüğü:* iki ayrı hat gerektirdiği ve "aynı sonuç" beklentisini zorlaştırdığı için seçilmedi. Web tarafında sorun çıkarsa yedek plan olarak kullanılabilir.
-- *Mobilde native ekran kaydı:* Expo Go'da çalışmadığı, development build gerektirdiği ve değerlendiricinin kurulumunu zorlaştırdığı için seçilmedi.
-
-### 2. Sunucu, veritabanı, kimlik doğrulama ve dosya deposu
-
-**Karar:** Sunucu **Node.js + Express**. Veri, kimlik doğrulama ve dosyalar tek bir **Supabase** projesinde (ücretsiz plan) tutulur:
-
-- **Veritabanı:** Supabase'in barındırdığı PostgreSQL. Sunucu, Postgres bağlantı adresiyle doğrudan SQL çalıştırır; Supabase'in otomatik REST API'si ve RLS kuralları kullanılmaz.
-- **Kimlik doğrulama:** Supabase Auth. Yönetici, öğretmen hesaplarını sunucu üzerinden (`service_role` anahtarıyla) oluşturur, günceller ve siler. Herkese açık kayıt yoktur. Branş ve rol bilgisi uygulamanın kendi tablosunda tutulur.
-- **Dosya deposu:** Supabase Storage (özel bucket). Soru görselleri, kayıt dosyaları ve üretilen MP4'ler burada durur. Atanmamış soruya erişimi engellemek için dosyalara kısa süreli imzalı adresle erişilir.
-- **Web ve mobil yalnızca Express API'siyle konuşur.** Supabase anahtarları (`service_role`, veritabanı şifresi) yalnızca sunucudadır, `.env` dosyasında durur ve repoya girmez.
-
-**Gerekçe**
-
-- Tek hesapta veritabanı, auth ve dosya deposu; Docker veya yerel Postgres kurulumu gerekmez.
-- ffmpeg ile MP4 üretimi, e-posta ve push gibi işler Supabase'de yapılamayacağı için Express sunucusu kalır.
-
-**Bilinen kısıtlar**
-
-- Ücretsiz plan: tek dosya en fazla 50 MB, toplam dosya deposu 1 GB, veritabanı 500 MB. Bu yüzden videolar kısa tutulur.
-- Ücretsiz projeler bir hafta kullanılmazsa duraklatılır; dashboard'dan devam ettirilir.
-- Supabase Auth token'ı, kullanıcı silinse de süresi dolana kadar geçerlidir. "Silinen öğretmen giriş yapamamalı ve açık oturumu kapanmalı" şartı için sunucu her istekte kullanıcının uygulama tablosunda hâlâ var olduğunu kontrol eder; yoksa 401 döner, istemci oturumu kapatır.
-- Değerlendirenin uygulamayı çalıştırması için kendi Supabase projesini açması gerekir; adımlar README'nin kurulum bölümünde anlatılacaktır.
-
-**Supabase proje ayarları**
-
-- **Data API kapalı.** Sunucu veritabanına doğrudan Postgres bağlantısıyla eriştiği ve web/mobil Supabase'e bağlanmadığı için tabloların REST olarak açılmasına gerek yoktur; böylece saldırı yüzeyi küçülür. Auth ve Storage bu ayardan etkilenmez.
-- **Yeni kullanıcı kaydı kapalı** (Authentication > Sign In / Providers > "Allow new users to sign up"). Supabase'in kayıt uç noktası proje adresini bilen herkese açık olduğundan, "herkese açık kayıt formu olmamalı" şartı bu ayarla da güvence altına alınır. Hesapları yalnızca yönetici, sunucu üzerinden oluşturur.
-- **Veritabanı bağlantısı: Session pooler (port 5432).** Direct connection ücretsiz planda yalnızca IPv6 destekler ve bazı ağlarda bağlanamaz; Transaction pooler prepared statement gibi oturum özelliklerini desteklemez. Session pooler IPv4'te çalışır ve `pg` kütüphanesini olduğu gibi kullanmamıza izin verir.
-- Bağlantı SSL ile şifrelidir. Sertifika zinciri doğrulanmaz (`rejectUnauthorized: false`); ileride Supabase CA sertifikası eklenerek sıkılaştırılabilir.
-- Bağlantı doğrulaması için `npm run check:supabase -w server` komutu veritabanı, Auth ve Storage'ı dener; geçici kayıtları oluşturup siler.
-- Ortam değişkenleri `server/.env` dosyasındadır (örnek: `server/.env.example`). `SUPABASE_URL` sonundaki `/rest/v1/` gibi ekler kodda temizlenir.
-
-### 3. E-posta
-
-**Karar:** Nodemailer + Gmail SMTP (uygulama şifresiyle). Atama kaydedildiği anda öğretmene e-posta gider.
-
-### 4. Web uygulaması
-
-**Karar:** Vite + React, yönetici ve öğretmen ekranları **tek uygulamada**, role göre ayrılmış yollarla (`/admin`, `/teacher`). Giriş ve API kodu paylaşıldığı için iki ayrı uygulamaya göre tekrar azalır. Yetki kontrolü istemcide değil sunucudadır.
-
-### 5. Mobil geliştirme ve test
-
-**Karar:** Expo (React Native), telefon ve tablet için tek uygulama. Geliştirme MacBook üzerinde, Xcode'daki iOS ve iPad simülatörleriyle yapılır.
-
-**Bilinen kısıtlar**
-
-- Simülatörde kamera yoktur ve uzaktan push bildirimi alınamaz. Kamera bindirmesi ve push için gerçek cihaz gerekir.
-- Mobil uygulama Expo (SDK 58) boş TypeScript şablonuyla kuruldu; Expo Go ile iOS simülatöründe çalıştırılır (`npm run dev:mobile`, ardından `i` tuşu). Navigasyon kütüphanesi henüz seçilmedi.
-- `shared/` paketi mobilde çalışır: Metro ortak paketi workspace üzerinden çözer, ek ayar gerekmez. iOS simülatöründe doğrulandı.
-
-### 6. Dil: TypeScript
-
-**Karar:** Sunucu, web ve mobilin tamamı TypeScript ile yazılır; hafif ayarlarla (tipleri susturmak için `any` kullanılmaz).
-
-**Gerekçe**
-
-- Üç parça (sunucu, web, mobil) aynı veriyi kullanır: çizim olayı formatı, atama durumları (Atandı / Onaya gönderildi / Onaylandı / Geri gönderildi), API cevapları. Tür tanımı, bu parçalar arasındaki uyumsuzlukları kod çalışmadan yakalar.
-- Tipler kodun belgesi gibidir, kodu açıklamayı kolaylaştırır.
-- JavaScript'ten TypeScript'e sonradan geçmek, baştan başlamaktan çok daha pahalıdır.
-
-**Bilinen kısıtlar**
-
-- Ek ayar dosyaları ve tip yazma zamanı.
-- Ortak tiplerin mobil uygulamada (Metro) sorunsuz çalışması ilk iskelette doğrulanır; olmazsa küçük tip dosyaları kopyalanır.
-
-### 7. Klasör düzeni: tek repo, ortak paket
-
-**Karar:** Tek repoda npm workspaces ile dört paket:
-
-```
-server/   Express sunucusu
-web/      Vite + React (yönetici ve öğretmen)
-mobile/   Expo uygulaması
-shared/   ortak tipler ve fonksiyonlar
-```
-
-`shared/` içinde sunucu, web ve mobilin ortak kullandığı tipler (çizim olayı formatı, atama durumları, branş listesi, API biçimleri) ve küçük ortak fonksiyonlar (özellikle çizgi yumuşatma) bulunur. Böylece ekranda çizilen çizgi ile sunucunun videoya işlediği çizgi aynı koddan çıkar.
-
-**Bilinen kısıtlar**
-
-- Mobil uygulamanın (Metro) `shared/` paketini tanıması ek ayar gerektirebilir. Sorun çıkarsa ortak paket bırakılır, tipler her pakette ayrı tutulur.
-
-### 8. İş kuralları
-
-**Atama**
-
-- Bir soru yalnızca **sorunun branşındaki** öğretmenlere atanabilir (ilk atama dahil).
-- Aynı soru aynı öğretmene **ikinci kez atanamaz.** Yönetici videoyu geri gönderirse atama aynı kalır; öğretmen aynı atama üzerinde videosunu yeniden çeker veya düzenleyip yeniden onaya gönderir.
-- Aynı soru, aynı branştaki birden fazla öğretmene atanabilir; her öğretmen kendi kaydını üretir.
-
-**Silinen öğretmen**
-
-- Hesap **kapatılır** (Supabase Auth kaydı silinir, açık oturumlar geçersiz olur). Öğretmenin atamaları, kayıtları ve hata bildirimleri veritabanında **kalır** (yumuşak silme).
-
-**Kazanımlar**
-
-- Verilen JSON'daki **tüm kazanımlar** (6.411 kayıt) veritabanına yüklenir. JSON, anahtarı hiyerarşik kod olan düz bir listedir; kod ve açıklama olduğu gibi saklanır.
-- Her kazanıma, kodunun ön ekine göre bir **branş** eşlenir:
-
-| Kod ön eki | Ders (JSON'da) | Branş |
-|---|---|---|
-| TDE, TÜR | Türk Dili ve Edebiyatı, Türkçe | Türkçe |
-| MAT, GEO | Matematik, Geometri | Matematik |
-| FİZ | Fizik | Fizik |
-| KİM | Kimya | Kimya |
-| BİY | Biyoloji | Biyoloji |
-| COG, TAR, FEL, DİN, İNG, ROOT | Coğrafya, Tarih, Felsefe, Din Kültürü, İngilizce, Tüm Dersler | Branş yok (boş) |
-
-- Soruların branşı, sorunun kazanımının ön ekinden belirlenir (soru paketinde branş alanı yoktur).
-
-**Hata bildirimi**
-
-- Türler: *Soru metninde hata, Şıklarda hata, Yazım yanlışı, Kırpma hatası, Cevap anahtarı hatası, Kazanım hatası* ve serbest metin (*Diğer*).
-- Soru paketinde soru metni ve şıklar bulunmadığı için bu alanlara işaret etme, ilgili **tür seçilerek** yapılır.
-
-### 9. Veritabanı şeması
-
-Şema düz SQL ile yazılır ve `server/db/migrations/` altındaki numaralı dosyalarla yönetilir; `npm run db:migrate -w server` bunları sırayla uygular (uygulananlar `schema_migrations` tablosunda tutulur, tekrar çalıştırmak zararsızdır). ORM kullanılmaz, sunucu `pg` ile SQL çalıştırır.
-
-| Tablo | İçerik |
-|---|---|
-| `profiles` | Yönetici ve öğretmenler: ad, soyad, e-posta, rol, branş, `auth_user_id`, `deleted_at` |
-| `learning_outcomes` | Kazanımlar: kod (benzersiz), açıklama, branş (boş olabilir) |
-| `questions` | Sorular: görsel yolu, branş, cevap anahtarı (A–E), paketteki orijinal kimlik (`source_id`), sayfa ve soru no |
-| `question_outcomes` | Soru–kazanım ilişkisi (bir soruda birden fazla kazanım) |
-| `assignments` | Atama: soru, öğretmen, durum (`assigned`, `submitted`, `approved`, `returned`), geri gönderme notu. `(soru, öğretmen)` benzersiz |
-| `recordings` | Atamanın güncel videosu (atama başına en fazla bir), durum (`processing`, `ready`, `failed`); öğretmen silince satır ve dosya **kalıcı silinir** |
-| `recording_history` | Her kırpma/silme düzenlemesinden önceki sürüm ("Geri al" için) |
-| `peer_checks` | Çapraz kontrol: bir videoya (kayıt) başka bir öğretmenin "hatasız / hatalı" değerlendirmesi ve isteğe bağlı notu; video başına kontrol eden başına tek satır |
-| `notifications` | Bildirim: alıcı, atama, tür, `read_at` (boşsa okunmamış). Metin saklanmaz, gösterilirken üretilir |
-| `error_reports` | Hata bildirimi: soru, gönderen öğretmen, tür, açıklama, isteğe bağlı ek |
-
-**Normalizasyon:** Şema **3NF**'yi, tabloların çoğunda BCNF'yi sağlar. Bilinçli tavizler:
-
-- Kazanımın branşı koddan türetilir ama yükleme sırasında bir kez hesaplanıp saklanır (branşa göre hızlı arama için).
-- Sorunun branşı yüklemede ilk kazanımdan alınır, sonra bağımsız bir bilgidir.
-- Branş değerleri ayrı tablo yerine `CHECK` kısıtıyla sınırlanır.
-- Soru metni ve şıklar pakette olmadığı için şemada yoktur; gerekirse ayrı bir `question_options` tablosu eklenir (şıkları tek sütunda liste tutmak 1NF'yi bozardı).
-
-**Veritabanı kuralları:** Öğretmenin branşı zorunlu, yöneticinin branşı yoktur. E-posta yalnızca silinmemiş kullanıcılarda benzersizdir (silinen öğretmenin e-postası yeniden kullanılabilir). Aynı soru aynı öğretmene iki kez atanamaz. Hata bildiriminde ek dosya ile türü birlikte dolu ya da birlikte boştur.
-
-**Uygulama kodunda denetlenen kurallar** (tek tabloyla ifade edilemediği için): öğretmen yalnızca sorunun branşındaki soruya atanabilir; her sorunun en az bir kazanımı olmalıdır.
-
-**Güvenlik:** Tüm tablolarda satır düzeyi güvenlik (RLS) açıktır ve politika yoktur; Data API ileride açılsa bile `anon` ve `authenticated` roller hiçbir satıra erişemez. Sunucu `postgres` rolüyle bağlandığı için etkilenmez.
-
-### 10. Örnek veri, hesaplar ve yükleme
-
-**Yükleme:** `npm run db:seed -w server` (önce `npm run db:migrate -w server`). Script kazanımları, 10 soruyu (görselleriyle) ve örnek hesapları yükler. Tekrar çalıştırmak güvenlidir: var olan kayıtlara dokunulmaz, yöneticinin panelden yaptığı değişiklikler korunur.
-
-**Alan eşlemesi (soru paketi → veritabanı):**
+10 JPEG soru, soru bilgisi ve kazanım listesi `npm run db:seed -w server` ile yüklenir (paket repoda `Örnek sorular/` klasöründedir). Yükleme tekrar çalıştırılabilir; var olan kayıtlara dokunmaz.
 
 | Pakette | Veritabanında |
 |---|---|
 | `id` | `questions.source_id` |
 | `answerKey` | `questions.answer_key` |
-| `outcomeKeys` | `question_outcomes` (kod, `learning_outcomes.code` ile eşleşir) |
+| `outcomeKeys` | `question_outcomes` (kazanım koduyla eşleşir) |
 | `questionNumber`, `page_num` | `questions.question_number`, `questions.page_num` |
-| `<id>.jpg` görseli | Supabase Storage, özel `question-images` bucket'ı; yolu `questions.image_path` |
-| *(branş alanı yok)* | Sorunun ilk kazanımının kod ön ekinden belirlenir (bkz. Karar 8) |
-| `learningOutcomes`, `s3imageUrl`, `bbox`, `createdAt`, `updatedAt`, `index`, `name`, `searchGrade`, `sourceId`, `sourceMetadata`, `type`, `userId` | Kullanılmaz (kazanım açıklamaları kazanım listesinden gelir) |
+| `<id>.jpg` | Supabase Storage, özel `question-images` bucket'ı |
+| *(branş alanı yok)* | Sorunun ilk kazanımının kod ön ekinden belirlenir |
+| Kazanım JSON'u (kod → açıklama) | `learning_outcomes` (6.411 kaydın tamamı) |
 
-Kazanım dosyası: anahtar → `learning_outcomes.code`, değer → `learning_outcomes.description`. Dosyadaki 6.411 kaydın tamamı yüklenir; dağılım: Türkçe 1.627, Matematik 736, Fizik 686, Kimya 599, Biyoloji 630, branşsız 2.133.
+Kazanım kodu ön eki branşı belirler: `TDE`/`TÜR` Türkçe, `MAT`/`GEO` Matematik, `FİZ` Fizik, `KİM` Kimya, `BİY` Biyoloji; diğer ön ekler (`COG`, `TAR`, `FEL`, `DİN`, `İNG`) branşsızdır. Soru metni ve şıklar pakette olmadığından saklanmaz; hata bildiriminde bu alanlar hata türü seçilerek ve görsel üzerinde yer işaretlenerek belirtilir.
 
-Soru metni ve şıklar pakette bulunmadığı için saklanmaz; hata bildiriminde bu alanlar, hata türü seçilerek belirtilir.
+Şema `server/db/migrations/` altındaki numaralı SQL dosyalarıyla yönetilir; tüm tablolarda satır düzeyi güvenlik açıktır ve politika yoktur.
 
-**Örnek hesaplar** (herkese açık demo hesaplarıdır):
+## E-posta
 
-| Rol | Branş | E-posta | Şifre |
-|---|---|---|---|
-| Yönetici | – | `admin@example.com` | `Admin12345!` |
-| Öğretmen | Türkçe | `turkce@example.com` | `Ogretmen12345!` |
-| Öğretmen | Matematik | `matematik@example.com` | `Ogretmen12345!` |
-| Öğretmen | Fizik | `fizik@example.com` | `Ogretmen12345!` |
-| Öğretmen | Kimya | `kimya@example.com` | `Ogretmen12345!` |
-| Öğretmen | Biyoloji | `biyoloji@example.com` | `Ogretmen12345!` |
+Atama kaydedilir kaydedilmez öğretmene e-posta gider (branş, soru, kazanım kodları ve uygulama bağlantısı). Yönetici öğretmen oluşturunca giriş bilgileri de e-postayla gider. Nodemailer ile **Gmail SMTP** kullanılır:
 
-**E-posta testi:** Örnek öğretmen adresleri (`example.com`) gerçek bir posta kutusuna ait değildir, e-posta almazlar. Atama e-postasının gerçekten ulaştığını görmek için yönetici panelinden **kendi e-posta adresinle yeni bir öğretmen oluşturup** ona soru atayın.
+1. Gönderici Gmail hesabında *2 Adımlı Doğrulama*'yı açın.
+2. *Güvenlik > Uygulama şifreleri*nden 16 haneli bir şifre üretin (normal şifreniz değil).
+3. `server/.env` içine `SMTP_USER=<gmail adresi>` ve `SMTP_PASS=<uygulama şifresi>` yazın; isteğe bağlı `MAIL_FROM` ve `APP_URL` (e-postadaki bağlantı, varsayılan `http://localhost:5173`).
+4. Sunucuyu yeniden başlatın.
 
-### 11. Video çıktısı ve çizim tahtası
+Ayar yoksa atama yine yapılır, yalnızca e-posta gitmez. `example.com` adresleri gerçek posta kutusu değildir; e-postayı görmek için yönetici panelinden **kendi adresinizle bir öğretmen oluşturup** ona soru atayın.
 
-**Karar**
+## Push
 
-- **Çıktı:** 1280×720 (16:9), 15 kare/sn, H.264/AAC MP4. Kayıt **en fazla 3 dakika** (ücretsiz Supabase planında tek dosya sınırı 50 MB).
-- **Tahta:** Çizim yüzeyi, soru görselinden bağımsız, **sabit 1280×720 mantıksal koordinat sistemidir.** Soru görseli tahtanın sol tarafına oranı korunarak yerleştirilir; geri kalan alan çözümü yazmak için boştur. Çizimler ve silgi hareketleri bu tahta koordinatlarında, kayıt süresine göre zaman damgalı olarak saklanır.
-- **Katmanlar:** Beyaz zemin, soru görseli, bunun üstünde şeffaf bir *çizim katmanı*. Silgi soru görseline dokunmaz.
-- **Silgi parça silgisidir:** Çizgiye (kenarına, ucuna bile) değdiği anda o çizginin **tamamı** silinir; alan silgisi değildir. Video, çizginin silindiği andan itibaren onu göstermez.
-- **Çizim günlüğü:** Olaylar gerçekleşme sırasıyla tutulur: `stroke` (kalemle çizilmiş çizgi: renk, kalınlık, zamanlı noktalar) ve `erase` (silinen çizgi ve zamanı). Sıra, zaman damgaları eşit olduğunda (örneğin duraklatma sırasında) neyin önce olduğunu belirler.
-- **Duraklatma:** Kayıt saati durur. Duraklatma sırasında yapılan çizimler duraklatma anının zaman damgasını alır; kayıt devam ettiğinde videoda ilk karede görünür.
+Öğretmen mobil uygulamaya girince Expo push jetonu sunucuya kaydedilir (bir öğretmenin birden çok cihazı olabilir). Atamada sunucu, jetonlara **Expo Push API** ile bildirim gönderir; jeton yoksa (uygulama yüklü değil) sessizce geçilir. Bildirime dokunmak ilgili soruyu açar. Aynı bildirim web ve mobil dashboard'unda da görünür, okununca "okundu" olur. Sunucuda ek ayar gerekmez; mobilde girişte bildirim izni istenir.
 
-**Gerekçe**
+**Push yalnızca gerçek cihazda çalışır** (simülatör uzaktan push alamaz); iOS'ta Expo Go için cihazın Expo hesabına bağlı bir proje kimliği gerekebilir.
 
-- Soru görselleri 618–1386 piksel yükseklikte ve oranları çok farklıdır; sabit tahta sayesinde web, mobil ve tablet aynı koordinatlarla aynı videoyu üretir, ekran boyutu sonucu etkilemez.
-- Görseller küçük olduğundan, çözümü yazmak için görselin dışında da boş alan gerekir.
-- Kalem çizgisi, noktaların orta noktalarından geçen yumuşatılmış eğrilerle (ikinci derece Bézier, yuvarlak uçlu) çizilir; küçük ve hızlı el hareketlerinde (örneğin küçük bir "3") köşeli görünmez. Ekranda ve videoda aynı koddan çizilir.
+## Varsayımlar
 
-**Bilinen kısıtlar**
+- Soru ilk atamada da yalnızca **kendi branşındaki** öğretmene atanır; aynı soru aynı öğretmene ikinci kez atanamaz.
+- Öğretmene **cevap anahtarı gösterilmez**, kazanımlar gösterilir.
+- Çapraz atanan öğretmen yalnızca **onaya gönderilmiş veya onaylanmış** videoları görür; taslak ve geri gönderilmiş videoları görmez.
+- Hata bildirimine her türde ek eklenebilir: ekran görüntüsü (en fazla 5 MB) veya en fazla 1 dk video (en fazla 30 MB).
+- Geri gönderme notu en fazla 500 karakterdir. Onay ve geri gönderme öğretmene bildirim olarak gider.
+- Mobil uygulama yalnızca öğretmenler içindir; yönetici girişi web panelindedir.
 
-- Çok uzun (dikey) soru görselleri 720 piksel yüksekliğe sığması için küçültülür (en uzun örnek yaklaşık %46); okunabilirlik gerçek videoda kontrol edilecek, gerekirse çözünürlük artırılır.
+## Bilinen sınırlar
 
-**Sunucu renderer'ı (`server/src/render/renderVideo.ts`)**
-
-- Kareler `@napi-rs/canvas` ile çizilir, ham piksel olarak `ffmpeg`'e (`ffmpeg-static` paketi, ayrıca kurulum gerektirmez) verilir; H.264 + AAC, `yuv420p` MP4 üretilir. Çizim kodu (`shared/src/drawing.ts`) istemcilerle ortaktır.
-- Her karede, o ana kadar gerçekleşen çizim adımları (çizgiler ve silmeler) çizim katmanına işlenir; bir çizgi silindiğinde katman temizlenip silinmemiş çizgiler yeniden çizilir. Değişiklik olmayan karelerde önceki kare yeniden kullanılır.
-- Deneme: `npm run render:demo -w server -- <çıktı klasörü> [süre sn]` elle hazırlanmış olaylarla (kalem, silgi, duraklatma sırasında çizim, ses) MP4 üretir.
-- **Doğrulandı:** MP4 1280×720, 15 kare/sn, ses akışı var ve sessiz değil; çizim zamanla ilerliyor; silgi bir çizgiye (yalnızca ucuna değse bile) değince çizginin tamamı silme anından itibaren videodan kalkıyor, soru görseline dokunmuyor ve geri gelmiyor; duraklatma sırasında yapılan çizim, devam anının ilk karesinde görünüyor; küçük bir "3" yalnızca 9 seyrek noktadan akıcı bir eğri olarak çiziliyor.
-- **Ölçüm:** 3 dakikalık video yaklaşık 11 saniyede üretildi (~17 kat gerçek zamanlı), dosya 2,7 MB.
-
-### 12. Web tahtası: HTML canvas
-
-**Karar:** Web'de çözüm tahtası ham HTML canvas ile yapılır (`web/src/studio/Board.tsx`); SVG veya çizim kütüphanesi kullanılmaz.
-
-**Gerekçe:** Çizim akıcılığı görevin en kritik ölçütlerinden biridir. Canvas'ta işaretçi olayları React'ten geçmeden doğrudan çizime çevrilir; böylece çizgi işaretçiyi gecikmeden izler ve silgi davranışı üzerinde tam kontrol kalır.
-
-**Nasıl çalışır**
-
-- İki katman: zemin (beyaz + soru görseli) ve şeffaf çizim katmanı. Katmanlar 1280×720 mantıksal çözünürlüktedir, CSS ile ekrana sığdırılır.
-- Silgi parça silgisidir: silgi işaretçisi bir çizgiye değdiğinde (hızlı harekette üstünden atlamasın diye yolu küçük adımlarla taranır) çizginin tamamı silinir.
-- Pointer Events kullanılır (fare, kalem ve dokunmatik aynı kodla). İşaretçi yakalanır, ikinci parmak yok sayılır.
-- Hızlı harekette tarayıcının iki olay arasında biriktirdiği ara noktalar da alınır (`getCoalescedEvents`), çizgi kopmaz.
-- Her noktanın kayıt süresi, olayın gerçekleştiği an esas alınarak hesaplanır ve geriye gitmez.
-- Çizim, sunucudaki renderer'la aynı `InkPainter` sınıfıyla yapılır (`shared/`).
-- `desynchronized` canvas ipucu ile tarayıcıdan çizimi daha düşük gecikmeyle ekrana göndermesi istenir.
-
-**Doğrulama (Chrome, otomatik):** kalem çiziyor; silgi bir çizginin ucuna değince tüm çizgiyi siliyor, uzaktaki çizgilere ve soru görseline dokunmuyor; küçük bir "3" akıcı çıkıyor. Yoğun kalem hareketinde (1.500 `pointermove`) olay işleme süresi ortalama 0,13 ms, en yüksek 0,5 ms; 40 çizgi varken silgi hareketinde ortalama 0,37 ms, en yüksek 4 ms ölçüldü. Bu, yalnızca yazılımın olay işleme süresidir; ekrandaki algılanan gecikme gerçek fare, kalem veya dokunmatikle elle de denenmelidir.
-
-### 13. Web kayıt akışı
-
-**Akış:** Başlat → kayıt sürerken Duraklat / Devam et ve Bitir, süre göstergesi (en fazla 3:00) → Bitir sonrası sunucu MP4'ü üretir, önizleme sayfada oynatılır.
-
-**Önizleme** (`web/src/studio/VideoPreview.tsx`): Tarayıcıların hazır video kontrolleri bitince yeniden oynatmayı her yerde göstermediği için kendi oynatıcımız vardır: her zaman görünen Oynat/Duraklat düğmesi (bitince "Baştan oynat"), konum çubuğu, süre göstergesi ve videoya tıklayarak oynat/duraklat. **Kaydet** düğmesi şimdilik MP4'ü bilgisayara indirir; sisteme kaydetme (atamaya bağlı) giriş ve atama sistemiyle gelecektir.
-
-**Nasıl çalışır** (`web/src/studio/useRecorder.ts`)
-
-- **Kayıt saati** yalnızca kayıt sürerken ilerler, duraklatınca donar. Çizim zaman damgaları bu saate göre alınır; bu yüzden duraklatma süresi videoya girmez ve duraklatma sırasında yapılan çizimler (hepsi duraklatma anının zamanını taşır) devam edildiğinde videoda belirir.
-- **Ses** `MediaRecorder` ile kaydedilir (Chrome'da webm/opus, Safari'de mp4); duraklat/devam aynı ses dosyasına devam eder. Saat, ses kaydı gerçekten başladığı anda sıfırlanır; böylece ses ve çizim aynı anda başlar.
-- **Kayıt başlamadan önce ve bittikten sonra tahtaya çizilemez.** Duraklatmada çizilebilir.
-- Süre sınırına (3 dk) gelince kayıt kendiliğinden biter.
-
-**Engelleyici durumlar:** Mikrofon izni verilmediyse, mikrofon bulunamazsa veya açılamazsa kayıt başlamaz ve anlaşılır bir uyarı gösterilir. Kayıt sırasında mikrofon bağlantısı kesilirse kayıt bitirilemez ve uyarı gösterilir. Soru görseli seçilmeden kayıt başlatılamaz.
-
-**Geçici geliştirme uç noktaları:** Giriş ve atama sistemi henüz olmadığı için kayıt `POST /api/dev/render` ile sunucuya gönderilir (görsel, ses, çizim günlüğü, süre); sunucu MP4'ü üretir ve `{ id, renderMs, sizeBytes }` döndürür. Video, `GET /api/dev/video/:id` adresinden sunulur (aralık isteği destekli, yani oynatıcılarda ileri-geri sarma çalışır; kimlik biçimi doğrulanır, bir saat sonra silinir). Web ve mobil videoyu bu adresten oynatır. Bu uç nokta **kimlik doğrulaması ve atama kontrolü içermez**, yalnızca `NODE_ENV !== 'production'` iken açılır ve atamaya bağlı gerçek yükleme uç noktası yazılınca kaldırılacaktır. Sunucu, gelen çizim günlüğünü doğrular (şekil, sayı sınırları, zaman damgalarının geriye gitmemesi, yalnızca daha önce çizilmiş bir çizginin silinebilmesi); bozuk istekler 400 döner. Geliştirmede web, `/api` isteklerini Vite proxy'siyle sunucuya yönlendirir.
-
-**Doğrulama (Chrome, sahte mikrofonla otomatik):** kayıt başlamadan çizim engelli; başlat–çiz–duraklat–duraklatmada çiz–devam–çiz–sil–bitir akışı çalışıyor; üretilen MP4 1280×720, 15 kare/sn, AAC ses akışı var ve sessiz değil; video süresi kayıt saatiyle aynı (duraklatma süresi çıkarılmış); duraklatmada çizilen çizgi devam anından itibaren görünüyor; silinen çizgi silme anından sonra videoda yok; mikrofon izni reddedilince Türkçe uyarı çıkıyor, kayıt başlamıyor.
-
-**Doğrulanmadı:** gerçek mikrofonla ses–çizim eşzamanlılığı ve uzun kayıtlarda tarayıcı davranışı (elle denenmeli).
-
-### 14. Mobil stüdyo: Skia ile çizim, expo-audio ile ses
-
-**Karar:** Mobil stüdyoda çizim **`@shopify/react-native-skia`** ile yapılır; ses kaydı **`expo-audio`** ile yapılır. Çizim modeli (çizgi/silme olayları, yumuşatma, kayıt saati) web ile aynıdır; video yine sunucuda üretilir.
-
-**Gerekçe:** Çizim akıcılığı görevin en kritik ölçütüdür. Skia GPU destekli çizim yapar. `react-native-svg` her noktada bileşen güncellemesi gerektirdiği için canlı çizimde gecikme riski taşır; WebView'a gömülen web tahtası ise hem dokunma gecikmesi getirir hem de "React Native uygulaması" olarak sayılmayabilir.
-
-**Nasıl çalışır** (`mobile/src/studio/`)
-
-- **Ortak çizim kodu:** `shared/` içindeki `InkPainter` (çizim) ve `InkController` (kalem/silgi etkileşimi) mobilde de aynen kullanılır; web, mobil ve sunucudaki video aynı koddan çıktığı için çizgiler aynıdır. `SkiaDrawingContext`, ortak kodun tarayıcı canvas'ına benzeyen çağrılarını (`moveTo`, `quadraticCurveTo`, `stroke`) Skia yoluna (`PathBuilder`) çeviren küçük bir adaptördür.
-- **Çizim yüzeyi:** 1280×720 mantıksal boyutlu ekran dışı bir Skia yüzeyine çizilir; her ekran karesinde en fazla bir kez görüntüsü alınır ve paylaşılan değer (Reanimated) ile ekrandaki canvas'a verilir, böylece React her çizgi noktasında yeniden çizilmez.
-- **Ekran yönü:** **Telefonda yalnızca yatay**, dikey ve yatay yalnızca **tablette** desteklenir. Uygulama açılınca ekranın kısa kenarına bakılır (600 birim ve üstü tablet sayılır); telefonda ekran yataya kilitlenir (`expo-screen-orientation`), tablette kilit kaldırılır. Kilit uygulanana kadar telefonda dikey arayüz hiç gösterilmez; sistem kilidi reddederse (iOS 27+'da yeniden boyutlanabilir iPhone uygulamalarında olabilir) kısa bir bekleyişten sonra mevcut yönde çalışmaya devam edilir. iPhone simülatöründe dikey açılan uygulamanın kendiliğinden yataya döndüğü, iPad simülatöründe kilitlenmediği ve iki yönde de çalıştığı doğrulandı. Not: yön kilidi çalışma zamanında uygulanır; mağaza yapısında başlangıç yönü `Info.plist` ile de sınırlanabilir.
-- **Yerleşim:** Her iki yönde ve her cihazda **aynı** yerleşim kullanılır: soru tahtası ekrana oranını koruyarak sığar (durum çubuğu gizlenir), kalem/silgi/kayıt kontrolleri tahtanın sağ kenarında dikey sütun olarak yüzer, süre sağ üstte durur. Tahta video çıktısıyla aynı 16:9 oranındadır; bu yüzden tablet dikeyde tahta ekran genişliğini doldurur, yükseklikte boşluk kalır. Tüm kontroller aynı küçük yuvarlak düğme tasarımındadır (`StudioControls`), seçili araç mavi çerçevelidir. Ekran çentiği ve kenar boşlukları `react-native-safe-area-context` ile hesaplanır. Ekran dönse de aynı bileşen ağacı korunur; tahta yeniden oluşmaz ve çizimler kaybolmaz. Geliştirici deneme düğmeleri arayüzden kaldırıldı.
-- **Kayıt kontrolleri:** ✏️ kalem, 🧽 silgi, ardından kayıt düğmeleri duruma göre değişir ve emoji yerine kendi çizdiğimiz sade simgelerdir (`icons.tsx`): bekleme kırmızı daire (başlat); kayıt sürerken iki çubuk (duraklat) ve kare (dur); duraklatılmışken üçgen (devam et) ve kare. Süre göstergesi (`00:12 / 03:00`) kayıtta kırmızı nokta, duraklatmada duraklatma simgesi gösterir ve duraklatınca donar. **Kayıt başlamadan da çizilebilir**; bu çizimler videonun ilk karesinden itibaren görünür (web'de şimdilik kayıttan önce çizilemez). Çizim kayıt sürerken ve duraklatmada da yapılır; kayıt 3 dakikada kendiliğinden biter.
-- **Mikrofon:** `expo-audio` (`useRecorder.ts`). Başlatırken mikrofon izni istenir; izin verilmezse kayıt başlamaz ve Türkçe uyarı gösterilir. Duraklatma `pause()`, devam etme `record()` çağrısıyla yapılır (aynı ses dosyasına devam eder; deneyle doğrulandı: duraklatma süresi ses dosyasına girmez). Kayıt sırasında kaydedici hata bildirirse kayıt bitirilemez. Kayıt saati ses kaydı başladığı anda sıfırlanır.
-- **Dur → hazırlama → izle → kaydet:** Dur (kare) ile ses dosyası, çizim günlüğü ve soru görseli sunucuya yüklenir (`/api/dev/render`); "Video hazırlanıyor…" katmanı gösterilir, hata olursa *Tekrar dene / Vazgeç* sunulur. Hazır olunca izleme ekranı açılır (`PreviewScreen`, `expo-video`): oynat/duraklat (bitince baştan oynatır), konum çubuğuna dokunarak ileri-geri sarma, süre. **Kaydet**, videoyu telefona indirir (`expo-file-system`) ve galeriye kaydeder (`expo-media-library`, `legacy` içe aktarması: güncel API'de `saveToLibraryAsync` kullanımdan kaldırılmıştır). **Yeni kayıt** tahtayı temizler. Yatayda video tam ekrandır ve kontroller altta yarı saydam bir şeritte durur.
-- **Sunucu adresi:** `EXPO_PUBLIC_API_URL` (varsayılan `http://localhost:4000`, iOS simülatörü içindir). Gerçek telefonda bilgisayarın yerel ağ adresi verilmelidir.
-- **Dokunma:** React Native'in kendi dokunma olayları (`onTouchStart/Move/End`) kullanılır: tanıma gecikmesi yoktur ve tek parmak izlenir. `react-native-gesture-handler` 3.x sürümünün API'si köklü biçimde değiştiği için ve çizim zaten JS tarafında yapıldığı için bu kütüphane çizimde kullanılmadı (kurulu; gerekirse navigasyon için kullanılabilir).
-- **Ses kaydı:** `expo-audio` (`AudioRecorder`: `record`, `pause`, `stop`, `uri`); Expo Go'da çalıştığı Expo SDK 58 dokümanından doğrulandı.
-
-**Doğrulama:** iOS simülatöründe (Expo Go) soru görseli, kalemle yumuşatılmış çizgiler (küçük bir "3" dahil) ve silgi, dokunmasız programatik denemeyle ekran görüntüleriyle doğrulandı: ucuna değen silgi çizginin tamamını sildi, diğer çizgiler kaldı. Gerçek dokunmayla akıcılık elle denenecektir.
-
-**Bilinen kısıtlar**
-
-- Expo SDK 58'in `fetch`'i, React Native'in eski `{ uri, name, type }` dosya biçimini **desteklemez** (hata: *Unsupported FormDataPart implementation*). Yükleme `expo/fetch` ve `expo-file-system`'ın `File` nesnesiyle yapılır.
-- Simülatörde mikrofon, Mac'in mikrofonunu kullanır; test ortamında ses sessiz gelebilir (ses akışı yine de oluşur). Gerçek ses elle denenmelidir. Galeriye kaydetme ilk kullanımda fotoğraf izni ister.
-- Expo Go'da galeri erişimi Android'de kısıtlıdır (Expo uyarısı); kaydetme iOS'ta doğrulandı.
-- Çizim yüzeyi **CPU** destekli oluşturulur. GPU destekli yüzey (`MakeOffscreen`) denendi; çizim yüzeyde vardı (piksel okuma ile doğrulandı) ama iOS simülatöründe ekrandaki canvas'a yansımadı. Gerçek cihazda GPU yüzeyi ayrıca denenebilir.
-- Etkileşim JS iş parçacığında işlenir; JS iş parçacığı meşgulse çizim gecikebilir. Akıcılık elle denenip gerekirse iyileştirilecektir.
-- Geliştirmede Metro'yu `CI=1` ile başlatmayın: bu modda dosya değişiklikleri izlenmez ve uygulama eski kodu çalıştırır. `npm run dev:mobile` yeterlidir.
-
-### MVP kapsamı (video stüdyosu)
-
-- Kalem ve silgi, tek renk ve tek kalınlık
-- Başlat, duraklat, devam ettir, bitir
-- Mikrofon izni yoksa kayıt bitirilemez, anlaşılır uyarı gösterilir
-- Sunucuda MP4 üretimi, kırpma (baştan/sondan)
-- **MVP sonrası:** kamera bindirmesi, ek renk/kalınlık
-
-## Açık noktalar ve kalan işler
-
-Görevin açık bıraktığı noktaların çoğu karara bağlandı (Karar 15–27). **Hâlâ açık olanlar** (varsayılan davranış yazılıdır, değiştirilebilir):
-
-- **Mevcut video görünürlüğü:** karara bağlandı (Karar 27): çapraz atanan öğretmen onaya gönderilmiş ve onaylanmış videoları izler.
-- **Branşı değişen öğretmenin mevcut atamaları:** şimdilik korunur (branş serbestçe değiştirilebilir).
-- **Yeni soru ekleme ekranı** ve **kazanım ekleme/silme:** yapılmadı; demo "paketten soru açma" ile yapılır, kazanım için zorunlu olan güncelleme vardır.
-- **Arka plana geçiş:** kayıt sırasında uygulama/sekme arka plana alınırsa, tarayıcıda ses kaydı sürebilir; mobilde işletim sistemi kaydı durdurabilir (gerçek cihazda ayrıca denenmelidir).
-- **Doğrulanamayanlar (simülatör/başsız tarayıcı sınırı):** gerçek mikrofonla ses senkronu, gerçek kamera ve kamera+mikrofonun iOS'ta birlikte çalışması, Apple Pencil, gerçek cihazda push.
-
-### Geçici uç noktalar kaldırıldı
-Kimlik doğrulamasız `/api/dev/*` uç noktaları, atamaya bağlı gerçek yükleme (`POST /api/teacher/assignments/:id/recording`) yazıldığı için **kaldırıldı**. `npm run render:demo` yalnızca renderer'ı elle denemek içindir.
-
-### Kamera bindirmesi ve tablet kalemi (uygulandı)
-- Kamera **web, tablet ve telefonda** vardır (telefonda önce yoktu; sonradan açıldı, Karar 38); isteğe bağlıdır. Açıksa tahtanın sağ altında 240x180 px dikdörtgen olarak hem kayıt ekranında görünür hem de sunucuda ffmpeg ile videoya bindirilir. İzin yoksa/kamera kapalıysa ekran ve sesle devam eder.
-- Web: kamera ayrı bir MediaRecorder klibidir, duraklat/devam ses ile birlikte yürür. Mobil: expo-camera kaydı duraklatamadığı için her duraklatmada klip kapanır, devamda yenisi açılır; sunucu klipleri art arda ekler.
-- Tablet kalemi: Apple Pencil/S Pen normal işaretçi olarak çizer; kalem kullanılırken parmak/avuç dokunuşları 1,2 sn yok sayılır (iOS `touchType`, web `pointerType`).
-- Doğrulanmadı: gerçek kamera (simülatörde yok), gerçek Apple Pencil, iOS'ta kamera + mikrofonun aynı anda çalışması.
-
-### Karar 15 — Giriş, oturum ve öğretmen yönetimi (başlandı)
-- **Tek web uygulaması, rol bazlı:** yönetici ve öğretmen aynı React uygulamasında, giriş yapan kullanıcının rolüne göre farklı ekranlar görür. Gerekçe: giriş, oturum ve stüdyo kodu tek yerde kalır; iki ayrı uygulama bakım ve zaman yükünü ikiye katlardı.
-- **Ortak giriş ekranı, iki sekme:** "Yönetici girişi" ve "Öğretmen girişi". Sekme, hesabın gerçek rolüyle karşılaştırılır; yönetici hesabı öğretmen sekmesinden (veya tersi) giremez ve doğru sekmeyi seçmesi söylenir. Hatalı e-posta/şifre ve silinmiş hesap aynı genel mesajı alır.
-- **Oturum:** istemciler Supabase'e bağlanmaz; `POST /api/auth/login` sunucuda Supabase Auth ile şifreyi doğrular, erişim + yenileme jetonu döner. Her istek `Authorization: Bearer` taşır, sunucu jetonu Supabase'e doğrulatır ve `profiles` kaydını (silinmemiş) okur. 401'de istemci bir kez yeniler, olmazsa oturumu kapatır. Web her 30 sn `/api/auth/me` sorgular (silinen öğretmenin oturumu otomatik kapanır).
-- **Öğretmen ekleme:** yönetici ad, soyad, e-posta, şifre (en az 8) ve branşı girer; sunucu Auth kullanıcısını açar, profil satırını yazar (profil yazılamazsa Auth kaydı geri silinir). Aynı e-posta ikinci kez eklenemez.
-- Şimdilik yapılan: giriş/çıkış, öğretmen listesi, öğretmen ekleme (web). **Sıradakiler:** mobil giriş, öğretmen güncelleme/silme.
-
-### Karar 16 — Renk paleti ve yönetici sayfa düzeni
-- **Renkler:** İşler Teknoloji sitesinden (islerteknoloji.com, CSS'inde en çok kullanılan renkler) alındı: turuncu `#f14e13` (ana vurgu, düğmeler), koyu patlıcan `#1a0e1c` (sol menü, başlıklar), adaçayı `#b5cbc8` (kenarlık, tablo başlığı), koyu bordo `#4f0006` (uyarı/geri gönderildi). İşler Yayınevi'nin ayrı bir kurumsal kılavuzuna ulaşılamadığı için aynı grubun sitesindeki palet esas alındı. Tüm renkler `web/src/index.css` başındaki CSS değişkenlerindedir; değiştirmek için orayı düzenlemek yeterli.
-- **Yönetici düzeni:** sol menülü tek sayfa uygulaması. Menü, görevdeki yönetici akışını izler: Panel, Öğretmenler, Sorular, Kazanımlar, Atamalar, Onay bekleyenler, Hata bildirimleri. Sayfa adreste `#/...` ile seçilir (yenilemede aynı sayfada kalır). Panel gerçek verilerle çalışır (öğretmen/soru/kazanım sayısı, atama durumu dağılımı, hata bildirimi sayısı); Öğretmenler listesi ve ekleme çalışır; diğer sayfalar yerleşim olarak hazır, içerikleri sıradaki adımlarda yapılacak.
-- Sıra: yönetici ekranları → öğretmen ekranları → mobil ve tablet.
-
-### Karar 17 — Öğretmen güncelleme ve silme
-- **Güncelleme:** ad, soyad, e-posta, branş ve şifre değiştirilebilir (şifre boş bırakılırsa değişmez). E-posta/şifre Supabase Auth'ta da güncellenir.
-- **Silme (yumuşak):** profil `deleted_at` ile işaretlenir ve Auth hesabı silinir; atama, kayıt ve hata bildirimleri yerinde kalır. Silinen öğretmen giriş yapamaz; açık oturumu bir sonraki istekte (en geç ~30 sn içinde) otomatik kapanır ve giriş ekranında "Oturumunuz sonlandırıldı" mesajı görünür. Silinen öğretmenin e-postası yeniden kullanılabilir.
-- **Branş değişikliği:** şimdilik serbest; mevcut atamalar korunur (bekleyen karar: branş değişince atamalara ne olacağı).
-
-### Karar 18 — Sorular, kazanım arama ve cevap anahtarı (yönetici)
-- **Sorular:** 10 soru veritabanından kart olarak listelenir (görsel, branş, cevap anahtarı, kazanım sayısı); karta tıklayınca detay açılır (`#/sorular/<id>`). Görseller özel Storage bucket'ındadır; ekrana 1 saatlik imzalı adresle verilir.
-- **Cevap anahtarı** (A–E) ve **kazanımlar** her değişiklikte anında veritabanına yazılır, ardından soru yeniden okunur; yenilemede kalıcıdır. Bir sorunun **en az bir kazanımı** olmalıdır: son kazanım çıkarılamaz (sunucu 409 döner).
-- **Kazanım ekleme:** arama kutusuna yazdıkça (250 ms gecikmeyle) sunucu, veritabanındaki kazanım listesini kod/açıklamaya göre süzer (ilk 30 sonuç); sonuca tıklayınca kazanım soruya eklenir. Varsayılan olarak yalnızca sorunun branşındaki kazanımlar aranır (onay kutusuyla tüm branşlar). Bir soruya birden fazla kazanım eklenebilir.
-- **Kazanımlar sayfası:** arama + branş süzme; bir kazanımın **açıklaması ve branşı** güncellenebilir (kod değişmez). Kazanım ekleme/silme yapılmadı (görevde zorunlu olan yalnızca güncelleme).
-- Soru paketinde soru metni ve şıklar yoktur (yalnızca görsel), bu yüzden hata bildiriminde bu alanlara işaret etme, görselin hangi bölümünü işaret ettiği olarak yorumlanacaktır (hata bildirimi adımında karara bağlanacak).
-
-### Karar 19 — Atama, e-posta ve push
-- **Atama kuralları:** soru yalnızca **kendi branşındaki** aktif öğretmene atanır; aynı soru **aynı öğretmene ikinci kez atanamaz** (409); aynı soru **farklı öğretmenlere** atanabilir, her öğretmen kendi kaydını üretir. Yeni atama durumu "Atandı"dır.
-- **Atamada olanlar:** atama ve bildirim satırı aynı veritabanı işleminde yazılır (biri başarısızsa ikisi de geri alınır). Ardından e-posta ve push ayrıca denenir; bunların hatası atamayı geri almaz. Arayüzde e-posta/push sonucu gösterilmez; yöneticiye yalnızca "X öğretmene atandı." denir (sunucu yanıtı `delivery` alanını yine de döndürür).
-- **Yönetici ekranları:** Atamalar sayfası (tüm atamalar, duruma göre süzme, yeni atama: soru seçince yalnızca o branştaki öğretmenler listelenir) ve soru detayında o soruya ait atamalar + atama formu. Sorular listesinde branş, atanma durumu ve metin (soru no, kazanım kodu/açıklaması) süzgeçleri vardır (cevap şıkkına göre süzme yoktur; cevap anahtarı soru detayında düzenlenir).
-
-**E-posta yaklaşımı ve kurulumu (Nodemailer + Gmail SMTP):** e-posta içeriği branş, soru ve kazanım kodlarını ve uygulama bağlantısını içerir. Kurulum: Google Hesabı'nda 2 Adımlı Doğrulama açık olmalı; Güvenlik > Uygulama şifreleri'nden 16 haneli bir şifre üretilir ve `server/.env` dosyasına `SMTP_USER` (Gmail adresi) ile `SMTP_PASS` (uygulama şifresi, normal şifre değil) yazılır; isteğe bağlı `MAIL_FROM` ve `APP_URL` tanımlanır (`server/.env.example`). Bu değerler tanımlı değilse atama yine yapılır ve ekranda "E-posta ayarı yapılmamış" uyarısı görünür. Test için alıcı olarak kendi e-posta adreslerinizle öğretmen oluşturulabilir.
-
-**Push yaklaşımı ve kurulumu (Expo Push):** mobil uygulama öğretmen girişi yapınca Expo push jetonunu `POST /api/push-token` ile sunucuya kaydeder (`push_tokens` tablosu, bir öğretmenin birden fazla cihazı olabilir). Atamada sunucu o öğretmenin jetonlarına Expo Push API'siyle (`exp.host`) bildirim gönderir; jeton yoksa (uygulama yüklü değil) sessizce geçilir. Expo Go'da ek anahtar gerekmez. Sunucu tarafı hazırdır; jetonu alıp gönderen mobil kısım mobil adımında yapılacak. Not: push, simülatörde değil gerçek cihazda denenebilir.
-
-### Karar 20 — Hız iyileştirmeleri
-Veritabanı ve Storage uzak (Supabase) olduğundan her ağ gidiş-dönüşü ~0,3 sn tutuyordu; liste 3,5 sn + görseller 2 sn sürüyordu. Yapılanlar:
-- **Jeton yerel doğrulanır:** erişim jetonu Supabase'in açık anahtarlarıyla (JWKS, önbellekli) sunucuda doğrulanır; her istekte Supabase Auth'a gidilmez. Profil 10 sn önbelleğe alınır (silinen hesap en geç 10 sn sonra reddedilir; silme anında önbellek temizlenir).
-- **Tek sorgu:** soru listesi, kazanımları ve atama sayılarıyla tek SQL sorgusunda okunur.
-- **Görseller sunucudan:** soru görselleri Storage'dan bir kez alınıp sunucu belleğinde tutulur (açılışta ısıtılır) ve HMAC imzalı, süreli, tarayıcı önbellekli bir adresle (`/api/question-images/...`) verilir. Görsel hâlâ özel bucket'tadır; adres yalnızca yetkili kullanıcıya üretilir.
-- **Ekran:** soru listesi bellekte tutulur; listeden detaya geçişte ekran hemen dolar, arkada yenilenir.
-Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
-
-### Karar 21 — Öğretmen dashboard'u (web)
-- **Ekranlar:** Panel (atama durumu sayıları, okunmamış bildirimler, sorular), Sorularım (liste) ve soru sayfası, Bildirimler. Yönetici ve öğretmen aynı menülü düzeni (`AppShell`) kullanır.
-- **Soru listesi:** branş, soru bilgisi (soru no, kazanım kodları), görsel ve çözüm durumu (Atandı, Onaya gönderildi, Onaylandı, Geri gönderildi; "Kayıt bekleniyor" ipucuyla). Soru atanmamışsa liste boş kalır ve kısa bir açıklama gösterilir.
-- **Bildirimler:** okunmamışlar vurgulanır, menüde rozet görünür; bildirime tıklayınca okundu olur ve ilgili soruya gidilir. Liste 30 sn'de bir yenilenir (yeni atama kısa sürede görünür). "Tümünü okundu yap" vardır.
-- **Görünürlük:** öğretmen yalnızca kendi atamalarını görür; başkasının atamasına erişim 404 döner (varlığı belli edilmez), yönetici rotalarına erişim 403 döner.
-- **Varsayım (açık nokta):** öğretmene **cevap anahtarı gösterilmez**, sorunun **kazanımları gösterilir**.
-- Soru sayfasındaki "Kayıt oluştur" stüdyoyu açar ve soru görselini otomatik yükler. Kaydı sisteme kaydetme, izleme, silme, kırpma ve onaya gönderme sıradaki adımdır.
-
-### Karar 22 — Hesap e-postası (giriş bilgileri öğretmene gider)
-- Yönetici öğretmen **oluşturunca** öğretmenin e-postasına hesap bilgileri gönderilir: e-posta (kullanıcı adı), yöneticinin girdiği şifre, branş ve giriş bağlantısı. Yönetici bir öğretmenin **şifresini değiştirirse** yeni şifre de e-postayla bildirilir (şifre boş bırakılırsa e-posta gitmez).
-- E-posta hatası hesabı geri almaz; sonuç yöneticiye gösterilir ("gönderildi / gönderilmedi (ayar yok) / gönderilemedi"), gerekirse bilgileri öğretmene yönetici iletir.
-- **Güvenlik notu:** şifrenin düz metin e-postayla gitmesi bilinçli bir kolaylıktır (yönetici şifreyi belirliyor ve öğretmene iletmesi gerekiyor). Canlıda daha güvenli yol, öğretmene tek kullanımlık "şifre belirle" bağlantısı göndermek olurdu; şifre değiştirme ekranı yapılırsa öğretmenden ilk girişte şifresini değiştirmesi istenebilir.
-
-### Karar 23 — Çözüm kaydını sisteme kaydetme, onaya gönderme ve onay akışı
-- **Kaydet = sisteme kaydet:** öğretmen kaydı bitirince sunucu MP4'ü üretir ve **otomatik olarak sisteme kaydeder** (özel `recordings` Storage bucket'ı + `recordings` tablosu, atama başına tek güncel kayıt). Cihaza indirme yoktur (yalnızca geçici geliştirme akışında kaldı). Kayıt sonrası seçenekler: **Kaydet ve onaya gönder**, **Kaydet** (taslak olarak kalır, soru sayfasına dön), **Sil** (video kalıcı silinir), **Yeniden çek**. Hiçbir kayıt kendiliğinden onaya gitmez; onaya yalnızca öğretmen gönderir. Yükleme başarısız olursa kayıt bellekte tutulur ve "Tekrar dene" ile yeniden gönderilir.
-- **Öğretmen erişimi:** kendi soru sayfasında kaydını izler, yeniden kaydeder, **siler** ve onaya gönderir. Başkasının kaydına erişemez (404).
-- **Video sunumu:** `<video>` kimlik başlığı gönderemediğinden video, HMAC imzalı + süreli adresle (`/api/recording-videos/...`) ve Range desteğiyle sunulur; adres yalnızca yetkili kullanıcıya üretilir, sunucu diskinde önbelleklenir. Silinen kaydın dosyası Storage'dan kaldırılır, eski adres 404 döner (yönetici izleyemez).
-- **Onaya gönderme:** yalnızca hazır kaydı olan ve "Atandı" ya da "Geri gönderildi" durumundaki atama gönderilebilir. Gönderilmeyen kayıt yönetici kuyruğunda görünmez.
-- **Yönetici — Onay bekleyenler:** onaya gönderilen videolar tarayıcı içinde izlenir (harici oynatıcı yok). **Onayla** veya **Geri gönder** (not zorunlu, en fazla 500 karakter, öğretmene görünür). Her iki işlemde öğretmene bildirim (ve push) gider ("Videonuz onaylandı / geri gönderildi"). Atamalar sayfasında ve soru detayında da kaydı olan atamalar için "İzle" vardır.
-- **Düzenleme sonrası durum (açık nokta kararı):** kayıt yeniden çekilir veya silinirse, *Onaya gönderildi / Onaylandı* durumundaki atama **Atandı**'ya (taslak) döner ve yeniden onaya gönderilmelidir; *Geri gönderildi* durumundaki atama **Geri gönderildi** kalır (yönetici notu görünmeye devam eder), öğretmen düzeltip yeniden gönderir; gönderince not temizlenir.
-
-### Karar 24 — Açılır kapanır menü ve bildirim düğmesi
-- **Menü:** sol koyu menü, üst çubuktaki düğmeyle açılıp kapanır (yönetici ve öğretmen); tercih tarayıcıda hatırlanır, dar ekranda varsayılan kapalıdır.
-- **Bildirimler (güncellendi):** görev, atama bildiriminin öğretmenin **dashboard'unda** görünmesini ister. Bu yüzden öğretmenin Panel sayfasında (web ve mobilde ana sayfa) **Bildirimler bölümü** vardır: son bildirimler listelenir, okunmamışlar vurgulanır ve "N okunmamış" sayacı görünür; bildirime tıklayınca okundu olur ve ilgili soruya gidilir; "Tümünü okundu yap" vardır. Panelde **son 3 bildirim** görünür; daha fazlası varsa "Tümünü gör" bağlantısı (yanında kalan sayıyı gösteren baloncukla) tüm bildirimlerin listelendiği Bildirimler sayfasını açar. Aynı kural mobilde de geçerlidir: telefon ve tablet **aynı ana sayfa kodunu** kullanır (tek fark `useWide()` ile iki sütunlu düzendir). Zil düğmesi bu nedenle kaldırıldı. **Yönetici** panelinde (web) de aynı Bildirimler bölümü vardır (son 3 bildirim, sayaç, "Tümünü gör"); yönetici bildirimlerinde **e-posta gönderilmez**.
-
-### Karar 25 — Hata bildirimi
-- **Türler:** Soru metninde hata, Şıklarda hata, Yazım yanlışı, Kırpma hatası, Cevap anahtarı hatası, Kazanım hatası + **Diğer** (serbest metin). Kısa açıklama yazılır (en fazla 1000 karakter); yalnızca "Diğer"de zorunludur.
-- **Ek (açık nokta kararı):** ek her türde eklenebilir (görev yalnızca serbest bildirimi şart koşuyor, bu bir üst kümedir). Ek tek dosyadır: **ekran görüntüsü** (JPEG/PNG/WebP, en fazla 5 MB) **veya en fazla 1 dakikalık video** (MP4/WebM/MOV, en fazla 30 MB). Süre hem tarayıcıda hem sunucuda (ffmpeg ile) denetlenir; süre okunamayan dosyalar (bazı tarayıcı kayıtları) kabul edilir. Ekler özel Storage bucket'ında (`error-attachments`) saklanır, imzalı süreli adresle sunulur.
-- **"Soru metni ve şıklara işaret etme":** soru paketinde metin ve şıklar ayrı alan olarak yoktur (yalnızca görsel), bu yüzden öğretmen sorunun **görseli üzerinde hatanın yerini işaretler** (oransal konum olarak saklanır: `marker_x/marker_y`); ayrıca "Soru metninde hata" / "Şıklarda hata" türleri vardır. Yönetici işareti görsel üzerinde kırmızı halka olarak görür.
-- **Görünürlük:** yalnızca soruyu atanmış öğretmen o soru için bildirim gönderebilir (başkası 404). Öğretmen kendi gönderdiklerini soru sayfasında görür. Yönetici bildirimleri hem **ilgili sorunun üzerinde** (soru detayı) hem **Hata bildirimleri** sayfasında (türe göre süzme), **gönderen öğretmenin adıyla** görür; panelde toplam sayı vardır.
-- Yapılmadı: bildirimin "çözüldü" işaretlenmesi ve yöneticiye anlık bildirim (isteğe bağlı iyileştirme).
-
-### Karar 26 — Yöneticiye bildirim
-- Öğretmen **videoyu onaya gönderince** veya **hata bildirimi oluşturunca** tüm aktif yöneticilere bildirim yazılır: "<Öğretmen> videoyu onaya gönderdi: <Branş - Soru>" ve "<Öğretmen> hata bildirdi (<tür>): <Branş - Soru>". Yönetici bunları panelindeki Bildirimler bölümünde görür (e-posta gitmez); bildirime tıklayınca okundu olur ve ilgili sayfaya gider (video için Onay bekleyenler, hata için sorunun detayı).
-- Bildirim sistemi iki role ortaktır (`/api/notifications`): bildirim bir atamaya veya bir hata bildirimine bağlıdır, metin ve gidilecek sayfa türden üretilir. Yöneticiye push gönderilmez (yönetici mobil uygulamaya girmez, Karar 34).
-- Hata türü "Diğer (serbest metin)" etiketi "Diğer" olarak sadeleştirildi.
-
-### Karar 27 — Çapraz atama ve kırpma
-- **Çapraz atama:** yönetici, videosu olan bir soruyu **aynı branştan başka bir öğretmene** de atayabilir (atama formu yalnızca sorunun branşındaki öğretmenleri listeler; aynı öğretmene ikinci kez atanamaz). Her öğretmen soruyu açar, **kendi kaydını** üretir ve onaya gönderir; her atamanın durumu (Atandı, Onaya gönderildi, Onaylandı, Geri gönderildi) hem o öğretmene hem yöneticiye görünür.
-- **Açık nokta kararı — mevcut video görünürlüğü (güncellendi):** görev, çapraz atanan öğretmenin *mevcut videoyu izleyip kendi kaydını üretebileceğini* zorunlu kılar. Bu yüzden yeni öğretmen soru sayfasında, aynı sorunun başka öğretmenlerce üretilmiş ve **onaya gönderilmiş veya yönetici tarafından onaylanmış** videolarını "Bu soru için mevcut çözüm videoları" kartında (öğretmen adı ve durumuyla) izler (web ve mobil). Taslak (gönderilmemiş) ve geri gönderilmiş videolar ile öğretmenin kendi videosu bu kartta gösterilmez; öğretmen yalnızca kendi kayıtlarını düzenler, tüm videoları yalnızca yönetici izler. *(Geçmiş: ilk sürümde yalnızca onaylı videolar gösteriliyordu, ara sürümde kart kaldırıldı; görev metnine uymak için geri getirildi ve kapsam onaya gönderilmişleri de içerecek şekilde genişletildi.)*
-- **Kırpma:** öğretmen kayıt sayfasında "Kırp"a basar, başlangıç ve bitiş kaydırıcılarıyla (veya "mevcut konumu başlangıç/bitiş yap" ile) aralığı seçer; sunucu ffmpeg ile aralığı keser (yeniden kodlama, kare hassasiyeti) ve **kırpılmış MP4 kaydın yerine geçer**; yönetici kırpılmış videoyu izler. Kırpma ve silme **"Geri al"** ile geri alınabilir (aşağıya bakın); aradaki süre en az 1 sn olmalıdır. Kırpma da bir düzenlemedir: onaya gönderilmiş/onaylanmış atama taslağa (Atandı) döner ve yeniden gönderilmelidir (Karar 23).
-
-### Karar 28 — Mobil uygulama (öğretmen)
-- **Ekranlar:** Giriş (yalnızca öğretmen) → Ana sayfa (atama durumu sayıları, bildirimler, sorular, çıkış) → Soru sayfası (görsel, durum, yönetici notu, kayıt izleme, yeniden kaydet, kırp, sil, onaya gönder, çapraz atamada onaylı örnek video, kazanımlar, hata bildirimi) → Kayıt stüdyosu, Kırpma, Hata bildirimi. Web ile **aynı hesap, aynı soru listesi, bildirimler ve kayıtlar**; aynı sunucu uç noktaları ve kurallar (web'den gönderilen video mobilde, mobilden gönderilen video webde ve yönetici panelinde görünür).
-- **Oturum:** jetonlar `expo-secure-store` ile güvenli depoda tutulur; 401'de bir kez yenilenir; açıkken 30 sn'de bir hesap kontrol edilir, **silinen öğretmenin oturumu otomatik kapanır** ve giriş ekranında bilgilendirilir.
-- **Kaydet = sisteme kaydet:** stüdyoda Dur'dan sonra sunucu MP4'ü üretir ve sisteme kaydeder (galeriye indirme yoktur); izleme ekranında **Kaydet ve onaya gönder / Kaydet / Sil / Yeniden çek**. Yükleme hatasında "Tekrar dene".
-- **Tablet düzeni:** ekran genişliği 820 px ve üzerindeyse (iPad, özellikle yatayda) web'deki gibi iki sütun kullanılır: soru sayfasında görsel solda, durum/kayıt/kazanım/hata kartları sağda; düzenlemede video solda, kontroller sağda; hata bildiriminde form solda, işaretlenecek görsel sağda; ana sayfada sorular iki sütunlu ızgara. Telefonda tek sütun düzeni aynen kalır (`mobile/src/ui/layout.ts`).
-- **Yönetici girişi yoktur (Karar 34):** giriş ekranında yalnızca öğretmen girişi vardır. Yönetici hesabıyla girilirse "Mobil uygulama yalnızca öğretmenler içindir. Yönetici girişi web panelinden yapılır." uyarısı çıkar (sunucu da mobil girişte hesabın rolünü `teacher` ile karşılaştırır). Eski sürümde cihazda kayıtlı bir yönetici oturumu varsa açılışta silinir.
-- **Sayı kartları sayfaya gider:** öğretmen ana sayfasında her durum kartı o durumdaki soruların listesini açar; satıra dokununca soru sayfasına geçilir.
-- **Web'de de aynı kural:** yönetici panelindeki tüm kartlar (Atandı / Onaylandı / Geri gönderildi `#/atamalar/<durum>` ile süzülmüş Atamalar sayfasını, diğerleri kendi sayfalarını açar) ve öğretmen panelindeki dört durum kartı (`#/durum/<durum>`) tıklanabilir.
-- **Ekran yönü:** telefonda yalnızca kayıt stüdyosu yataydır, diğer ekranlar dikeydir; tablette serbesttir.
-- **Hata bildirimi:** web ile aynı türler ve kurallar; hatanın yeri sorunun görseline dokunarak işaretlenir; ek `expo-image-picker` ile seçilir (ekran görüntüsü veya en fazla 1 dk video; süre/boyut istemcide ve sunucuda denetlenir; sunucu dosya türünü baytlardan da anlar).
-- **Kırpma:** `@react-native-community/slider` ile başlangıç/bitiş; sunucu kırpılmış MP4'ü kaydın yerine koyar.
-- **Push:** giriş yapınca izin istenir ve Expo push jetonu `POST /api/push-token` ile kaydedilir; bildirime tıklanınca ilgili soru açılır. **Kurulum notu:** Expo Go'da push yalnızca gerçek cihazda ve (iOS'ta) Expo hesabına bağlı proje kimliğiyle çalışır; simülatörde izin penceresi çıkar ama jeton alınamaz ve sessizce atlanır. Tam doğrulama için gerçek cihaz gerekir.
-
-- **Durum renkleri (role göre):** turuncu, o rolün **aksiyon alması gereken** durumdur. Yöneticide "Onaya gönderildi" (kuyrukta bekliyor); öğretmende "Atandı" ve "Geri gönderildi" (kayıt üretmesi/düzeltmesi gerekiyor). Öğretmende "Onaya gönderildi" nötr (beklemede), "Onaylandı" yeşil. Web ve mobilde aynı kural.
-
-### Karar 29 — Yükleme sınırları ve çizim günlüğü boyutu
-- **Sorun:** 26 saniyelik bir kayıt "Yükleme geçersiz veya çok büyük" hatası verdi. Sebep: çok parçalı yüklemede çizim günlüğü bir metin alanı olarak gidiyor ve sunucunun varsayılan metin alanı sınırı 1 MB'tı; yoğun çizimde (kalem/fare, yüksek örnekleme, uzun ondalıklı koordinatlar) günlük bunu aşabiliyordu.
-- **Çözüm:** (1) alan sınırı **16 MB**'a çıkarıldı (günlük en fazla 200.000 nokta taşıyabilir); dosya başına sınır 60 MB. (2) İstemciler günlüğü **sıkıştırarak** gönderir: koordinatlar 0,1 piksele, zaman damgaları 1 ms'ye yuvarlanır (tahta 1280x720 olduğundan görsel fark yoktur; sıra ve zaman monotonluğu korunur). (3) Web kamera klibinin bit hızı 0,8 Mb/sn ile sınırlandı (3 dk ≈ 15 MB). (4) Hata mesajları nedenini söyler ("Yüklenen dosya çok büyük", "Çizim verisi çok büyük") ve sunucu günlüğüne neden yazılır.
-- **Ek düzeltme (video üretici kilitlenmesi):** test sırasında, ses dosyası çizim süresinden kısa kaldığında ffmpeg'in erken kapanması yüzünden yazma döngüsünün sonsuza kadar beklediği bir hata bulundu (gerçek kayıtlarda ses süresi çizim süresinden milisaniyelerle kısa olabildiği için aralıklı bir risk). Yazma artık akışın kapanmasını/hatasını da bekleme bitişi sayar; gerçek hata ffmpeg çıkış kodundan bildirilir.
-
-### Karar 30 — Kayıt düzenleme (kırpma + ortadan kesme)
-- Kırpma yetmediği için (yalnızca baştan/sondan kesiyordu ve kayıttan hemen sonra görünmüyordu) **kayıt düzenleyici** yapıldı. Öğretmen soru sayfasında **Düzenle (kırp / bölüm sil)** ile videoda bir aralık seçer (kaydırıcılar veya "mevcut konumu başlangıç/bitiş yap") ve iki işlemden birini yapar: **Yalnızca bu aralığı tut** (baştan/sondan kırpma) veya **Bu aralığı sil** (ortadan kesme; kalan parçalar art arda birleştirilir). Düzenleme kayıttan hemen sonraki ekranda da bir bağlantı olarak sunulur. Web ve mobilde aynı işlem ve aynı uç nokta (`POST /api/teacher/assignments/:id/recording/edit`).
-- Sunucu, görüntü ve sesi aynı aralıklarla keser ve yeniden kodlar (ffmpeg `trim/atrim + concat`, kare hassasiyeti); düzenlenmiş MP4 kaydın yerine geçer ve yönetici düzenlenmiş videoyu izler. Arka arkaya birden fazla düzenleme yapılabilir; her düzenlemeden önceki sürüm `recording_history` tablosunda (dosyası Storage'da) saklanır ve **"Geri al"** düğmesi (web ve mobil, `POST /recording/undo`) en son düzenlemeyi geri getirir; birden fazla adım geri alınabilir. Yeniden çekme veya kaydı silme geçmişi temizler. Geri alma da bir değişiklik sayıldığı için onay durumunu sıfırlar. Düzenlemeden sonra videoda en az 1 sn kalmalıdır. Düzenleme de bir düzenleme sayıldığı için onaylı/onaya gönderilmiş atama taslağa döner ve yeniden onaya gönderilmelidir (Karar 23).
-- "Düzenleyip yeniden kaydetme" (görev 6.8): düzenleme + **Yeniden kaydet** (stüdyo yeniden açılır) birlikte bu gereksinimi karşılar. Kayıtlı videonun çizimlerini tek tek değiştirmek (çizgi düzenleme) kapsam dışıdır: sistemde video MP4 olarak saklanır, çizim günlüğü saklanmaz.
-
-### Karar 31 — Buton görünümü (soru sayfası ve düzenleme ekranı)
-- Soru sayfasındaki ve düzenleme ekranındaki işlem butonları (onaya gönder, düzenle, yeniden kaydet, sil; kırpma kontrolleri, geri al, kapat) **aynı stilde**dir: paletin iki turuncusu (`#f14e13` → `#d6400d`) arasında **degrade**, hafif gölge, beyaz yazı. Web ve mobilde aynıdır. Gezinti butonları ("← Geri") ve giriş/form gibi ana işlem butonları bu stile dahil değildir.
-- Web: `.accent-btn` sınıfı (CSS `linear-gradient`; `<a>` bağlantısı da aynı görünür). Mobil: React Native'de degrade olmadığı için resmî **`expo-linear-gradient`** (Expo Go içinde hazır) eklendi; `Button` bileşeninin `accent` varyantı.
-- Web: yan yana duran butonlar (öğretmen/yönetici tabloları, onay bekleyenler, hata formu, düzenleme paneli, stüdyo) aynı stilde, aynı yükseklikte ve **eşit genişlikte tek satıra sığar** (`.btn-row`; dar kartlarda ana işlem tam genişlikte üstte, ikincil işlemler altta: `.btn-stack`). Tablo satırı işlemleri küçük boydadır (`.accent-btn.sm`). Sığmak için "Düzenle (kırp / bölüm sil)" etiketi "Düzenle" oldu (ipucu metni durur) ve kırpma ekranındaki "Yalnızca bu aralığı tut" etiketinden "(X sn)" kalktı (süre üstteki "Seçili aralık" satırında görünür).
-
-### Karar 32 — Sunucu dayanıklılığı (veritabanı bağlantısı koparsa çökmez)
-- **Sorun:** Havuzdaki boşta bir bağlantıyı Supabase kapatınca `pg` havuzu `error` olayı üretir. Dinleyici olmadığı için Node bunu yakalanmamış hata sayıp sunucu sürecini kapatıyordu (geliştirme ortamında API sürecinin kapanıp `tsx watch`'ın boşta kalmasıyla fark edildi; o çökmenin günlüğü alınmadığı için kesin nedeni doğrulanamadı, ancak bu bilinen bir `pg` davranışıdır). Dinleyici olmadan havuzda bir `error` olayı üretilerek çökme yeniden üretildi.
-- **Çözüm:** `server/src/db.ts` içinde `pool.on("error")` dinleyicisi hatayı kaydeder ve yutar; `pg` bozuk bağlantıyı havuzdan atar, sonraki sorgu yeni bağlantı açar, çalışan sorgular etkilenmez. `server/src/index.ts` içinde yakalanmayan söz reddi (`unhandledRejection`) de kaydedilir; tek bir hatalı istek tüm sunucuyu düşürmez. Yakalanmayan istisnalar (`uncaughtException`) bilerek yakalanmaz.
-- **Doğrulama:** Dinleyici yokken simüle edilen bağlantı hatası süreci çöktürüyor; düzeltmeden sonra hata konsola yazılıyor, süreç ayakta kalıyor ve sonraki sorgu çalışıyor.
-
-### Karar 33 — Toplu atama (web)
-- Yönetici bir soruyu aynı branştaki **birden çok öğretmene tek işlemde** atayabilir: atama formunda öğretmenler onay kutusuyla seçilir ("Ata (N öğretmen)"). Form hem soru detayında hem Atamalar sayfasında aynıdır.
-- Seçilen her öğretmen için mevcut atama uç noktası ayrı çağrılır; yani **her öğretmenin kendi atama kaydı, durumu, bildirimi ve e-postası** olur ve biri başarısız olursa (örneğin zaten atanmışsa) diğerleri geri alınmaz. Başarısız olan öğretmen formda seçili kalır ve hata mesajında adıyla görünür.
-- Bu soruya zaten atanmış öğretmenler pasif görünür ("zaten atandı"); aynı öğretmene aynı soru ikinci kez atanamaz (Varsayımlar). Sunucu tarafında değişiklik yoktur.
-
-### Karar 34 — Mobil ve tablet uygulamasından yönetici ekranı kaldırıldı
-- Görev, öğretmenin "web ve mobilden aynı hesapla" girmesini ister; mobilde yönetici ekranı istemez. Dokümanın açık bıraktığı "Mobilde yönetici" sorusu **hayır** olarak karara bağlandı: gereksiz iş yükü olduğu için mobil/tablet uygulamasında yalnızca **öğretmen girişi** kalır; yönetici tüm işlemleri web panelinden yapar.
-- Kaldırılanlar: yönetici giriş sekmesi, yönetici paneli (sayılar, bildirimler), onay bekleyenler, hata bildirimleri ve soru detayından atama/kazanım/cevap anahtarı ekranları (`AdminScreen`, `AdminLists`). Sunucuda değişiklik yoktur (web yönetici paneli aynı uç noktaları kullanır).
-- Telefon ve tablet **aynı uygulamayla** çalışmaya devam eder (Karar 28).
-
-### Karar 35 — Çapraz kontrol iş akışı (öğretmenler birbirinin çözümünü değerlendirir)
-- **Amaç:** Yöneticinin aynı soruyu birkaç öğretmene atadığı çaprazlama kurgusunda, bir öğretmenin çözümünün hatalı olup olmadığını diğer öğretmenler de işaretleyebilsin; müdahaleyi yönetici yapsın. Soruda hata varsa öğretmen zaten **Hata bildir** ile bildirir; çapraz kontrol yalnızca **çözümün** hatalı/hatasız olduğunu söyler.
-- **Kim kontrol eder:** Yönetici tarafından **aynı soruya atanmış tüm diğer öğretmenler**. Ayrı bir "yalnızca kontrol" ataması yoktur; kontrol eden, soru sayfasında zaten gördüğü "Bu soru için mevcut çözüm videoları"nın altında **Hatasız / Hatalı** seçer ve istersen kısa not yazar (500 karaktere kadar). **Not hatalıda da zorunlu değildir.** Yalnızca **onaya gönderilmiş veya onaylanmış** videolar kontrol edilir (taslak ve geri gönderilmiş videolar zaten görünmez); kimse kendi videosunu kontrol edemez.
-- **Gizlilik:** Değerlendirmeyi **yalnızca yönetici** görür. Videonun sahibi, hatalı çözdüğünü bile olsa, başkalarının bıraktığı değerlendirmeyi hiçbir ekranda ve hiçbir API yanıtında görmez (API testiyle doğrulandı). Kontrol eden yalnızca **kendi** değerlendirmesini görür ve değiştirebilir (video başına tek değerlendirme; yeniden gönderilirse güncellenir).
-- **Yönetici ne görür:** "Onay bekleyenler" kartında ve soru detayındaki atama tablosunda videonun altında "Çapraz kontrol: Hatalı · Ad Soyad — not". **Durum otomatik değişmez**; müdahale mevcut **Onayla / Geri gönder** ile yapılır. Her değerlendirmede (değişiklik dahil) tüm yöneticilere bildirim yazılır: "X, Y öğretmenin çözümünü hatalı buldu: Branş - Soru N"; tıklayınca sorunun detay sayfası açılır. E-posta ve push gönderilmez.
-- **Video değişirse:** Öğretmen onaya gönderilmiş bir videoyu düzenler, geri alır veya yeniden çekerse (yeni video) o videoya verilmiş **eski değerlendirmeler silinir**; yönetici ekranında eski değerlendirmeler görünmez, kontrol edenler yeni videoyu yeniden değerlendirebilir. Yöneticinin kafası karışmasın diye: (1) yöneticiye gitmiş eski bildirim **silinmez**, ama metnine durum eklenir ("… (video sonradan yeniden yüklendi)" veya "… (video silindi)"; gösterilirken hesaplanır); (2) bildirime tıklayınca sorunun detay sayfası yine açılır ve atama satırının altında, videonun üstünde **"Video X tarafından yeniden yüklendi · tarih"** (silindiyse "… tarafından silindi") etiketi görünür; aynı etiket "Onay bekleyenler" kartında da vardır. Etiket anı atamada `video_replaced_at` olarak tutulur ve yalnızca video **daha önce onaya gönderilmiş/onaylanmış/geri gönderilmişse** (veya daha önce bir kez etiketlenmişse) güncellenir; henüz kimsenin görmediği taslak düzenlemeleri etiketlenmez. Kayıt silinip yeniden çekilse de etiket kalır.
-- **Teknik:** `peer_checks` tablosu (`recording_id` + `reviewer_id` benzersiz, kayıt silinince `on delete cascade`); uç nokta `PUT /api/teacher/assignments/:id/peer-check` (`:id` kontrol edenin kendi atamasıdır; video aynı soruda, başka öğretmenin ve onaya gönderilmiş/onaylanmış olmalıdır, aksi halde 404). Yönetici atama listesi (`/api/admin/assignments`) her atamaya `peerChecks` ekler. Bildirim türü `peer_checked` (kontrol eden ve karar bildirimde saklanır). Web ve mobil öğretmen uygulamasında aynı kutu vardır; mobilde yönetici ekranı olmadığı için yönetici görünümü yalnızca webdedir (Karar 34).
-
-### Karar 36 — Atamayı geri alma (yönetici, web)
-- Yönetici yanlışlıkla yaptığı ya da vazgeçtiği bir atamayı **geri alabilir**: soru detayındaki ve Atamalar sayfasındaki atama tablosunda her satırda **"Atamayı geri al"** vardır (onay penceresiyle). Uç nokta `DELETE /api/admin/assignments/:id` (yalnızca yönetici).
-- **Atama kalıcı silinir** (ayrı bir "iptal" durumu yoktur) ve şunlar birlikte kaldırılır: öğretmenin **kaydı/videosu** (dosya, düzenleme geçmişi ve o videoya verilmiş çapraz kontroller); atamaya bağlı **tüm bildirimler** (öğretmenin "yeni soru atandı" bildirimi, yöneticiye gitmiş "onaya gönderdi" ve çapraz kontrol bildirimleri; böylece hiçbir bildirim silinmiş bir soruya götürmez); bu öğretmenin **aynı soruda başkalarının videolarına verdiği çapraz kontroller** ve bunların bildirimleri (kontrol etme yetkisi atamadan geliyordu). **Hata bildirimleri silinmez** (soruya ve gönderene bağlıdır).
-- **Her durumda** geri alınabilir (Atandı, Onaya gönderildi, Onaylandı, Geri gönderildi); video varsa onay penceresi videonun kalıcı silineceğini ve işlemin geri alınamayacağını, durumuyla birlikte söyler. Öğretmene **"Güncelleme: atama geri alındı: Branş - Soru N"** bildirimi, aynı konulu **e-posta** (video silindiyse bunu da söyler) ve **push** gider (silinmiş öğretmene gönderilmez); eski "yeni soru atandı" bildirimi kalkar. Atama silindiği için bu bildirim bir atamaya değil soruya bağlanır (`notifications.question_id`, migrasyon 009) ve tıklayınca Sorularım listesi açılır. Öğretmen o sırada stüdyodaysa kayıt gönderemez (soru artık ona atanmış değildir). Geri alınan soru aynı öğretmene **yeniden atanabilir**.
-- Mobilde yönetici ekranı olmadığı için yalnızca webdedir (Karar 34).
-
-### Karar 37 — Yerleşim düzeltmeleri (yönetici soru detayı, tablet)
-- **Yönetici soru detayı (web):** sağ sütun sırası **Cevap anahtarı → Kazanımlar → Atamalar → Hata bildirimleri**; görsel solda tek başına kalır. (Önce cevap anahtarı görselin altına alınmıştı, sonra geri yanına döndürüldü; Kazanımlar'ın en altta kalması istenmedi.)
-- **Öğretmen soru sayfası (web ve mobil, aynı düzen):** görsel solda; sağ sütun sırası **Durum → Kazanımlar → Çözüm kaydı → (varsa) mevcut çözüm videoları → Soruda hata mı var?**. Durum ve kazanımlar üstte alt alta, video ve hata bildirimi altlarında. Mobilde bu sıra telefonda da aynıdır (tek sütun); tablette (≥820 dp) görsel solda, kartlar sağda. (Bir ara tabletteki Kazanımlar ve hata kartı iki sütunun altına yan yana alınmıştı; bu düzenle kaldırıldı.)
-- **Kaydı düzenle (dikey tablet):** video tam genişlikte üstte; altında başlangıç ve bitiş ayarları yan yana, onların altında seçili aralık bilgisi ve üç buton ("Yalnızca bu aralığı tut", "Bu aralığı sil", "Geri al") tek satırda. Her şey tek ekrana sığar. Yatay tablette video solda (genişliğin yaklaşık %70'i), ayarlar sağda ve daha dar (%30); butonlar bu düzende `compact` (daha alçak, küçük yazı) olur; telefon tek sütundur. Dikey/yatay ayrımı `useWidePortrait` (`mobile/src/ui/layout.ts`) ile yapılır. "Yalnızca bu aralığı tut" etiketinden süre ibaresi çıkarıldı (zaten "Seçili aralık" satırında yazıyor; web ile aynı).
-
-### Karar 38 — Telefonda kayıt için kamera
-- Kayıt stüdyosundaki **kamera düğmesi telefonda da** gösterilir (daha önce yalnızca web ve tabletteydi). Davranış tabletle aynıdır: isteğe bağlı, kayıt başlamadan açılır/kapanır, tahtanın sağ altında küçük dikdörtgen olarak önizlenir ve sunucuda videoya aynı yerden bindirilir; izin verilmezse veya kamera hata verirse kayıt ekran ve sesle tamamlanır. Stüdyo yerleşimi iki cihazda aynı olduğundan telefon yatay konumunda kontrol sütunu bir düğme uzar (yaklaşık 270 dp, 360 dp ve üstü yükseklikte süre göstergesine değmez).
-- Doğrulanmadı: gerçek telefon kamerası (simülatörde kamera yok) ve iOS/Android'de kamera + mikrofonun birlikte çalışması.
-
-### Karar 39 — Mobil stüdyoda geri tuşu
-- Kayıt stüdyosunda (telefon ve tablet) sol üstte yuvarlak bir **geri tuşu (←)** vardır; kayıt bitirilmek zorunda değildir, yanlışlıkla açılan stüdyodan çıkılabilir. Kayıt başlamamışsa ve çizim yapılmamışsa doğrudan soru sayfasına dönülür. Kayıt sürüyorsa/duraklatılmışsa veya çizim varsa onay istenir ("Kayıttan çıkılsın mı?" — "Kayda devam et" / "Çık"); **Çık** ses, kamera klipleri ve çizimleri kaydetmeden atar (mikrofon ve kamera durdurulur). Sunucuya hiçbir şey gönderilmez.
-- Android geri tuşu aynı yolu izler. Önizleme aşamasında (video zaten kaydedildi, taslak olarak saklanır) geri tuşu önceki gibi soru sayfasına döner; "Sil" ve "Yeniden çek" seçenekleri o ekranda durur.
-
-### Karar 40 — Uygulama adı
-- Uygulamanın adı **"İşler Video Çözüm Platformu"** oldu: web sekme başlığı, giriş sayfası ve yönetici/öğretmen kenar çubuğu, mobil giriş ekranı ve mobil uygulama adı (`app.json` → `name`), hesap e-postalarının konu/giriş cümlesi ve bu README başlığı. Kod tarafındaki teknik adlar (paket adları, Expo `slug`, depo adı) değişmedi; böylece kurulum ve bağlantılar bozulmaz.
-- Not: gönderen adı `MAIL_FROM` ortam değişkeninden gelir (`server/.env`); yerel `.env` değeri elle güncellenmelidir (örnek dosya güncellendi).
+- Çıktı, cihaz ekranının birebir kaydı değil, soru görseli ve çizimlerin sunucuda yeniden çizilmesidir. Görev, kayda soru görseli ve çizimlerin girmesini yeterli saydığı için bu yaklaşım seçildi.
+- Kayıt bittikten sonra videonun hazırlanması kısa bir işleme süresi alır.
+- Gerçek kamera, gerçek cihazda push ve Apple Pencil ile çizim simülatörde denenemedi.
+- Yeni soru ekleme ve kazanım ekleme/silme ekranları yoktur; görevde zorunlu olan soru ve kazanım güncelleme (cevap anahtarı, kazanım arama ve ekleme/çıkarma, kazanım açıklaması) vardır.
+- Supabase ücretsiz planında dosya başına 50 MB, toplam 1 GB sınırı vardır; videolar bu yüzden en fazla 3 dakikadır. Kullanılmayan ücretsiz projeler bir hafta sonra duraklatılır.
+- SMTP ayarı yalnızca Gmail için hazırdır.
