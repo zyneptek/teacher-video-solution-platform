@@ -41,7 +41,7 @@ export function AssignmentsTable({ assignments, showQuestion }: { assignments: A
               <td>{new Date(a.assignedAt).toLocaleString('tr-TR')}</td>
               <td>
                 {a.recording ? (
-                  <button type="button" className="link" onClick={() => setWatching(watching === a.id ? null : a.id)} data-testid={`watch-${a.id}`}>
+                  <button type="button" className="accent-btn sm" onClick={() => setWatching(watching === a.id ? null : a.id)} data-testid={`watch-${a.id}`}>
                     {watching === a.id ? 'Kapat' : 'İzle'}
                   </button>
                 ) : (

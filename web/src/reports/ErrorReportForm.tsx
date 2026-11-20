@@ -96,12 +96,12 @@ export function ErrorReportForm({ assignmentId, marker, picking, onPickingChange
         Kısa açıklama {type === 'other' ? '(zorunlu)' : ''}
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={ERROR_REPORT_LIMITS.descriptionMax} rows={3} required={type === 'other'} data-testid="report-description-input" />
       </label>
-      <div className="marker-row">
-        <button type="button" className={picking ? 'primary' : 'ghost-btn'} onClick={() => onPickingChange(!picking)} data-testid="pick-marker">
+      <div className="btn-row">
+        <button type="button" className="accent-btn" aria-pressed={picking} onClick={() => onPickingChange(!picking)} data-testid="pick-marker">
           {picking ? 'Soru görseline tıklayın…' : marker ? 'İşareti değiştir' : 'Görselde hatayı işaretle'}
         </button>
         {marker && (
-          <button type="button" className="link danger" onClick={onClearMarker} data-testid="clear-marker">İşareti kaldır</button>
+          <button type="button" className="accent-btn" onClick={onClearMarker} data-testid="clear-marker">İşareti kaldır</button>
         )}
       </div>
       <label>
@@ -110,9 +110,9 @@ export function ErrorReportForm({ assignmentId, marker, picking, onPickingChange
       </label>
       {fileError && <p role="alert" className="error" data-testid="file-error">{fileError}</p>}
       {error && <p role="alert" className="error" data-testid="report-error">{error}</p>}
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button type="submit" className="primary" disabled={busy || !type} data-testid="report-submit">{busy ? 'Gönderiliyor…' : 'Gönder'}</button>
-        <button type="button" className="link" onClick={onClose}>Vazgeç</button>
+      <div className="btn-row">
+        <button type="submit" className="accent-btn" disabled={busy || !type} data-testid="report-submit">{busy ? 'Gönderiliyor…' : 'Gönder'}</button>
+        <button type="button" className="accent-btn" onClick={onClose}>Vazgeç</button>
       </div>
     </form>
   );

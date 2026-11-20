@@ -182,17 +182,19 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
                   <VideoPreview key={assignment.recording.videoUrl} src={assignment.recording.videoUrl} />
                 )}
                 <div className="muted small">Süre: {Math.round(assignment.recording.durationSeconds)} sn · Kaydedilme: {new Date(assignment.recording.updatedAt).toLocaleString('tr-TR')}</div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div className="btn-stack">
                   {canSubmit && (
                     <button type="button" className="accent-btn" disabled={busy} onClick={() => void act('/submit', 'POST')} data-testid="submit-review">
                       {assignment.status === 'returned' ? 'Yeniden onaya gönder' : 'Onaya gönder'}
                     </button>
                   )}
-                  {!editing && <button type="button" className="accent-btn" disabled={busy} onClick={() => setEditing(true)} data-testid="edit-open" title="Kırp veya videodan bölüm sil">Düzenle (kırp / bölüm sil)</button>}
-                  <a href={`#/sorularim/${assignment.id}/kayit`} className="accent-btn" data-testid="re-record">Yeniden kaydet</a>
-                  <button type="button" className="accent-btn" disabled={busy} onClick={() => void act('/recording', 'DELETE', 'Kayıt silinsin mi? Onaya gönderilmişse yönetici de artık izleyemez.')} data-testid="delete-recording">
-                    Kaydı sil
-                  </button>
+                  <div className="btn-row">
+                    {!editing && <button type="button" className="accent-btn" disabled={busy} onClick={() => setEditing(true)} data-testid="edit-open" title="Kırp veya videodan bölüm sil">Düzenle</button>}
+                    <a href={`#/sorularim/${assignment.id}/kayit`} className="accent-btn" data-testid="re-record">Yeniden kaydet</a>
+                    <button type="button" className="accent-btn" disabled={busy} onClick={() => void act('/recording', 'DELETE', 'Kayıt silinsin mi? Onaya gönderilmişse yönetici de artık izleyemez.')} data-testid="delete-recording">
+                      Kaydı sil
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (

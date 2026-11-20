@@ -178,25 +178,25 @@ function StudioPage({ questionImageUrl, assignmentId }: { questionImageUrl: stri
       )}
       {phase === 'rendering' && <p data-testid="rendering">Video hazırlanıyor ve sisteme kaydediliyor…</p>}
       {phase === 'failed' && (
-        <p style={{ display: 'flex', gap: 8 }}>
+        <div className="btn-row free">
           <button type="button" className="accent-btn" onClick={() => void upload()} data-testid="retry-upload">Tekrar dene</button>
           <button type="button" className="accent-btn" onClick={handleNewRecording}>Vazgeç ve yeniden çek</button>
-        </p>
+        </div>
       )}
 
       {phase === 'done' && video ? (
         <section>
           <p data-testid="done" className="notice">Video hazır.</p>
           <VideoPreview src={video.url} />
-          <p style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="btn-row free" style={{ margin: '16px 0' }}>
             <button type="button" className="accent-btn" onClick={() => void submitForReview()} disabled={sending} data-testid="submit-review">
               {sending ? 'Gönderiliyor…' : 'Kaydet ve onaya gönder'}
             </button>
             <a href={`#/sorularim/${assignmentId}`} className="accent-btn" data-testid="save-draft">Kaydet</a>
             <button type="button" className="accent-btn" onClick={() => void deleteRecording()} disabled={sending} data-testid="delete-new">Sil</button>
-            <a href={`#/sorularim/${assignmentId}/duzenle`} className="accent-btn" data-testid="edit-after">Düzenle (kırp / bölüm sil)</a>
+            <a href={`#/sorularim/${assignmentId}/duzenle`} className="accent-btn" data-testid="edit-after">Düzenle</a>
             <button type="button" className="accent-btn" onClick={handleNewRecording}>Yeniden çek</button>
-          </p>
+          </div>
         </section>
       ) : (
         <div style={{ position: 'relative', maxWidth: 1280 }}>

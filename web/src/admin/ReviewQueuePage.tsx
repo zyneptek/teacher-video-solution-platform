@@ -93,15 +93,15 @@ function ReviewCard({ assignment: a, onDone }: { assignment: AssignmentInfo; onD
             Öğretmene görünecek not (zorunlu, en fazla {MAX_NOTE} karakter)
             <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={MAX_NOTE} rows={3} data-testid="return-note-input" style={{ padding: 8, border: '1px solid var(--sage)', borderRadius: 8, font: 'inherit' }} />
           </label>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button type="button" className="primary" disabled={busy || !note.trim()} onClick={() => void sendBack()} data-testid="return-submit">Geri gönder</button>
-            <button type="button" className="link" onClick={() => setReturning(false)}>Vazgeç</button>
+          <div className="btn-row">
+            <button type="button" className="accent-btn" disabled={busy || !note.trim()} onClick={() => void sendBack()} data-testid="return-submit">Geri gönder</button>
+            <button type="button" className="accent-btn" onClick={() => setReturning(false)}>Vazgeç</button>
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button type="button" className="primary" disabled={busy} onClick={() => void approve()} data-testid="approve">Onayla</button>
-          <button type="button" className="link danger" disabled={busy} onClick={() => setReturning(true)} data-testid="return-open">Geri gönder</button>
+        <div className="btn-row">
+          <button type="button" className="accent-btn" disabled={busy} onClick={() => void approve()} data-testid="approve">Onayla</button>
+          <button type="button" className="accent-btn" disabled={busy} onClick={() => setReturning(true)} data-testid="return-open">Geri gönder</button>
         </div>
       )}
     </div>

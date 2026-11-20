@@ -76,17 +76,21 @@ export function EditPanel({ assignmentId, recording, notice, onEdited, onClose }
       </div>
       {notice && <p className="notice" data-testid="edit-done" style={{ margin: 0 }}>{notice}</p>}
       {error && <p role="alert" className="error" data-testid="edit-error">{error}</p>}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <button type="button" className="accent-btn" disabled={busy || keepSeconds < 1} onClick={() => void apply('keep')} data-testid="edit-keep" title="Seçili aralık dışındaki baş ve son kısımlar silinir">
-          Yalnızca bu aralığı tut ({keepSeconds.toFixed(1)} sn)
-        </button>
-        <button type="button" className="accent-btn" disabled={busy || cutSeconds < 1} onClick={() => void apply('cut')} data-testid="edit-cut" title="Seçili aralık videodan çıkarılır, kalan parçalar birleştirilir">
-          Bu aralığı sil
-        </button>
-        <button type="button" className="accent-btn" disabled={busy || !recording.canUndo} onClick={() => void undo()} data-testid="edit-undo">
-          ↶ Geri al
-        </button>
-        <button type="button" className="accent-btn" onClick={onClose} data-testid="edit-close">Kapat</button>
+      <div className="btn-stack">
+        <div className="btn-row">
+          <button type="button" className="accent-btn" disabled={busy || keepSeconds < 1} onClick={() => void apply('keep')} data-testid="edit-keep" title="Seçili aralık dışındaki baş ve son kısımlar silinir">
+            Yalnızca bu aralığı tut
+          </button>
+          <button type="button" className="accent-btn" disabled={busy || cutSeconds < 1} onClick={() => void apply('cut')} data-testid="edit-cut" title="Seçili aralık videodan çıkarılır, kalan parçalar birleştirilir">
+            Bu aralığı sil
+          </button>
+        </div>
+        <div className="btn-row">
+          <button type="button" className="accent-btn" disabled={busy || !recording.canUndo} onClick={() => void undo()} data-testid="edit-undo">
+            ↶ Geri al
+          </button>
+          <button type="button" className="accent-btn" onClick={onClose} data-testid="edit-close">Kapat</button>
+        </div>
       </div>
       </div>
     </div>

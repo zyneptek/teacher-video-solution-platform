@@ -36,9 +36,19 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color:
 .primary:hover:not(:disabled) { background: var(--brand-dark); }
 .primary:disabled { opacity: .5; cursor: wait; }
 /* Degrade turuncu buton (soru sayfası ve düzenleme paneli): paletin iki turuncusu arasında geçiş, hafif gölge; <a> üzerinde de aynı görünür. */
-.accent-btn { display: inline-block; padding: 9px 18px; background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: #fff; border: 0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; line-height: normal; text-decoration: none; box-shadow: 0 2px 6px rgba(214, 64, 13, .35); }
+.accent-btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 9px 18px; background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: #fff; border: 0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; line-height: normal; text-decoration: none; box-shadow: 0 2px 6px rgba(214, 64, 13, .35); }
 .accent-btn:hover:not(:disabled) { filter: brightness(.94); }
 .accent-btn:disabled { opacity: .5; cursor: wait; box-shadow: none; }
+.accent-btn.sm { padding: 5px 12px; font-size: 13px; }            /* tablo satırı işlemleri */
+.accent-btn[aria-pressed="true"] { box-shadow: 0 0 0 3px rgba(241, 78, 19, .35); } /* açık/kapalı düğme (işaretleme modu) */
+/* Yan yana duran butonlar: aynı stil, aynı yükseklik, eşit genişlik; tek satıra sığar.
+   btn-stack: satırları alt alta dizer (ana işlem tam genişlik, altında ikincil işlemler). */
+.btn-row { display: flex; align-items: stretch; gap: 8px; max-width: 460px; }
+.btn-row > * { flex: 1 1 0; min-width: max-content; }              /* eşit genişlik; yazı sığmayacaksa o buton gerektiği kadar genişler */
+.btn-row.sm { max-width: 200px; }                                   /* tablo hücreleri */
+.btn-row.free { max-width: none; flex-wrap: wrap; }                 /* geniş alan (stüdyo): sığmazsa alt satıra geçer */
+.btn-row.free > * { flex: 0 1 auto; min-width: 0; }
+.btn-stack { display: flex; flex-direction: column; gap: 8px; max-width: 460px; }
 .error { color: var(--danger); background: #fdecea; border-radius: 8px; padding: 8px 12px; margin: 0; font-size: 13px; }
 .notice { background: var(--sage-light); color: var(--ink); padding: 8px 12px; border-radius: 8px; margin: 0 0 12px; font-size: 13px; }
 .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
@@ -172,7 +182,6 @@ a { color: var(--brand-dark); }
 .attach { max-width: 260px; max-height: 200px; border-radius: 8px; border: 1px solid var(--line); background: #000; }
 .report-form { display: flex; flex-direction: column; gap: 12px; }
 .report-form textarea { padding: 8px; border: 1px solid var(--sage); border-radius: 8px; font: inherit; }
-.marker-row { display: flex; gap: 10px; align-items: center; }
 .ghost-btn { padding: 8px 14px; background: #fff; border: 1px solid var(--sage); border-radius: 8px; cursor: pointer; color: var(--ink); }
 
 /* Kırpma */

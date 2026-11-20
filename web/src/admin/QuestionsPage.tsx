@@ -197,7 +197,7 @@ function QuestionDetail({ id }: { id: string }) {
                   </span>
                   <button
                     type="button"
-                    className="link danger"
+                    className="accent-btn sm"
                     onClick={() => void change(() => api(`/api/admin/questions/${id}/outcomes/${o.id}`, { method: 'DELETE' }), 'Kazanım çıkarıldı.')}
                     data-testid={`remove-${o.code}`}
                   >

@@ -155,7 +155,7 @@ export function TeachersPage() {
               <th>Ad Soyad</th>
               <th>E-posta</th>
               <th>Branş</th>
-              <th style={{ width: 150 }} />
+              <th style={{ width: 200 }} />
             </tr>
           </thead>
           <tbody>
@@ -167,12 +167,14 @@ export function TeachersPage() {
                 <td>{t.email}</td>
                 <td>{t.branch}</td>
                 <td>
-                  <button type="button" className="link" onClick={() => openEdit(t)} data-testid={`edit-${t.email}`}>
-                    Düzenle
-                  </button>
-                  <button type="button" className="link danger" onClick={() => void remove(t)} data-testid={`delete-${t.email}`}>
-                    Sil
-                  </button>
+                  <div className="btn-row sm">
+                    <button type="button" className="accent-btn sm" onClick={() => openEdit(t)} data-testid={`edit-${t.email}`}>
+                      Düzenle
+                    </button>
+                    <button type="button" className="accent-btn sm" onClick={() => void remove(t)} data-testid={`delete-${t.email}`}>
+                      Sil
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

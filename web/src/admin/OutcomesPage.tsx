@@ -98,8 +98,10 @@ export function OutcomesPage() {
                       </select>
                     </td>
                     <td>
-                      <button type="button" className="link" onClick={() => void save(o)} data-testid="outcome-save">Kaydet</button>
-                      <button type="button" className="link" onClick={() => setEditing(null)}>Vazgeç</button>
+                      <div className="btn-row sm">
+                        <button type="button" className="accent-btn sm" onClick={() => void save(o)} data-testid="outcome-save">Kaydet</button>
+                        <button type="button" className="accent-btn sm" onClick={() => setEditing(null)}>Vazgeç</button>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -108,7 +110,7 @@ export function OutcomesPage() {
                     <td>{o.description}</td>
                     <td>{o.branch ?? '—'}</td>
                     <td>
-                      <button type="button" className="link" onClick={() => startEdit(o)} data-testid={`edit-outcome-${o.code}`}>Düzenle</button>
+                      <button type="button" className="accent-btn sm" onClick={() => startEdit(o)} data-testid={`edit-outcome-${o.code}`}>Düzenle</button>
                     </td>
                   </tr>
                 ),
