@@ -30,6 +30,12 @@ function store(next: { tokens: Tokens; user: UserInfo } | null) {
   }
 }
 
+// Sayfa adreste (#/sorular gibi) tutulur; oturum başlarken ve biterken adres sıfırlanır, böylece her girişte panelden başlanır.
+// (Sayfa yenilemede oturum sürdüğü için adres korunur.)
+function resetRoute() {
+  if (window.location.hash) window.history.replaceState(null, '', window.location.pathname + window.location.search);
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -95,6 +101,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     onSessionLost = () => {
+      resetRoute();
       setUser(null);
       setSessionEnded(true);
     };
@@ -117,12 +124,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       await fetch('/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password, role }) }),
     );
     store({ tokens: { accessToken: result.accessToken, refreshToken: result.refreshToken }, user: result.user });
+    resetRoute();
     setSessionEnded(false);
     setUser(result.user);
   }, []);
 
   const logout = useCallback(async () => {
     store(null);
+    resetRoute();
     setUser(null);
     setSessionEnded(false);
   }, []);
