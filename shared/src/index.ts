@@ -80,6 +80,14 @@ export const ASSIGNMENT_STATUS_LABEL: Record<AssignmentStatus, string> = {
 // Atamanın güncel çözüm videosu (sunucuda üretilmiş MP4). videoUrl, süreli imzalı bir adrestir.
 export type RecordingInfo = { id: string; videoUrl: string; durationSeconds: number; updatedAt: string; canUndo?: boolean };
 
+// Çapraz kontrol: aynı soruya atanmış öğretmenler birbirlerinin çözüm videosunu "hatasız" / "hatalı" diye işaretler (isteğe bağlı not).
+// Değerlendirmeyi yalnızca yönetici görür; videonun sahibi görmez. Video değişince (düzenleme, yeniden çekme) silinir.
+export type PeerVerdict = 'correct' | 'faulty';
+export const PEER_VERDICT_LABEL: Record<PeerVerdict, string> = { correct: 'Hatasız', faulty: 'Hatalı' };
+export const PEER_NOTE_MAX = 500;
+export type PeerCheckInfo = { checkerName: string; verdict: PeerVerdict; note: string | null; updatedAt: string }; // yönetici listesi
+export type MyPeerCheck = { verdict: PeerVerdict; note: string | null }; // kontrol edenin kendi değerlendirmesi
+
 export type AssignmentInfo = {
   id: string;
   questionId: string;
@@ -92,6 +100,7 @@ export type AssignmentInfo = {
   assignedAt: string;
   submittedAt: string | null;
   recording: RecordingInfo | null;
+  peerChecks: PeerCheckInfo[]; // güncel videonun çapraz kontrol değerlendirmeleri
 };
 
 // Atama sonrası bildirim sonuçları: e-posta durumu ve push gönderilen cihaz sayısı.
@@ -102,7 +111,7 @@ export type AssignmentDelivery = {
 
 // Öğretmen: atanan soru ve bildirim tipleri.
 // Aynı soru için başka bir öğretmenin onaya gönderilmiş veya onaylanmış çözüm videosu (çapraz atamada yeni öğretmen izleyebilir).
-export type ReferenceVideo = { teacherName: string; status: AssignmentStatus; recording: RecordingInfo };
+export type ReferenceVideo = { teacherName: string; status: AssignmentStatus; recording: RecordingInfo; myCheck: MyPeerCheck | null };
 
 export type TeacherAssignment = {
   id: string;
@@ -116,7 +125,7 @@ export type TeacherAssignment = {
 
 export type NotificationInfo = {
   id: string;
-  type: 'assignment_created' | 'recording_approved' | 'recording_returned' | 'recording_submitted' | 'error_reported';
+  type: 'assignment_created' | 'recording_approved' | 'recording_returned' | 'recording_submitted' | 'error_reported' | 'peer_checked';
   text: string;
   href: string; // tıklayınca gidilecek sayfa (#/...)
   readAt: string | null;

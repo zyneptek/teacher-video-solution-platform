@@ -4,7 +4,7 @@
 // Öğretmene cevap anahtarı gösterilmez (varsayım, README'de); sorunun kazanımları gösterilir.
 import { Router } from 'express';
 import multer from 'multer';
-import type { AssignmentStatus, Branch, OutcomeInfo, TeacherAssignment } from '@app/shared';
+import { PEER_NOTE_MAX, type AssignmentStatus, type Branch, type OutcomeInfo, type PeerVerdict, type TeacherAssignment } from '@app/shared';
 import { requireAuth } from '../auth.js';
 import { pool } from '../db.js';
 import { notifyAdmins } from '../notifications.js';
@@ -86,10 +86,13 @@ teacherRouter.get('/assignments/:id', async (req, res) => {
     }
     // Çapraz atama: aynı sorunun BAŞKA öğretmenlerce üretilmiş ve onaya gönderilmiş ya da onaylanmış videoları da gösterilir
     // (taslak ve geri gönderilmiş videolar gösterilmez).
-    const refs = await pool.query<{ first_name: string; last_name: string; rec_id: string; rec_duration: string | null; rec_updated: Date; status: AssignmentStatus }>(
-      `select p.first_name, p.last_name, a.status, r.id as rec_id, r.duration_seconds as rec_duration, r.updated_at as rec_updated
+    // Her videoyla birlikte bu öğretmenin kendi çapraz kontrol değerlendirmesi de döner (başkalarının değerlendirmeleri dönmez).
+    const refs = await pool.query<{ first_name: string; last_name: string; rec_id: string; rec_duration: string | null; rec_updated: Date; status: AssignmentStatus; check_verdict: PeerVerdict | null; check_note: string | null }>(
+      `select p.first_name, p.last_name, a.status, r.id as rec_id, r.duration_seconds as rec_duration, r.updated_at as rec_updated,
+              c.verdict as check_verdict, c.note as check_note
        from assignments a join recordings r on r.assignment_id = a.id and r.deleted_at is null and r.status = 'ready'
        join profiles p on p.id = a.teacher_id
+       left join peer_checks c on c.recording_id = r.id and c.reviewer_id = $2
        where a.question_id = $1 and a.teacher_id <> $2 and a.status in ('submitted', 'approved') order by r.updated_at desc`,
       [rows[0].question_id, req.user?.id],
     );
@@ -98,11 +101,60 @@ teacherRouter.get('/assignments/:id', async (req, res) => {
       teacherName: `${r.first_name} ${r.last_name}`,
       status: r.status,
       recording: recordingInfo({ id: r.rec_id, duration_seconds: r.rec_duration, updated_at: r.rec_updated }),
+      myCheck: r.check_verdict ? { verdict: r.check_verdict, note: r.check_note } : null,
     }));
     res.json({ assignment });
   } catch (err) {
     console.error('Atama alınamadı:', err);
     res.status(500).json({ error: 'Soru yüklenemedi.' });
+  }
+});
+
+// ---- Çapraz kontrol: aynı soruya atanmış başka bir öğretmenin çözümünü "hatasız" / "hatalı" diye değerlendirir ----
+// :id kontrol edenin KENDİ atamasıdır (soruya atanmış olması şarttır). Değerlendirilecek video, aynı soruda başka bir öğretmenin
+// onaya gönderilmiş veya onaylanmış kaydıdır (öğretmenin referans olarak zaten gördüğü videolar). Not isteğe bağlıdır.
+// Her video için her kontrol edenin tek değerlendirmesi vardır; yeniden gönderilirse güncellenir. Her değerlendirmede yöneticilere bildirim yazılır.
+teacherRouter.put('/assignments/:id/peer-check', async (req, res) => {
+  const { recordingId, verdict, note } = (req.body ?? {}) as { recordingId?: unknown; verdict?: unknown; note?: unknown };
+  if (!UUID_PATTERN.test(req.params.id)) {
+    res.status(404).json({ error: 'Soru bulunamadı veya size atanmamış.' });
+    return;
+  }
+  if (typeof recordingId !== 'string' || !UUID_PATTERN.test(recordingId) || (verdict !== 'correct' && verdict !== 'faulty')) {
+    res.status(400).json({ error: 'Çözümü "Hatasız" veya "Hatalı" olarak değerlendirin.' });
+    return;
+  }
+  const text = typeof note === 'string' ? note.trim() : '';
+  if (text.length > PEER_NOTE_MAX) {
+    res.status(400).json({ error: `Not en fazla ${PEER_NOTE_MAX} karakter olabilir.` });
+    return;
+  }
+  try {
+    const own = await pool.query<{ question_id: string }>('select question_id from assignments where id = $1 and teacher_id = $2', [req.params.id, req.user?.id]);
+    if (!own.rows[0]) {
+      res.status(404).json({ error: 'Soru bulunamadı veya size atanmamış.' });
+      return;
+    }
+    const target = await pool.query<{ assignment_id: string }>(
+      `select a.id as assignment_id from recordings r join assignments a on a.id = r.assignment_id
+       where r.id = $1 and r.deleted_at is null and r.status = 'ready'
+         and a.question_id = $2 and a.teacher_id <> $3 and a.status in ('submitted', 'approved')`,
+      [recordingId, own.rows[0].question_id, req.user?.id],
+    );
+    if (!target.rows[0]) {
+      res.status(404).json({ error: 'Bu çözüm değerlendirilemez.' });
+      return;
+    }
+    await pool.query(
+      `insert into peer_checks (recording_id, reviewer_id, verdict, note) values ($1, $2, $3, $4)
+       on conflict (recording_id, reviewer_id) do update set verdict = excluded.verdict, note = excluded.note, updated_at = now()`,
+      [recordingId, req.user?.id, verdict, text || null],
+    );
+    await notifyAdmins({ type: 'peer_checked', assignmentId: target.rows[0].assignment_id, checkerId: req.user?.id as string, verdict }).catch((err) => console.error('Yönetici bildirimi yazılamadı:', err));
+    res.json({ check: { verdict, note: text || null } });
+  } catch (err) {
+    console.error('Çapraz kontrol kaydedilemedi:', err);
+    res.status(500).json({ error: 'Değerlendirme kaydedilemedi.' });
   }
 });
 

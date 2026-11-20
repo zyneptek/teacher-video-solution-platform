@@ -66,6 +66,8 @@ export async function saveRecording(assignmentId: string, mp4Path: string, durat
     [assignmentId, videoPath, durationSeconds],
   );
   const row = rows[0] as RecordingRow;
+  // Video değişti (ilk kayıt, yeniden çekme veya düzenleme): eski videoya verilmiş çapraz kontrol değerlendirmeleri geçersizdir.
+  await pool.query('delete from peer_checks where recording_id = $1', [row.id]);
   // Yeni dosya yerel önbelleğe de konur (ilk izleme Storage'a gitmeden açılır).
   await mkdir(CACHE_DIR, { recursive: true });
   await copyFile(mp4Path, cachePath(row.id, row.updated_at.getTime())).catch(() => undefined);
@@ -100,6 +102,7 @@ export async function undoLastEdit(assignmentId: string): Promise<boolean> {
   const prev = last.rows[0];
   if (!prev) return false;
   await pool.query('update recordings set video_path = $2, duration_seconds = $3, updated_at = now() where id = $1', [current.id, prev.video_path, prev.duration_seconds]);
+  await pool.query('delete from peer_checks where recording_id = $1', [current.id]); // video değişti: eski değerlendirmeler geçersiz
   await rm(cachePath(current.id, current.updated_at.getTime()), { force: true });
   if (current.video_path) await supabase.storage.from(BUCKETS.recordings).remove([current.video_path]).catch(() => undefined);
   return true;

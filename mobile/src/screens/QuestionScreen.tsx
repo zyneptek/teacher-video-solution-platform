@@ -9,6 +9,7 @@ import type { Nav } from '../nav';
 import { colors } from '../theme';
 import { Button, Card, ErrorText, StatusBadge } from '../ui';
 import { useWide } from '../ui/layout';
+import { PeerCheck } from '../ui/PeerCheck';
 import { VideoBox } from '../ui/VideoBox';
 
 export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
@@ -122,9 +123,10 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
         <Card>
           <Text style={styles.bold}>Bu soru için mevcut çözüm videoları</Text>
           {assignment.referenceVideos.map((v) => (
-            <View key={v.recording.id} style={{ gap: 4 }}>
+            <View key={`${v.recording.id}-${v.recording.updatedAt}`} style={{ gap: 4 }}>
               <Text style={styles.small}>{v.teacherName} · {ASSIGNMENT_STATUS_LABEL[v.status]}</Text>
               <VideoBox url={abs(v.recording.videoUrl)} />
+              <PeerCheck assignmentId={assignment.id} recordingId={v.recording.id} initial={v.myCheck} />
             </View>
           ))}
         </Card>

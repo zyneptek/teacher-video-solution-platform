@@ -1,20 +1,24 @@
 // Bildirimler (öğretmen ve yönetici ortak): listeleme, okundu işaretleme ve yöneticilere bildirim üretme.
 // Bildirim metni saklanmaz; türden ve bağlı atama/hata bildiriminden gösterilirken üretilir.
 import { Router } from 'express';
-import { ERROR_REPORT_TYPES, type NotificationInfo } from '@app/shared';
+import { ERROR_REPORT_TYPES, PEER_VERDICT_LABEL, type NotificationInfo, type PeerVerdict } from '@app/shared';
 import { requireAuth } from './auth.js';
 import { pool } from './db.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 // Tüm aktif yöneticilere bildirim yazar (öğretmen videoyu onaya gönderince veya hata bildirince).
-export async function notifyAdmins(input: { type: 'recording_submitted'; assignmentId: string } | { type: 'error_reported'; errorReportId: string }): Promise<void> {
+export async function notifyAdmins(
+  input: { type: 'recording_submitted'; assignmentId: string } | { type: 'error_reported'; errorReportId: string } | { type: 'peer_checked'; assignmentId: string; checkerId: string; verdict: PeerVerdict },
+): Promise<void> {
   const assignmentId = 'assignmentId' in input ? input.assignmentId : null;
   const errorReportId = 'errorReportId' in input ? input.errorReportId : null;
+  const checkerId = input.type === 'peer_checked' ? input.checkerId : null;
+  const verdict = input.type === 'peer_checked' ? input.verdict : null;
   await pool.query(
-    `insert into notifications (recipient_id, assignment_id, error_report_id, type)
-     select id, $1, $2, $3 from profiles where role = 'admin' and deleted_at is null`,
-    [assignmentId, errorReportId, input.type],
+    `insert into notifications (recipient_id, assignment_id, error_report_id, type, checker_id, check_verdict)
+     select id, $1, $2, $3, $4, $5 from profiles where role = 'admin' and deleted_at is null`,
+    [assignmentId, errorReportId, input.type, checkerId, verdict],
   );
 }
 
@@ -29,6 +33,8 @@ type Row = {
   question_id: string;
   person: string | null;
   report_type: string | null;
+  checker: string | null;
+  check_verdict: PeerVerdict | null;
 };
 
 function toInfo(r: Row): NotificationInfo {
@@ -53,6 +59,10 @@ function toInfo(r: Row): NotificationInfo {
       text = `${person} hata bildirdi (${ERROR_REPORT_TYPES.find((t) => t.value === r.report_type)?.label ?? 'Hata'}): ${label}`;
       href = `#/sorular/${r.question_id}`;
       break;
+    case 'peer_checked':
+      text = `${r.checker ?? 'Bir öğretmen'}, ${person} öğretmenin çözümünü ${r.check_verdict ? PEER_VERDICT_LABEL[r.check_verdict].toLocaleLowerCase('tr') : ''} buldu: ${label}`;
+      href = `#/sorular/${r.question_id}`;
+      break;
     default:
       text = `Size yeni bir soru atandı: ${label}`;
       href = `#/sorularim/${r.assignment_id}`;
@@ -70,7 +80,8 @@ notificationsRouter.get('/', async (req, res) => {
               coalesce(qa.branch, qe.branch) as branch,
               coalesce(qa.question_number, qe.question_number) as question_number,
               coalesce(qa.id, qe.id) as question_id,
-              coalesce(pt.first_name || ' ' || pt.last_name, pr.first_name || ' ' || pr.last_name) as person
+              coalesce(pt.first_name || ' ' || pt.last_name, pr.first_name || ' ' || pr.last_name) as person,
+              pc.first_name || ' ' || pc.last_name as checker, n.check_verdict
        from notifications n
        left join assignments a on a.id = n.assignment_id
        left join questions qa on qa.id = a.question_id
@@ -78,6 +89,7 @@ notificationsRouter.get('/', async (req, res) => {
        left join error_reports e on e.id = n.error_report_id
        left join questions qe on qe.id = e.question_id
        left join profiles pr on pr.id = e.reporter_id
+       left join profiles pc on pc.id = n.checker_id
        where n.recipient_id = $1 order by n.created_at desc limit 100`,
       [req.user?.id],
     );

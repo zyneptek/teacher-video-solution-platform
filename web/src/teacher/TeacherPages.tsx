@@ -11,6 +11,7 @@ import { MarkedImage, type Marker } from '../reports/MarkedImage';
 import { ReportCard } from '../reports/ReportViews';
 import { AssignmentCards } from './AssignmentCards';
 import { EditPanel } from './EditPanel';
+import { PeerCheck } from './PeerCheck';
 
 function useAssignments() {
   const [assignments, setAssignments] = useState<TeacherAssignment[] | null>(null);
@@ -211,9 +212,10 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
             <div className="card" data-testid="reference-videos">
               <strong>Bu soru için mevcut çözüm videoları</strong>
               {assignment.referenceVideos.map((v) => (
-                <div key={v.recording.id}>
+                <div key={`${v.recording.id}-${v.recording.updatedAt}`}>
                   <div className="muted small" style={{ marginBottom: 4 }}>{v.teacherName} · {ASSIGNMENT_STATUS_LABEL[v.status]}</div>
                   <VideoPreview src={v.recording.videoUrl} />
+                  <PeerCheck assignmentId={assignment.id} recordingId={v.recording.id} initial={v.myCheck} />
                 </div>
               ))}
             </div>

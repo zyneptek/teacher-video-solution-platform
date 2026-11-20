@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AssignmentInfo } from '@app/shared';
 import { api } from '../auth/session';
 import { VideoPreview } from '../studio/VideoPreview';
+import { PeerChecks } from './PeerChecks';
 
 const MAX_NOTE = 500;
 
@@ -86,6 +87,7 @@ function ReviewCard({ assignment: a, onDone }: { assignment: AssignmentInfo; onD
         </div>
       </div>
       {a.recording ? <div style={{ maxWidth: 720 }}><VideoPreview src={a.recording.videoUrl} /></div> : <p className="muted">Video bulunamadı.</p>}
+      <PeerChecks checks={a.peerChecks} />
       {error && <p role="alert" className="error" data-testid="review-error">{error}</p>}
       {returning ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
