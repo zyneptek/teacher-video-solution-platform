@@ -111,8 +111,8 @@ export type AccountMail = { to: string; teacherName: string; branch: string; ema
 
 export function buildAccountMail(mail: AccountMail): { subject: string; text: string; html: string } {
   const created = mail.kind === 'created';
-  const subject = created ? 'Hesabınız oluşturuldu: Video Çözüm Platformu' : 'Şifreniz güncellendi: Video Çözüm Platformu';
-  const intro = created ? 'Video Çözüm Platformu için öğretmen hesabınız oluşturuldu.' : 'Hesabınızın şifresi yönetici tarafından güncellendi.';
+  const subject = created ? 'Hesabınız oluşturuldu: İşler Video Çözüm Platformu' : 'Şifreniz güncellendi: İşler Video Çözüm Platformu';
+  const intro = created ? 'İşler Video Çözüm Platformu için öğretmen hesabınız oluşturuldu.' : 'Hesabınızın şifresi yönetici tarafından güncellendi.';
   const text = [
     `Merhaba ${mail.teacherName},`,
     '',

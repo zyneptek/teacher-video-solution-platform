@@ -47,7 +47,7 @@ export function AppShell({ pages, userName, roleLabel, onLogout }: { pages: Page
   return (
     <div className={collapsed ? 'admin collapsed' : 'admin'}>
       <aside className="sidebar" data-testid="sidebar">
-        <div className="brand">Video Çözüm<br />Platformu</div>
+        <div className="brand">İşler Video Çözüm<br />Platformu</div>
         <nav>
           {pages.filter((p) => !p.hidden).map((p) => (
             <a key={p.path} href={`#${p.path}`} className={p.path === route.path ? 'nav active' : 'nav'} data-testid={`nav-${p.path.replace('/', '') || 'panel'}`}>

@@ -1,4 +1,4 @@
-# Öğretmen Video Çözüm Platformu
+# İşler Video Çözüm Platformu
 
 İşler Yayınevi için hazırlanan, öğretmenlerin sorulara video çözüm kaydettiği ve yöneticinin bu videoları onayladığı bir teknik değerlendirme projesidir. Üç istemci ve bir sunucudan oluşur:
 
@@ -639,3 +639,7 @@ Sonuç: liste görselleriyle birlikte ~0,4 sn, detay anında açılır.
 ### Karar 39 — Mobil stüdyoda geri tuşu
 - Kayıt stüdyosunda (telefon ve tablet) sol üstte yuvarlak bir **geri tuşu (←)** vardır; kayıt bitirilmek zorunda değildir, yanlışlıkla açılan stüdyodan çıkılabilir. Kayıt başlamamışsa ve çizim yapılmamışsa doğrudan soru sayfasına dönülür. Kayıt sürüyorsa/duraklatılmışsa veya çizim varsa onay istenir ("Kayıttan çıkılsın mı?" — "Kayda devam et" / "Çık"); **Çık** ses, kamera klipleri ve çizimleri kaydetmeden atar (mikrofon ve kamera durdurulur). Sunucuya hiçbir şey gönderilmez.
 - Android geri tuşu aynı yolu izler. Önizleme aşamasında (video zaten kaydedildi, taslak olarak saklanır) geri tuşu önceki gibi soru sayfasına döner; "Sil" ve "Yeniden çek" seçenekleri o ekranda durur.
+
+### Karar 40 — Uygulama adı
+- Uygulamanın adı **"İşler Video Çözüm Platformu"** oldu: web sekme başlığı, giriş sayfası ve yönetici/öğretmen kenar çubuğu, mobil giriş ekranı ve mobil uygulama adı (`app.json` → `name`), hesap e-postalarının konu/giriş cümlesi ve bu README başlığı. Kod tarafındaki teknik adlar (paket adları, Expo `slug`, depo adı) değişmedi; böylece kurulum ve bağlantılar bozulmaz.
+- Not: gönderen adı `MAIL_FROM` ortam değişkeninden gelir (`server/.env`); yerel `.env` değeri elle güncellenmelidir (örnek dosya güncellendi).

@@ -31,7 +31,7 @@ export function LoginScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView contentContainerStyle={[styles.wrap, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
-          <Text style={styles.title}>Video Çözüm Platformu</Text>
+          <Text style={styles.title}>İşler Video Çözüm Platformu</Text>
           <View style={styles.accent} />
           {sessionEnded && <Notice>Oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.</Notice>}
           <Text style={styles.label}>E-posta</Text>
