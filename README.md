@@ -8,7 +8,7 @@
 - **Mobil ve tablet (React Native, Expo):** öğretmen uygulaması, telefon ve tablet için tek uygulama
 - **Sunucu (Node.js, Express):** tek API, MP4 üretimi, e-posta ve push. Veri ve dosyalar Supabase'de
 
-> **Demo videosu:** _(demo çekildikten sonra buraya bağlantı eklenecek)_
+> **Demo videosu:** [demo/demo.mp4](demo/demo.mp4) (≈2 dk 41 sn; yönetici öğretmen oluşturur ve soruyu atar, öğretmen kaydı oluşturup onaya gönderir).
 
 | Yönetici: soru, cevap anahtarı, kazanım, atama | Yönetici: onay bekleyen video |
 |---|---|
