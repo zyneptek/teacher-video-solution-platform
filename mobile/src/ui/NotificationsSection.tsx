@@ -1,4 +1,4 @@
-// Bildirimler (öğretmen ve yönetici ana sayfalarında ortak): son 3 bildirim, okunmamış sayısı, "Tümünü okundu yap" ve
+// Bildirimler (öğretmen ana sayfası): son 3 bildirim, okunmamış sayısı, "Tümünü okundu yap" ve
 // daha fazlası varsa kalan sayıyı gösteren "Tümünü gör" bağlantısı. NotificationRows tam liste sayfalarında da kullanılır.
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { NotificationInfo } from '@app/shared';

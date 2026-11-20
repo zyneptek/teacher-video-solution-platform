@@ -74,10 +74,11 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   return parse<T>(response);
 }
 
-export async function login(email: string, password: string, role: 'admin' | 'teacher'): Promise<LoginResponse> {
+// Mobil uygulama yalnızca öğretmen girişi içindir; sunucu hesabın gerçek rolünü "teacher" ile karşılaştırır.
+export async function login(email: string, password: string): Promise<LoginResponse> {
   let response;
   try {
-    response = await fetch(abs('/api/auth/login'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password, role }) });
+    response = await fetch(abs('/api/auth/login'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password, role: 'teacher' }) });
   } catch {
     throw new ApiError('Sunucuya ulaşılamadı. İnternet bağlantınızı ve sunucu adresini kontrol edin.', 0);
   }

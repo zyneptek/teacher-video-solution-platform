@@ -87,7 +87,7 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
       <Card>
         <View style={styles.between}>
           <Text style={styles.bold}>Durum</Text>
-          <StatusBadge status={assignment.status} forTeacher />
+          <StatusBadge status={assignment.status} />
         </View>
         {assignment.status === 'returned' && assignment.returnNote && (
           <View style={styles.returnNote} testID="return-note">

@@ -1,5 +1,5 @@
 // Mobil uygulama (öğretmen): giriş → ana sayfa (sorular, bildirimler) → soru → kayıt stüdyosu / kırpma / hata bildirimi.
-// Yönetici mobil uygulamaya girmez (web panelini kullanır). Ekranlar basit bir yığınla (src/nav.ts) yönetilir.
+// Mobil uygulama yalnızca öğretmenler içindir; yönetici web panelini kullanır. Ekranlar basit bir yığınla (src/nav.ts) yönetilir.
 import * as Notifications from 'expo-notifications';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { StatusBar } from 'expo-status-bar';
@@ -8,7 +8,6 @@ import { ActivityIndicator, BackHandler, useWindowDimensions, View } from 'react
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Nav, Route } from './src/nav';
 import { HomeScreen } from './src/screens/HomeScreen';
-import { AdminScreen } from './src/screens/AdminScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { ListScreen } from './src/screens/ListScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
@@ -81,7 +80,6 @@ function Root() {
     );
   }
   if (!user) return <LoginScreen />;
-  if (user.role === 'admin') return <AdminScreen />;
 
   switch (route.name) {
     case 'list':

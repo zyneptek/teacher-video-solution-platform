@@ -24,7 +24,7 @@ export function AssignmentRow({ assignment: a, onPress, wide }: { assignment: Te
           <Text style={styles.small} numberOfLines={1}>{a.question.outcomes.map((o) => o.code).join(', ')}</Text>
           <Text style={styles.small}>{solutionHint(a)}</Text>
         </View>
-        <StatusBadge status={a.status} forTeacher />
+        <StatusBadge status={a.status} />
       </Card>
     </Pressable>
   );

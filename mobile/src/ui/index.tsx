@@ -22,7 +22,7 @@ export function Card({ children, style }: { children: ReactNode; style?: ViewSty
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-// Sayı kartı (yönetici paneli ve öğretmen ana sayfası): solda renkli şerit, büyük sayı, altında etiket.
+// Sayı kartı (öğretmen ana sayfası): solda renkli şerit, büyük sayı, altında etiket.
 export function StatCard({ label, value, tone, wide, onPress }: { label: string; value: number; tone?: 'brand' | 'warn'; wide?: boolean; onPress?: () => void }) {
   const accent = tone === 'brand' ? colors.brand : tone === 'warn' ? colors.danger : colors.sage;
   return (
@@ -44,11 +44,9 @@ export function Badge({ label, tone }: { label: string; tone?: 'brand' | 'ok' | 
   );
 }
 
-// forTeacher: turuncu, öğretmenin aksiyon alması gereken durumlardır (Atandı, Geri gönderildi); yönetici için Onaya gönderildi.
-export function StatusBadge({ status, forTeacher }: { status: AssignmentStatus; forTeacher?: boolean }) {
-  const tone = forTeacher
-    ? status === 'assigned' || status === 'returned' ? 'brand' : status === 'approved' ? 'ok' : undefined
-    : status === 'submitted' ? 'brand' : status === 'approved' ? 'ok' : status === 'returned' ? 'warn' : undefined;
+// Durum etiketi: turuncu, öğretmenin aksiyon alması gereken durumlardır (Atandı, Geri gönderildi); yeşil: Onaylandı.
+export function StatusBadge({ status }: { status: AssignmentStatus }) {
+  const tone = status === 'assigned' || status === 'returned' ? 'brand' : status === 'approved' ? 'ok' : undefined;
   return <Badge label={ASSIGNMENT_STATUS_LABEL[status]} tone={tone} />;
 }
 
