@@ -26,7 +26,7 @@ export function Card({ children, style }: { children: ReactNode; style?: ViewSty
 export function StatCard({ label, value, tone, wide, onPress }: { label: string; value: number; tone?: 'brand' | 'warn'; wide?: boolean; onPress?: () => void }) {
   const accent = tone === 'brand' ? colors.brand : tone === 'warn' ? colors.danger : colors.sage;
   return (
-    <Pressable disabled={!onPress} onPress={onPress} style={[styles.statCard, wide && { flexBasis: '22%', minHeight: 120, padding: 20 }]}>
+    <Pressable disabled={!onPress} onPress={onPress} style={[styles.statCard, wide ? { flexBasis: '22%', flexGrow: 1, minHeight: 120, padding: 20 } : { width: '48%' }]}>
       <View style={[styles.statAccent, { backgroundColor: accent }]} />
       <Text style={[styles.statValue, { fontSize: wide ? 44 : 32 }, tone === 'brand' && { color: colors.brand }, tone === 'warn' && { color: colors.danger }]}>{value}</Text>
       <Text style={[styles.statLabel, { fontSize: wide ? 16 : 13 }]}>{label}</Text>
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   btnDanger: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.danger },
   btnText: { fontSize: 15, fontWeight: '700', color: colors.ink },
   card: { backgroundColor: colors.white, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 14, gap: 10, shadowColor: colors.ink, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
-  statCard: { flexGrow: 1, flexBasis: '45%', minHeight: 92, backgroundColor: colors.white, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 14, justifyContent: 'center', overflow: 'hidden', shadowColor: colors.ink, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+  statCard: { minHeight: 92, backgroundColor: colors.white, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 14, justifyContent: 'center', overflow: 'hidden', shadowColor: colors.ink, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
   statAccent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 5 },
   statValue: { fontWeight: '800', color: colors.ink },
   statLabel: { color: colors.muted, marginTop: 2 },
