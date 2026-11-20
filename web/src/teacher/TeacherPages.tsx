@@ -165,6 +165,15 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
             <div className="muted small">Atanma: {new Date(assignment.assignedAt).toLocaleString('tr-TR')}</div>
           </div>
 
+          {!editing && <div className="card">
+            <strong>Kazanımlar</strong>
+            <ul className="outcomes">
+              {q.outcomes.map((o) => (
+                <li key={o.id}><span><strong>{o.code}</strong> {o.description}</span></li>
+              ))}
+            </ul>
+          </div>}
+
           <div className="card">
             <strong>Çözüm kaydı</strong>
             {actionError && <p role="alert" className="error" data-testid="action-error">{actionError}</p>}
@@ -220,15 +229,6 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
               ))}
             </div>
           )}
-
-          {!editing && <div className="card">
-            <strong>Kazanımlar</strong>
-            <ul className="outcomes">
-              {q.outcomes.map((o) => (
-                <li key={o.id}><span><strong>{o.code}</strong> {o.description}</span></li>
-              ))}
-            </ul>
-          </div>}
 
           <div className="card" data-testid="report-card-area">
             <div className="row" style={{ marginBottom: 0 }}>

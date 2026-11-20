@@ -124,6 +124,8 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
         <Text style={styles.small}>Atanma: {new Date(assignment.assignedAt).toLocaleString('tr-TR')}</Text>
       </Card>
 
+      {outcomesCard}
+
       <Card>
         <Text style={styles.bold}>Çözüm kaydı</Text>
         {assignment.recording ? (
@@ -158,16 +160,9 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
         </Card>
       )}
 
-      {!wide && outcomesCard}
-      {!wide && reportCard}
+      {reportCard}
       </View>
       </View>
-      {wide && (
-        <View style={styles.bottomRow}>
-          <View style={styles.bottomCol}>{outcomesCard}</View>
-          <View style={styles.bottomCol}>{reportCard}</View>
-        </View>
-      )}
     </ScrollView>
   );
 }
@@ -179,8 +174,6 @@ const styles = StyleSheet.create({
   cols: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
   colLeft: { flex: 1 },
   colRight: { flex: 1, gap: 12 },
-  bottomRow: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
-  bottomCol: { flex: 1 },
   backBtn: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
   back: { color: colors.brandDark, fontWeight: '700', fontSize: 15, paddingVertical: 6 },
   title: { fontSize: 20, fontWeight: '800', color: colors.ink },
