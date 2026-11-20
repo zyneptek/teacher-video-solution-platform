@@ -6,14 +6,14 @@ import { ASSIGNMENT_STATUS_LABEL, type AssignmentStatus } from '@app/shared';
 import { colors } from '../theme';
 
 // primary: dolu turuncu (ana işlem: giriş, kayıt oluştur); accent: turuncu degrade + hafif gölge (soru ve düzenleme ekranı işlemleri, web ile aynı);
-// ghost: çerçeveli (gezinti ve ikincil işlemler); danger: kırmızı çerçeveli.
-export function Button({ label, onPress, variant = 'primary', disabled, busy, style }: { label: string; onPress: () => void; variant?: 'primary' | 'accent' | 'ghost' | 'danger'; disabled?: boolean; busy?: boolean; style?: ViewStyle }) {
+// ghost: çerçeveli (gezinti ve ikincil işlemler); danger: kırmızı çerçeveli. compact: daha alçak ve küçük yazı (yatay tablette düzenleme ayarları).
+export function Button({ label, onPress, variant = 'primary', disabled, busy, style, compact }: { label: string; onPress: () => void; variant?: 'primary' | 'accent' | 'ghost' | 'danger'; disabled?: boolean; busy?: boolean; style?: ViewStyle; compact?: boolean }) {
   const off = disabled || busy;
   const filled = variant === 'primary' || variant === 'accent';
   return (
-    <Pressable accessibilityRole="button" disabled={off} onPress={onPress} style={({ pressed }) => [styles.btn, variant === 'primary' && styles.btnPrimary, variant === 'accent' && styles.btnAccent, variant === 'ghost' && styles.btnGhost, variant === 'danger' && styles.btnDanger, variant === 'accent' && pressed && { opacity: 0.85 }, off && { opacity: 0.5 }, style]}>
+    <Pressable accessibilityRole="button" disabled={off} onPress={onPress} style={({ pressed }) => [styles.btn, variant === 'primary' && styles.btnPrimary, variant === 'accent' && styles.btnAccent, variant === 'ghost' && styles.btnGhost, variant === 'danger' && styles.btnDanger, variant === 'accent' && pressed && { opacity: 0.85 }, off && { opacity: 0.5 }, compact && styles.btnCompact, style]}>
       {variant === 'accent' && <LinearGradient colors={[colors.brand, colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btnGradient} />}
-      {busy ? <ActivityIndicator color={filled ? '#fff' : colors.ink} /> : <Text style={[styles.btnText, filled && { color: '#fff' }, variant === 'danger' && { color: colors.danger }]}>{label}</Text>}
+      {busy ? <ActivityIndicator color={filled ? '#fff' : colors.ink} /> : <Text style={[styles.btnText, compact && { fontSize: 13 }, filled && { color: '#fff' }, variant === 'danger' && { color: colors.danger }]}>{label}</Text>}
     </Pressable>
   );
 }
@@ -66,6 +66,7 @@ const styles = StyleSheet.create({
   btn: { minHeight: 46, paddingHorizontal: 18, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
   btnPrimary: { backgroundColor: colors.brand },
   btnAccent: { backgroundColor: colors.brand, shadowColor: colors.brandDark, shadowOpacity: 0.35, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  btnCompact: { minHeight: 36, paddingHorizontal: 10, borderRadius: 10 },
   btnGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 12 },
   btnGhost: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.sage },
   btnDanger: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.danger },

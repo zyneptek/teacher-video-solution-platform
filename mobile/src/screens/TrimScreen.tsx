@@ -96,18 +96,19 @@ export function TrimScreen({ id, nav }: { id: string; nav: Nav }) {
   const keepSeconds = end - start;
   const cutSeconds = total - keepSeconds;
 
+  const compact = wide && !portraitTablet; // yatay tablet: video geniş, ayarlar dar ve küçük
   const startControls = (
     <View style={{ gap: 10 }}>
       <Text style={styles.label}>Aralık başlangıcı: {fmt(start)}</Text>
       <Slider minimumValue={0} maximumValue={total} step={0.1} value={start} onValueChange={changeStart} minimumTrackTintColor={colors.brand} thumbTintColor={colors.brand} />
-      <Button label="Mevcut konumu başlangıç yap" variant="accent" onPress={() => changeStart(player.current?.currentTime ?? 0)} />
+      <Button label="Mevcut konumu başlangıç yap" variant="accent" compact={compact} onPress={() => changeStart(player.current?.currentTime ?? 0)} />
     </View>
   );
   const endControls = (
     <View style={{ gap: 10 }}>
       <Text style={styles.label}>Aralık bitişi: {fmt(end)}</Text>
       <Slider minimumValue={0} maximumValue={total} step={0.1} value={end} onValueChange={changeEnd} minimumTrackTintColor={colors.brand} thumbTintColor={colors.brand} />
-      <Button label="Mevcut konumu bitiş yap" variant="accent" onPress={() => changeEnd(player.current?.currentTime ?? total)} />
+      <Button label="Mevcut konumu bitiş yap" variant="accent" compact={compact} onPress={() => changeEnd(player.current?.currentTime ?? total)} />
     </View>
   );
   const summary = (
@@ -139,16 +140,16 @@ export function TrimScreen({ id, nav }: { id: string; nav: Nav }) {
         </View>
       ) : (
         <View style={wide ? { flexDirection: 'row', gap: 20, alignItems: 'flex-start' } : { gap: 10 }}>
-          <View style={wide ? { flex: 3 } : undefined}>
+          <View style={wide ? { flex: 7 } : undefined}>
             <VideoBox key={recording.videoUrl} url={abs(recording.videoUrl)} onPlayer={(p) => (player.current = p)} />
           </View>
-          <View style={[{ gap: 10 }, wide && { flex: 2 }]}>
+          <View style={[{ gap: compact ? 8 : 10 }, wide && { flex: 3 }]}>
             {startControls}
             {endControls}
             {summary}
-            <Button label="Yalnızca bu aralığı tut" variant="accent" onPress={() => void apply('keep')} busy={busy} disabled={keepSeconds < 1} />
-            <Button label="Bu aralığı sil" variant="accent" onPress={() => void apply('cut')} disabled={busy || cutSeconds < 1} />
-            <Button label="↶ Geri al" variant="accent" onPress={() => void undo()} disabled={busy || !recording.canUndo} />
+            <Button label="Yalnızca bu aralığı tut" variant="accent" compact={compact} onPress={() => void apply('keep')} busy={busy} disabled={keepSeconds < 1} />
+            <Button label="Bu aralığı sil" variant="accent" compact={compact} onPress={() => void apply('cut')} disabled={busy || cutSeconds < 1} />
+            <Button label="↶ Geri al" variant="accent" compact={compact} onPress={() => void undo()} disabled={busy || !recording.canUndo} />
           </View>
         </View>
       )}
