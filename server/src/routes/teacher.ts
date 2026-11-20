@@ -1,10 +1,10 @@
 // Öğretmen: kendisine atanan sorular ve kendi bildirimleri.
 // Görünürlük kuralı: öğretmen yalnızca KENDİ atamalarını, kayıtlarını ve bildirimlerini görür; başkasının
 // atamasına erişim denemesi "bulunamadı" (404) döner (varlığı bile belli edilmez).
-// Öğretmene cevap anahtarı gösterilmez (varsayım, README'de); sorunun kazanımları gösterilir.
+// Öğretmene sorunun cevap anahtarı ve kazanımları gösterilir (varsayım, README'de).
 import { Router } from 'express';
 import multer from 'multer';
-import { PEER_NOTE_MAX, type AssignmentStatus, type Branch, type OutcomeInfo, type PeerVerdict, type TeacherAssignment } from '@app/shared';
+import { PEER_NOTE_MAX, type AssignmentStatus, type Branch, type OutcomeInfo, type PeerVerdict, type QuestionInfo, type TeacherAssignment } from '@app/shared';
 import { requireAuth } from '../auth.js';
 import { pool } from '../db.js';
 import { notifyAdmins } from '../notifications.js';
@@ -30,6 +30,7 @@ type AssignmentRow = {
   question_id: string;
   branch: Branch;
   question_number: number | null;
+  answer_key: QuestionInfo['answerKey'];
   rec_id: string | null;
   rec_duration: string | null;
   rec_updated: Date | null;
@@ -39,7 +40,7 @@ type AssignmentRow = {
 
 // Öğretmenin atamaları (tek sorgu): soru bilgisi, kazanımlar ve kayıt var mı.
 const SELECT = `
-  select a.id, a.status, a.return_note, a.assigned_at, q.id as question_id, q.branch, q.question_number,
+  select a.id, a.status, a.return_note, a.assigned_at, q.id as question_id, q.branch, q.question_number, q.answer_key,
          r.id as rec_id, r.duration_seconds as rec_duration, r.updated_at as rec_updated,
          (select count(*) from recording_history h where h.recording_id = r.id) as rec_history,
          coalesce((select json_agg(json_build_object('id', o.id, 'code', o.code, 'description', o.description, 'branch', o.branch) order by o.code)
@@ -58,6 +59,7 @@ const toAssignment = (r: AssignmentRow): TeacherAssignment => ({
     id: r.question_id,
     branch: r.branch,
     questionNumber: r.question_number,
+    answerKey: r.answer_key,
     imageUrl: questionImageUrl(r.question_id),
     outcomes: r.outcomes as OutcomeInfo[],
   },

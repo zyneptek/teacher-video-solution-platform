@@ -165,6 +165,13 @@ function QuestionPage({ id, startEditing }: { id: string; startEditing?: boolean
             <div className="muted small">Atanma: {new Date(assignment.assignedAt).toLocaleString('tr-TR')}</div>
           </div>
 
+          {!editing && <div className="card" data-testid="answer-key">
+            <div className="row" style={{ marginBottom: 0 }}>
+              <strong>Cevap anahtarı</strong>
+              <span className="badge">{q.answerKey}</span>
+            </div>
+          </div>}
+
           {!editing && <div className="card">
             <strong>Kazanımlar</strong>
             <ul className="outcomes">

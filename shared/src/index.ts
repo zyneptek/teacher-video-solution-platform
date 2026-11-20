@@ -122,7 +122,7 @@ export type TeacherAssignment = {
   assignedAt: string;
   recording: RecordingInfo | null;
   referenceVideos?: ReferenceVideo[]; // yalnızca soru detayında dolar
-  question: { id: string; branch: Branch; questionNumber: number | null; imageUrl: string; outcomes: OutcomeInfo[] };
+  question: { id: string; branch: Branch; questionNumber: number | null; answerKey: QuestionInfo['answerKey']; imageUrl: string; outcomes: OutcomeInfo[] };
 };
 
 export type NotificationInfo = {

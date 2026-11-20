@@ -71,6 +71,15 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
   const q = assignment.question;
   const canSubmit = !!assignment.recording && (assignment.status === 'assigned' || assignment.status === 'returned');
 
+  const answerCard = (
+    <Card>
+      <View style={styles.between}>
+        <Text style={styles.bold}>Cevap anahtarı</Text>
+        <Text style={{ color: colors.ink, fontSize: 18, fontWeight: '800' }}>{q.answerKey}</Text>
+      </View>
+    </Card>
+  );
+
   const outcomesCard = (
     <Card>
       <Text style={styles.bold}>Kazanımlar</Text>
@@ -124,6 +133,7 @@ export function QuestionScreen({ id, nav }: { id: string; nav: Nav }) {
         <Text style={styles.small}>Atanma: {new Date(assignment.assignedAt).toLocaleString('tr-TR')}</Text>
       </Card>
 
+      {answerCard}
       {outcomesCard}
 
       <Card>

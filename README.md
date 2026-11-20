@@ -182,7 +182,7 @@ Ayar yoksa atama yine yapılır, yalnızca e-posta gitmez. `example.com` adresle
 ## Varsayımlar
 
 - Soru ilk atamada da yalnızca **kendi branşındaki** öğretmene atanır; aynı soru aynı öğretmene ikinci kez atanamaz.
-- Öğretmene **cevap anahtarı gösterilmez**, kazanımlar gösterilir.
+- Öğretmen soru sayfasında sorunun **cevap anahtarını ve kazanımlarını** görür (web ve mobil).
 - Çapraz atanan öğretmen yalnızca **onaya gönderilmiş veya onaylanmış** videoları görür; taslak ve geri gönderilmiş videoları görmez.
 - Hata bildirimine her türde ek eklenebilir: ekran görüntüsü (en fazla 5 MB) veya en fazla 1 dk video (en fazla 30 MB).
 - Geri gönderme notu en fazla 500 karakterdir. Onay ve geri gönderme öğretmene bildirim olarak gider.
