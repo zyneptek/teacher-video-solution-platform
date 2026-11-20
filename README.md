@@ -105,7 +105,14 @@ mobile/   Expo + RN       ─┴─► yalnızca Express API ile konuşur
 
 1. Öğretmen soruyu açar; soru görseli stüdyoda çizim yüzeyinin arka planıdır. **Kalem ve silgi**, **başlat, duraklat, devam ettir, bitir** ve önizleme vardır. Kamera isteğe bağlıdır.
 2. Kayıt sırasında istemci yalnızca nokta ekler: web HTML canvas, mobil Skia kullanır; yumuşatma kodu ortaktır. Böylece çizim işaretçiyi gecikmesiz izler.
-3. Kayıt bitince çizim olayları, ses ve varsa kamera klibi sunucuya gider. Sunucu soru görselini arka plan alıp olayları zamanına göre **kare kare çizer** ve ffmpeg ile sesi ekleyerek **tek bir MP4** üretir (1280×720, 15 kare/sn, H.264/AAC, en fazla 3 dk). Ara format yoktur.
+3. Kayıt bitince çizim olayları, ses ve varsa kamera klibi sunucuya gider. Sunucu soru görselini arka plan alıp olayları zamanına göre **kare kare çizer** (`@napi-rs/canvas`), kareleri ham piksel olarak ffmpeg'e verir ve sesi (varsa kamera bindirmesini) ekleyerek **tek bir MP4** üretir (1280×720, 15 kare/sn, H.264/AAC, en fazla 3 dk). Ara format yoktur.
+
+**Neden bu yöntem?**
+
+- **Sabit tahta:** çizim yüzeyi, ekran boyutundan bağımsız **1280×720 mantıksal bir tahtadır**; soru görseli oranı korunarak sol tarafa yerleştirilir, kalan alan çözümü yazmak içindir. Çizimler tahta koordinatlarında ve kayıt süresine göre zaman damgalı saklandığı için web, telefon ve tablet **aynı videoyu** üretir.
+- **Çizim olay günlüğü:** her olay (`stroke`, `erase`) sırasıyla ve zamanıyla kaydedilir. Silgi hareketi de bir olaydır; bu yüzden silinen çizgi tam silindiği andan itibaren videodan kalkar. Duraklatmada kayıt saati durur; o sırada yapılan çizimler devam anının ilk karesinde görünür.
+- **Seçilmeyen yöntemler:** (1) *Webde `MediaRecorder` ile gerçek ekran kaydı, mobilde olay günlüğü:* iki ayrı hat gerektirir ve "web ve mobil aynı sonucu üretsin" beklentisini zorlaştırır. (2) *Mobilde native ekran kaydı:* Expo Go'da çalışmaz, development build gerektirir ve değerlendiricinin kurulumunu zorlaştırır.
+- **Bedeli:** çıktı ekranın birebir kaydı değil, soru görseli ve çizimlerin yeniden çizilmesidir; kayıt bittikten sonra kısa bir işleme süresi vardır.
 
 - **Silgi** değdiği çizginin tamamını siler; çizgi, silindiği andan sonra videoda görünmez.
 - **Duraklatma:** duraklatılan kayıtta kalem ve silgi kullanılabilir; bu çizimler devam anında videoya girer. Duraklatılıp sürdürülen kayıt tek MP4 olur.
