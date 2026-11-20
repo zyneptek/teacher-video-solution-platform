@@ -19,7 +19,6 @@ function QuestionList() {
   const [questions, setQuestions] = useState<QuestionInfo[] | null>(listCache);
   const [error, setError] = useState<string | null>(null);
   const [branch, setBranch] = useState<Branch | ''>('');
-  const [answerKey, setAnswerKey] = useState('');
   const [assigned, setAssigned] = useState<'' | 'yes' | 'no'>('');
   const [text, setText] = useState('');
 
@@ -35,12 +34,11 @@ function QuestionList() {
   if (error) return <p role="alert" className="error">{error}</p>;
   if (!questions) return <p>Yükleniyor…</p>;
 
-  // Süzgeçler: branş, cevap anahtarı, atanma durumu ve metin (soru no, kazanım kodu/açıklaması).
+  // Süzgeçler: branş, atanma durumu ve metin (soru no, kazanım kodu/açıklaması).
   const needle = text.trim().toLocaleLowerCase('tr');
   const visible = questions.filter(
     (q) =>
       (!branch || q.branch === branch) &&
-      (!answerKey || q.answerKey === answerKey) &&
       (!assigned || (assigned === 'yes') === q.assignmentCount > 0) &&
       (!needle ||
         `soru ${q.questionNumber ?? ''}`.toLocaleLowerCase('tr').includes(needle) ||
@@ -56,12 +54,6 @@ function QuestionList() {
           <option value="">Tüm branşlar</option>
           {BRANCHES.map((b) => (
             <option key={b} value={b}>{b}</option>
-          ))}
-        </select>
-        <select value={answerKey} onChange={(e) => setAnswerKey(e.target.value)} data-testid="q-key">
-          <option value="">Tüm cevaplar</option>
-          {ANSWER_KEYS.map((k) => (
-            <option key={k} value={k}>Cevap {k}</option>
           ))}
         </select>
         <select value={assigned} onChange={(e) => setAssigned(e.target.value as '' | 'yes' | 'no')} data-testid="q-assigned">
